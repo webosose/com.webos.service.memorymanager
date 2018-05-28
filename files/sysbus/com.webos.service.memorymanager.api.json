@@ -1,0 +1,36 @@
+{
+    "applications.internal": [
+        "com.webos.memorymanager/getEFS",
+        "com.webos.memorymanager/setMriHelper",
+        "com.webos.memorymanager/getCloseAppId",
+        "com.webos.memorymanager/getCurrentMemState",
+        "com.webos.memorymanager/getCustomThreshold",
+        "com.webos.memorymanager/getGroupInfo",
+        "com.webos.memorymanager/getPolicy",
+        "com.webos.memorymanager/getUnitList",
+        "com.webos.memorymanager/sendLowMemPopupTest",
+        "com.webos.memorymanager/setRequiredMemory",
+        "com.webos.memorymanager/startMemNotifier"
+    ],
+    "system": [
+        "com.webos.memorymanager/getEFS",
+        "com.webos.memorymanager/setMriHelper",
+        "com.webos.memorymanager/getCloseAppId",
+        "com.webos.memorymanager/getCurrentMemState",
+        "com.webos.memorymanager/getCustomThreshold",
+        "com.webos.memorymanager/getGroupInfo",
+        "com.webos.memorymanager/getPolicy",
+        "com.webos.memorymanager/getUnitList",
+        "com.webos.memorymanager/sendLowMemPopupTest",
+        "com.webos.memorymanager/setRequiredMemory",
+        "com.webos.memorymanager/startMemNotifier"
+    ],
+    "memory.information": [
+        "com.webos.service.memorymanager/getMemoryStatus"
+    ],
+    "memory.management": [
+        "com.webos.service.memorymanager/getMemoryStatus",
+        "com.webos.service.memorymanager/getManagerEvent",
+        "com.webos.service.memorymanager/requireMemory"
+    ]
+}

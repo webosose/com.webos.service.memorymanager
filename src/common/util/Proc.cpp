@@ -1,0 +1,42 @@
+// Copyright (c) 2018 LG Electronics, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+#include "Proc.h"
+
+bool Proc::getMemoryInfo(long& total, long& available)
+{
+    string type;
+    long value;
+    string kb;
+
+    ifstream meminfo("/proc/meminfo");
+    while (true) {
+        meminfo >> type >> value >> kb;
+
+        if (type == "MemTotal:") {
+            total = value / 1024;
+        }
+        if (type == "MemAvailable:") {
+            available = value / 1024;
+            break;
+        }
+    }
+    // TODO: This is hack for rpi3 for now
+    total -= 180;
+    available -= 180;
+    meminfo.close();
+    return true;
+}

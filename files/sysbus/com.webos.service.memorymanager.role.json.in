@@ -1,0 +1,19 @@
+{
+    "exeName":"@WEBOS_INSTALL_SBINDIR@/memorymanager",
+    "type": "regular",
+    "allowedNames": ["com.webos.memorymanager", "com.webos.service.memorymanager"],
+    "permissions": [
+        {
+            "service":"com.webos.memorymanager",
+            "outbound": [
+                "com.webos.applicationManager"
+            ]
+        },
+        {
+            "service":"com.webos.service.memorymanager",
+            "outbound": [
+                "com.webos.applicationManager"
+            ]
+        }
+    ]
+}
