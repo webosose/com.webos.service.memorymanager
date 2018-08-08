@@ -34,9 +34,6 @@ bool Proc::getMemoryInfo(long& total, long& available)
             break;
         }
     }
-    // TODO: This is hack for rpi3 for now
-    total -= 180;
-    available -= 180;
     meminfo.close();
     return true;
 }
