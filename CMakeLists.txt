@@ -27,3 +27,4 @@ add_subdirectory(src/memstay)
 
 # Install
 webos_build_system_bus_files()
+webos_build_configured_file(files/activity/activity-com.webos.service.memorymanager.foreground.json SYSCONFDIR palm/activities/com.webos.service.memorymanager)

@@ -32,5 +32,9 @@
         "com.webos.service.memorymanager/getMemoryStatus",
         "com.webos.service.memorymanager/getManagerEvent",
         "com.webos.service.memorymanager/requireMemory"
+    ],
+    "configurator.callbacks": [
+        "com.webos.service.applicationmanager/launch",
+        "com.webos.service.applicationmanager/getForegroundAppInfo"
     ]
 }
