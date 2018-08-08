@@ -17,6 +17,7 @@
 #include "LunaManager.h"
 
 #include "client/ApplicationManager.h"
+#include "client/NotificationManager.h"
 #include "util/Logger.h"
 
 #define NAME    "LunaManager"
@@ -72,6 +73,7 @@ void LunaManager::initialize(GMainLoop* mainloop)
     m_managerEventKillingNative.setServiceHandle(&m_oldHandle);
 
     ApplicationManager::getInstance().initialize(&m_newHandle);
+    NotificationManager::getInstance().initialize(&m_newHandle);
 }
 
 void LunaManager::signalLevelChanged(string prev, string cur)
@@ -113,6 +115,11 @@ void LunaManager::postManagerKillingEvent(Application& application)
 
     default:
         break;
+    }
+
+    if (application.getApplicationStatus() == ApplicationStatus_Foreground) {
+        // TODO: Locale support
+        NotificationManager::getInstance().createToast("Foreground App is closed because of memory issue.");
     }
 }
 

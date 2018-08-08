@@ -12,7 +12,8 @@
         {
             "service":"com.webos.service.memorymanager",
             "outbound": [
-                "com.webos.applicationManager"
+                "com.webos.applicationManager",
+                "com.webos.notification"
             ]
         }
     ]

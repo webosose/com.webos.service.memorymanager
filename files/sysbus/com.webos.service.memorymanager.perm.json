@@ -1,5 +1,6 @@
 {
     "com.webos.service.memorymanager": [
-        "applications.internal"
+        "applications.internal",
+        "notifications"
     ]
 }
