@@ -55,15 +55,26 @@ void MemoryManager::onTick()
     MemoryInfoManager::getInstance().update(false);
 }
 
-bool MemoryManager::onRequireMemory(int requiredMemory)
+bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 {
-    while (MemoryInfoManager::getInstance().getExpectedLevel(requiredMemory) == MemoryLevel_CRITICAL) {
+    for (int i = 0; i < SettingManager::getInstance().getRetryCount(); ++i) {
+        if (ApplicationManager::getInstance().getRunningAppCount() == 0) {
+            errorText = "Failed to reclaim required memory. All apps were closed";
+            return false;
+        }
+
+        if (MemoryInfoManager::getInstance().getExpectedLevel(requiredMemory) != MemoryLevel_CRITICAL) {
+            return true;
+        }
+
         ApplicationManager::getInstance().closeApp(true);
-        // Wait real process termination
-        usleep(100);
+
+        // TODO: Need to update. Waiting is not good solution
+        sleep(1);
         MemoryInfoManager::getInstance().update();
     }
-    return true;
+    errorText = "Failed to reclaim required memory. Timeout.";
+    return false;
 }
 
 bool MemoryManager::onMemoryStatus(JValue& responsePayload)

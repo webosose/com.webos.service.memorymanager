@@ -47,7 +47,7 @@ public:
     LunaManagerListener() {};
     virtual ~LunaManagerListener() {};
 
-    virtual bool onRequireMemory(int requiredMemory) = 0;
+    virtual bool onRequireMemory(int requiredMemory, string& errorText) = 0;
     virtual bool onMemoryStatus(JValue& responsePayload) = 0;
 
 };

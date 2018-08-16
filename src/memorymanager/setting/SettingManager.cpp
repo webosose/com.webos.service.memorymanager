@@ -58,6 +58,11 @@ int SettingManager::getDefaultRequiredMemory()
     return 120;
 }
 
+int SettingManager::getRetryCount()
+{
+    return 5;
+}
+
 bool SettingManager::isVerbose()
 {
     return true;

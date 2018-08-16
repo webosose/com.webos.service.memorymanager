@@ -21,9 +21,9 @@
 
 #include "base/IManager.h"
 
-#define DEFAULT_LOW_EXIT          250
-#define DEFAULT_LOW_ENTER         200
-#define DEFAULT_CRITICAL_EXIT     150
+#define DEFAULT_LOW_EXIT          280
+#define DEFAULT_LOW_ENTER         250
+#define DEFAULT_CRITICAL_EXIT     130
 #define DEFAULT_CRITICAL_ENTER    100
 
 using namespace std;
@@ -55,6 +55,7 @@ public:
     int getCriticalExit();
 
     int getDefaultRequiredMemory();
+    int getRetryCount();
     bool isVerbose();
 
 private:

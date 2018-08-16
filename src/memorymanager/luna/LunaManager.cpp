@@ -180,6 +180,7 @@ void LunaManager::requireMemory(Message& request, JValue& requestPayload, JValue
         return;
 
     bool returnValue = true;
+    string errorText = "";
     if (relaunch) {
         goto Done;
     }
@@ -188,9 +189,12 @@ void LunaManager::requireMemory(Message& request, JValue& requestPayload, JValue
         requiredMemory = SettingManager::getInstance().getDefaultRequiredMemory();
     }
 
-    returnValue = m_listener->onRequireMemory(requiredMemory);
+    returnValue = m_listener->onRequireMemory(requiredMemory, errorText);
 
 Done:
+    if (!returnValue) {
+        responsePayload.put("errorText", errorText);
+    }
     responsePayload.put("returnValue", returnValue);
 }
 

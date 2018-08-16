@@ -47,7 +47,7 @@ public:
     virtual void onTick();
 
     // LunaManagerListener
-    virtual bool onRequireMemory(int requiredMemory);
+    virtual bool onRequireMemory(int requiredMemory, string& errorText);
     virtual bool onManagerStatus(JValue& responsePayload);
     virtual bool onMemoryStatus(JValue& responsePayload);
 
