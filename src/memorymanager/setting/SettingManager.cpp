@@ -16,6 +16,10 @@
 
 #include "SettingManager.h"
 
+#include <unistd.h>
+
+const char *SettingManager::PATH_DEVMODE_ENABLED = "/var/luna/preferences/devmode_enabled";
+
 SettingManager::SettingManager()
     : m_lowEnter(DEFAULT_LOW_ENTER)
     , m_lowExit(DEFAULT_LOW_EXIT)
@@ -55,12 +59,19 @@ int SettingManager::getCriticalExit()
 
 int SettingManager::getDefaultRequiredMemory()
 {
-    return 120;
+    return DEFAULT_REQUIRED_MEMORY;
 }
 
 int SettingManager::getRetryCount()
 {
-    return 5;
+    return DEFAULT_RETRY_COUNT;
+}
+
+bool SettingManager::isDevmode()
+{
+    if (access(PATH_DEVMODE_ENABLED, F_OK) == 0)
+        return true;
+    return false;
 }
 
 bool SettingManager::isVerbose()

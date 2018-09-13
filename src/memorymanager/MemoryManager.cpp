@@ -69,8 +69,7 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 
         ApplicationManager::getInstance().closeApp(true);
 
-        // TODO: Need to update. Waiting is not good solution
-        sleep(1);
+        g_main_context_iteration(NULL, TRUE);
         MemoryInfoManager::getInstance().update();
     }
     errorText = "Failed to reclaim required memory. Timeout.";

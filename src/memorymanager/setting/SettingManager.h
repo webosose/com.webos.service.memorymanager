@@ -21,11 +21,6 @@
 
 #include "base/IManager.h"
 
-#define DEFAULT_LOW_EXIT          280
-#define DEFAULT_LOW_ENTER         250
-#define DEFAULT_CRITICAL_EXIT     130
-#define DEFAULT_CRITICAL_ENTER    100
-
 using namespace std;
 
 class SettingManagerListener {
@@ -56,9 +51,21 @@ public:
 
     int getDefaultRequiredMemory();
     int getRetryCount();
+
+    bool isDevmode();
     bool isVerbose();
 
 private:
+    static const int DEFAULT_LOW_EXIT = 280;
+    static const int DEFAULT_LOW_ENTER = 250;
+    static const int DEFAULT_CRITICAL_EXIT = 130;
+    static const int DEFAULT_CRITICAL_ENTER = 100;
+
+    static const int DEFAULT_RETRY_COUNT = 5;
+    static const int DEFAULT_REQUIRED_MEMORY = 120;
+
+    static const char *PATH_DEVMODE_ENABLED;
+
     SettingManager();
 
     int m_lowEnter;
