@@ -128,6 +128,7 @@ void MemoryInfoManager::print()
 {
     // TODO
 }
+
 void MemoryInfoManager::print(JValue& json)
 {
     JValue current = pbnjson::Object();

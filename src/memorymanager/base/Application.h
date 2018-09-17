@@ -51,13 +51,13 @@ enum ApplicationStatus {
 class Application : public IPrintable {
 public:
     static string toString(enum WindowType& type);
-    static void toEnum(string& str, enum WindowType& type);
+    static void toEnum(string str, enum WindowType& type);
 
     static string toString(enum ApplicationType& type);
-    static void toEnum(string& str, enum ApplicationType& type);
+    static void toEnum(string str, enum ApplicationType& type);
 
     static string toString(enum ApplicationStatus& type);
-    static void toEnum(string& str, enum ApplicationStatus& type);
+    static void toEnum(string str, enum ApplicationStatus& type);
 
     static bool compare(const Application& a, const Application& b)
     {
@@ -71,38 +71,24 @@ public:
         }
     }
 
-    static bool isRemoved(const Application& application)
-    {
-        return application.m_isRemoved;
-    }
-
-    static vector<Application>::iterator find(vector<Application>& applications, string appId)
-    {
-        vector<Application>::iterator it;
-        it = find_if(applications.begin(), applications.end(),
-                     [&] (const Application& application) { return application.getAppId() == appId; } );
-        return it;
-    }
-
-    static bool isExist(vector<Application>& applications, string appId)
-    {
-        auto it = find(applications, appId);
-        if (it == applications.end())
-            return false;
-        return true;
-    }
-
     Application();
+    Application(string appId);
     virtual ~Application();
 
-    // Load API
-    virtual void fromJson(JValue& json);
-    virtual void fromApplication(Application& application);
-
     // setter / getter
+    void setAppId(string appId)
+    {
+        m_appId = appId;
+    }
+
     string getAppId() const
     {
         return m_appId;
+    }
+
+    void setTid(int tid)
+    {
+        m_tid = tid;
     }
 
     int getTid() const
@@ -110,14 +96,32 @@ public:
         return m_tid;
     }
 
+    void setWindowType(enum WindowType type)
+    {
+        m_windowType = type;
+    }
+
     enum WindowType getWindowType()
     {
         return m_windowType;
     }
 
+    void setApplicationType(enum ApplicationType type)
+    {
+        m_applicationType = type;
+    }
+
     enum ApplicationType getApplicationType()
     {
         return m_applicationType;
+    }
+
+    void setApplicationStatus(enum ApplicationStatus status)
+    {
+        if (status == ApplicationStatus_Foreground) {
+            updateTime();
+        }
+        m_applicationStatus = status;
     }
 
     enum ApplicationStatus getApplicationStatus()
@@ -128,26 +132,6 @@ public:
     void updateTime()
     {
         m_time = Time::getSystemTime();
-    }
-
-    void removed()
-    {
-        m_isRemoved = true;
-    }
-
-    void notRemoved()
-    {
-        m_isRemoved = false;
-    }
-
-    void closing()
-    {
-        m_isClosing = true;
-    }
-
-    bool isClosing()
-    {
-        return m_isClosing;
     }
 
     // IPrintable
@@ -166,8 +150,6 @@ private:
 
     // runtime value
     int m_time;
-    bool m_isRemoved;
-    bool m_isClosing;
 
 };
 

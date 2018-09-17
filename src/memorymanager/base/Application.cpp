@@ -33,7 +33,7 @@ string Application::toString(enum WindowType& type)
     return "unknown";
 }
 
-void Application::toEnum(string& str, enum WindowType& type)
+void Application::toEnum(string str, enum WindowType& type)
 {
     if (str == "card" || str == "_WEBOS_WINDOW_TYPE_CARD") {
         type = WindowType_Card;
@@ -62,7 +62,7 @@ string Application::toString(enum ApplicationType& type)
     return "unknown";
 }
 
-void Application::toEnum(string& str, enum ApplicationType& type)
+void Application::toEnum(string str, enum ApplicationType& type)
 {
     if (str == "native" || str == "native_builtin") {
         type = ApplicationType_Native;
@@ -93,7 +93,7 @@ string Application::toString(enum ApplicationStatus& type)
     return "unknown";
 }
 
-void Application::toEnum(string& str, enum ApplicationStatus& type)
+void Application::toEnum(string str, enum ApplicationStatus& type)
 {
     if (str == "foreground" || str == "launch")
         type = ApplicationStatus_Foreground;
@@ -107,71 +107,22 @@ void Application::toEnum(string& str, enum ApplicationStatus& type)
 
 Application::Application()
     : m_appId("")
-    , m_tid(-1)
+    , m_tid(0)
     , m_windowType(WindowType_Unknown)
     , m_applicationType(ApplicationType_Unknown)
     , m_applicationStatus(ApplicationStatus_Unknown)
     , m_time(0)
-    , m_isRemoved(false)
-    , m_isClosing(false)
 {
+}
+
+Application::Application(string appId)
+    : Application()
+{
+    m_appId = appId;
 }
 
 Application::~Application()
 {
-}
-
-void Application::fromJson(JValue& json)
-{
-    string str;
-
-    if (json.hasKey("id")) {
-        m_appId = json["id"].asString();
-    }
-    if (json.hasKey("appId")) {
-        m_appId = json["appId"].asString();
-    }
-    if (json.hasKey("processid")) {
-        m_tid = std::stoi(json["processid"].asString());
-    }
-    if (json.hasKey("defaultWindowType")) {
-        str = json["defaultWindowType"].asString();
-        toEnum(str, m_windowType);
-    }
-    if (json.hasKey("windowType")) {
-        str = json["windowType"].asString();
-        toEnum(str, m_windowType);
-    }
-    if (json.hasKey("appType")) {
-        str = json["appType"].asString();
-        toEnum(str, m_applicationType);
-    }
-    if (json.hasKey("event")) {
-        str = json["event"].asString();
-        toEnum(str, m_applicationStatus);
-    }
-}
-
-void Application::fromApplication(Application& application)
-{
-    m_appId = application.m_appId;
-
-    if (application.m_tid != -1) {
-        m_tid = application.m_tid;
-        Process::fromPid(m_tid, m_process);
-    }
-
-    if (application.m_windowType != WindowType_Unknown) {
-        m_windowType = application.m_windowType;
-    }
-
-    if (application.m_applicationType != ApplicationType_Unknown) {
-        m_applicationType = application.m_applicationType;
-    }
-
-    if (application.m_applicationStatus != ApplicationStatus_Unknown) {
-        m_applicationStatus = application.m_applicationStatus;
-    }
 }
 
 void Application::print()

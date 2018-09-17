@@ -79,6 +79,7 @@ public:
     // Internal
     void logRequest(Message& request, JValue& requestPayload, string name);
     void logResponse(Message& request, JValue& responsePayload, string name);
+    void logSubscription(string api, JValue& returnPayload);
     void logCall(string& url, JValue& callPayload);
     void logReturn(Message& response, JValue& returnPayload);
     void replyError(JValue& response, enum ErrorCode code);

@@ -16,6 +16,7 @@
 
 #include "ApplicationManager.h"
 
+#include "NotificationManager.h"
 #include "luna/LunaManager.h"
 #include "util/Logger.h"
 
@@ -25,31 +26,26 @@ bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void 
     Message response(reply);
     JValue responsePayload = JDomParser::fromString(response.getPayload());
 
-    LunaManager::getInstace().logReturn(response, responsePayload);
+    LunaManager::getInstace().logSubscription("getAppLifeEvents", responsePayload);
     if (response.isHubError()) {
         return false;
     }
 
-    Application application;
-    application.fromJson(responsePayload);
-
-    if (application.getAppId().empty()) {
+    string appId = responsePayload["appId"].asString();
+    if (appId.empty()) {
         // SAM returns empty appid at first
-        return false;
-    }
-
-    auto it = Application::find(sam->m_applications, application.getAppId());
-    if (it == sam->m_applications.end()) {
-        sam->m_applications.emplace_back();
-        sam->m_applications.back().fromApplication(application);
         return true;
     }
 
-    it->fromApplication(application);
+    enum ApplicationStatus applicationStatus;
+    Application::toEnum(responsePayload["event"].asString(), applicationStatus);
 
-    if (application.getApplicationStatus() == ApplicationStatus_Foreground) {
-        it->updateTime();
-        std::sort(sam->m_applications.begin(), sam->m_applications.end(), Application::compare);
+    // 'update' only. Adding operation occurs in 'running' handler
+    auto it = sam->m_runningList.find(appId);
+    if (it != sam->m_runningList.getRunningList().end() &&
+        it->getApplicationStatus() != applicationStatus) {
+        it->setApplicationStatus(applicationStatus);
+        sam->m_runningList.sort();
         if (sam->m_listener) sam->m_listener->onApplicationsChanged();
         sam->print();
     }
@@ -62,34 +58,38 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
     Message response(reply);
     JValue responsePayload = JDomParser::fromString(response.getPayload());
 
-    LunaManager::getInstace().logReturn(response, responsePayload);
+    LunaManager::getInstace().logSubscription("running", responsePayload);
     if (response.isHubError()) {
         return false;
     }
 
-    for (auto it = sam->m_applications.begin(); it != sam->m_applications.end(); ++it) {
-        it->removed();
-    }
-
+    sam->m_runningList.resetPid();
     Application application;
     for (JValue item : responsePayload["running"].items()) {
-        application.fromJson(item);
+        enum WindowType windowType;
+        enum ApplicationType applicationType;
 
-        auto it = Application::find(sam->m_applications, application.getAppId());
-        if (it == sam->m_applications.end()) {
-            sam->m_applications.emplace_back();
-            sam->m_applications.back().fromApplication(application);
+        Application::toEnum(item["defaultWindowType"].asString(), windowType);
+        Application::toEnum(item["appType"].asString(), applicationType);
+
+        application.setAppId(item["id"].asString());
+        application.setTid(std::stoi(item["processid"].asString()));
+        application.setApplicationType(applicationType);
+        application.setWindowType(windowType);
+
+        auto it = sam->m_runningList.find(application.getAppId());
+        if (it == sam->m_runningList.getRunningList().end()) {
+            sam->m_runningList.push(application);
         } else {
-            it->fromApplication(application);
-            it->notRemoved();
+            it->setTid(application.getTid());
+            it->setApplicationType(application.getApplicationType());
+            it->setWindowType(application.getWindowType());
         }
     }
-
-    sam->m_applications.erase(std::remove_if(sam->m_applications.begin(),
-                                             sam->m_applications.end(),
-                                             Application::isRemoved),
-                              sam->m_applications.end());
+    sam->m_runningList.removeZeroPid();
+    sam->m_runningList.sort();
     if (sam->m_listener) sam->m_listener->onApplicationsChanged();
+    sam->print();
     return true;
 }
 
@@ -116,35 +116,57 @@ void ApplicationManager::clear()
 
 bool ApplicationManager::closeApp(bool includeForeground)
 {
-    if (m_applications.size() == 0)
+    if (m_runningList.isEmpty())
         return false;
 
-    if (!includeForeground &&
-        m_applications.back().getApplicationStatus() == ApplicationStatus_Foreground)
+    Application& application = m_runningList.back();
+    if (!includeForeground && application.getApplicationStatus() == ApplicationStatus_Foreground)
         return false;
+    LunaManager::getInstace().postManagerKillingEvent(application);
 
-    if (m_applications.back().isClosing())
-        return true;
+    string appId = application.getAppId();
+    enum ApplicationStatus status = application.getApplicationStatus();
 
-    m_applications.back().closing();
-    LunaManager::getInstace().postManagerKillingEvent(m_applications.back());
-    string appId = m_applications.back().getAppId();
-    return closeByAppId(appId);
+    if (status == ApplicationStatus_Foreground) {
+        NotificationManager::getInstance().createToast(appId + " is closed because of memory issue.");
+    }
+
+    if (!closeByAppId(appId)) {
+        return false;
+    }
+
+    // Wait for app close event
+    for (int i = 0; i < 100; ++i) {
+        g_main_context_iteration(NULL, TRUE);
+        if (m_runningList.isExist(appId) == false) {
+            break;
+        }
+    }
+
+    if (status == ApplicationStatus_Foreground) {
+        if (!launch(appId))
+            return false;
+
+        // Wait for app foreground event
+        for (int i = 0; i < 100; ++i) {
+            g_main_context_iteration(NULL, TRUE);
+            if (m_runningList.getForegroundAppId() == appId) {
+                break;
+            }
+        }
+    }
+
+    return true;
 }
 
 string ApplicationManager::getForegroundAppId()
 {
-    if (m_applications.size() == 0)
-        return "";
-
-    if (m_applications.front().getApplicationStatus() == ApplicationStatus_Foreground)
-        return m_applications.front().getAppId();
-    return "";
+    return m_runningList.getForegroundAppId();
 }
 
 int ApplicationManager::getRunningAppCount()
 {
-    return m_applications.size();
+    return m_runningList.getCount();
 }
 
 bool ApplicationManager::onStatusChange(bool isConnected)
@@ -185,13 +207,24 @@ bool ApplicationManager::closeByAppId(string& appId)
     return callSync("closeByAppId", callPayload, returnPayload);
 }
 
+bool ApplicationManager::launch(string& appId)
+{
+    JValue callPayload = pbnjson::Object();
+    callPayload.put("id", appId);
+
+    JValue returnPayload;
+    return callSync("launch", callPayload, returnPayload);
+}
+
 void ApplicationManager::print()
 {
-    if (m_applications.size() == 0)
+    if (m_runningList.getRunningList().size() == 0) {
+        Logger::verbose("Application List : Empty", m_name);
         return;
+    }
     if (SettingManager::getInstance().isVerbose()) {
-        Logger::verbose("Ordered Application List", m_name);
-        for (auto it = m_applications.begin(); it != m_applications.end(); ++it) {
+        Logger::verbose("Application List", m_name);
+        for (auto it = m_runningList.getRunningList().begin(); it != m_runningList.getRunningList().end(); ++it) {
             it->print();
         }
     }
@@ -200,7 +233,7 @@ void ApplicationManager::print()
 void ApplicationManager::print(JValue& json)
 {
     JValue array = pbnjson::Array();
-    for (auto it = m_applications.begin(); it != m_applications.end(); ++it) {
+    for (auto it = m_runningList.getRunningList().begin(); it != m_runningList.getRunningList().end(); ++it) {
         JValue item = pbnjson::Object();
         it->print(item);
         array.append(item);

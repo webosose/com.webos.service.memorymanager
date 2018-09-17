@@ -116,11 +116,6 @@ void LunaManager::postManagerKillingEvent(Application& application)
     default:
         break;
     }
-
-    if (application.getApplicationStatus() == ApplicationStatus_Foreground) {
-        // TODO: Locale support
-        NotificationManager::getInstance().createToast("Foreground App is closed because of memory issue.");
-    }
 }
 
 void LunaManager::getMemoryStatus(Message& request, JValue& requestPayload, JValue& responsePayload)
@@ -224,6 +219,16 @@ void LunaManager::logCall(string& url, JValue& callPayload)
         Logger::normal("[Call] API(" + url + ")\n" + callPayload.stringify("    ").c_str(), NAME);
     } else {
         Logger::normal("[Call] API(" + url + ")", NAME);
+    }
+}
+
+void LunaManager::logSubscription(string api, JValue& returnPayload)
+{
+    if (SettingManager::getInstance().isVerbose()) {
+        Logger::normal("[Subscription] API(" + api + ")\n" +
+                       returnPayload.stringify("    ").c_str(), NAME);
+    } else {
+        Logger::normal("[Subscription] API(" + api + ")", NAME);
     }
 }
 

@@ -23,6 +23,7 @@
 
 MemoryManager::MemoryManager()
     : m_tickSrc(-1)
+    , m_lock(false)
 {
     m_mainloop = g_main_loop_new(NULL, FALSE);
 }
@@ -68,8 +69,6 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
         }
 
         ApplicationManager::getInstance().closeApp(true);
-
-        g_main_context_iteration(NULL, TRUE);
         MemoryInfoManager::getInstance().update();
     }
     errorText = "Failed to reclaim required memory. Timeout.";
@@ -106,17 +105,24 @@ void MemoryManager::onEnter(enum MemoryLevel prev, enum MemoryLevel cur)
         Logger::normal("MemoryLevel - CRITICAL", LOG_NAME);
         break;
     }
-
 }
 
 void MemoryManager::onLow()
 {
+    if (m_lock)
+        return;
+    m_lock = true;
     ApplicationManager::getInstance().closeApp(false);
+    m_lock = false;
 }
 
 void MemoryManager::onCritical()
 {
+    if (m_lock)
+        return;
+    m_lock = true;
     ApplicationManager::getInstance().closeApp(true);
+    m_lock = false;
 }
 
 void MemoryManager::onApplicationsChanged()

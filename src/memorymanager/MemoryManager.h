@@ -70,6 +70,7 @@ private:
 
     GMainLoop* m_mainloop;
     guint m_tickSrc;
+    bool m_lock;
 
 };
 

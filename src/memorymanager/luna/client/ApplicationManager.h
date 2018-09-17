@@ -23,8 +23,9 @@
 #include <luna-service2/lunaservice.hpp>
 #include <pbnjson.hpp>
 
-#include "base/IPrintable.h"
 #include "AbsClient.hpp"
+#include "base/RunningList.h"
+#include "base/IPrintable.h"
 
 using namespace std;
 using namespace pbnjson;
@@ -51,6 +52,7 @@ public:
 
     // public
     bool closeApp(bool includeForeground = false);
+
     string getForegroundAppId();
     int getRunningAppCount();
 
@@ -78,9 +80,9 @@ private:
     bool getAppLifeEvents();
     bool running();
     bool closeByAppId(string& appId);
+    bool launch(string& appId);
 
-    vector<Application> m_applications;
-
+    RunningList m_runningList;
     Call m_getAppLifeEventsCall;
     Call m_runningCall;
 
