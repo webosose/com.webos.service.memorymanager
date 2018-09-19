@@ -64,7 +64,7 @@ string Application::toString(enum ApplicationType& type)
 
 void Application::toEnum(string str, enum ApplicationType& type)
 {
-    if (str == "native" || str == "native_builtin") {
+    if (str == "native" || str == "native_builtin" || str == "native_appshell") {
         type = ApplicationType_Native;
     } else if (str == "web") {
         type = ApplicationType_WebApp;
