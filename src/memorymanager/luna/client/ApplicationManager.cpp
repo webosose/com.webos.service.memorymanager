@@ -79,6 +79,8 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
 
         auto it = sam->m_runningList.find(application.getAppId());
         if (it == sam->m_runningList.getRunningList().end()) {
+            // Considering new app as foreground app
+            application.setApplicationStatus(ApplicationStatus_Foreground);
             sam->m_runningList.push(application);
         } else {
             it->setTid(application.getTid());
