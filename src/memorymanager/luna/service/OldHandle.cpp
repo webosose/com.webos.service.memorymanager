@@ -21,7 +21,7 @@
 #include "util/Logger.h"
 
 const string OldHandle::NAME_SERVICE = "com.webos.memorymanager";
-const string OldHandle::NAME_SIGNAL = "com/webos/memorymanager";
+const string OldHandle::NAME_SIGNAL = "com/webos/memory";
 
 const LSSignal OldHandle::TABLE_SIGNAL[2] = {
     { "thresholdChanged", LUNA_SIGNAL_FLAGS_NONE },
