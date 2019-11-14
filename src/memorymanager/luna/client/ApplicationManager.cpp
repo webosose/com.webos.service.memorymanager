@@ -127,6 +127,7 @@ bool ApplicationManager::closeApp(bool includeForeground)
     LunaManager::getInstace().postManagerKillingEvent(application);
 
     string appId = application.getAppId();
+    int tid = application.getTid();
     enum ApplicationStatus status = application.getApplicationStatus();
 
     if (status == ApplicationStatus_Foreground) {
@@ -140,7 +141,9 @@ bool ApplicationManager::closeApp(bool includeForeground)
     // Wait for app close event
     for (int i = 0; i < 100; ++i) {
         g_main_context_iteration(NULL, TRUE);
-        if (m_runningList.isExist(appId) == false) {
+        // The target app can be relaunched before checking following code
+        // so MM should use pid instead of appId
+        if (m_runningList.isExist(tid) == false) {
             break;
         }
     }
@@ -148,14 +151,6 @@ bool ApplicationManager::closeApp(bool includeForeground)
     if (status == ApplicationStatus_Foreground) {
         if (!launch(appId))
             return false;
-
-        // Wait for app foreground event
-        for (int i = 0; i < 100; ++i) {
-            g_main_context_iteration(NULL, TRUE);
-            if (m_runningList.getForegroundAppId() == appId) {
-                break;
-            }
-        }
     }
 
     return true;

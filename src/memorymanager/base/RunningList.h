@@ -42,6 +42,7 @@ public:
     int getCount();
     string getForegroundAppId();
 
+    bool isExist(int pid);
     bool isExist(string appId);
     bool isEmpty();
 

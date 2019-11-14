@@ -97,6 +97,17 @@ bool RunningList::isEmpty()
     return m_applications.empty();
 }
 
+bool RunningList::isExist(int pid)
+{
+    vector<Application>::iterator it;
+    it = find_if(m_applications.begin(), m_applications.end(),
+                 [&] (const Application& application) { return application.getTid() == pid; } );
+    if (it == m_applications.end()) {
+        return false;
+    }
+    return true;
+}
+
 bool RunningList::isExist(string appId)
 {
     vector<Application>::iterator it;
