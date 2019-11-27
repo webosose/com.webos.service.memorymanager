@@ -97,6 +97,7 @@ void LunaManager::postManagerKillingEvent(Application& application)
 {
     JValue subscriptionResponse = pbnjson::Object();
     subscriptionResponse.put("id", application.getAppId());
+    subscriptionResponse.put("instanceId", application.getInstanceId());
     subscriptionResponse.put("type", "killing");
     subscriptionResponse.put("returnValue", true);
     subscriptionResponse.put("subscribed", true);

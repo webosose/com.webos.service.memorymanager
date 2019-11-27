@@ -86,6 +86,16 @@ public:
         return m_appId;
     }
 
+    void setInstanceId(string instanceId)
+    {
+        m_instanceId = instanceId;
+    }
+
+    string getInstanceId() const
+    {
+        return m_instanceId;
+    }
+
     void setTid(int tid)
     {
         m_tid = tid;
@@ -140,6 +150,7 @@ public:
 
 private:
     string m_appId;
+    string m_instanceId;
     int m_tid;
 
     enum WindowType m_windowType;

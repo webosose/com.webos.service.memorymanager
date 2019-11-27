@@ -73,7 +73,9 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
         Application::toEnum(item["appType"].asString(), applicationType);
 
         application.setAppId(item["id"].asString());
-        application.setTid(std::stoi(item["processid"].asString()));
+        application.setInstanceId(item["instanceId"].asString());
+        if (!item["processId"].asString().empty())
+            application.setTid(std::stoi(item["processId"].asString()));
         application.setApplicationType(applicationType);
         application.setWindowType(windowType);
 
@@ -127,7 +129,6 @@ bool ApplicationManager::closeApp(bool includeForeground)
     LunaManager::getInstace().postManagerKillingEvent(application);
 
     string appId = application.getAppId();
-    int tid = application.getTid();
     enum ApplicationStatus status = application.getApplicationStatus();
 
     if (status == ApplicationStatus_Foreground) {
@@ -137,22 +138,6 @@ bool ApplicationManager::closeApp(bool includeForeground)
     if (!closeByAppId(appId)) {
         return false;
     }
-
-    // Wait for app close event
-    for (int i = 0; i < 100; ++i) {
-        g_main_context_iteration(NULL, TRUE);
-        // The target app can be relaunched before checking following code
-        // so MM should use pid instead of appId
-        if (m_runningList.isExist(tid) == false) {
-            break;
-        }
-    }
-
-    if (status == ApplicationStatus_Foreground) {
-        if (!launch(appId))
-            return false;
-    }
-
     return true;
 }
 
