@@ -96,14 +96,14 @@ public:
         return m_instanceId;
     }
 
-    void setTid(int tid)
+    void setPid(int pid)
     {
-        m_tid = tid;
+        m_pid = pid;
     }
 
-    int getTid() const
+    int getPid() const
     {
-        return m_tid;
+        return m_pid;
     }
 
     void setWindowType(enum WindowType type)
@@ -144,6 +144,16 @@ public:
         m_time = Time::getSystemTime();
     }
 
+    int getContext()
+    {
+        return m_context;
+    }
+
+    void setContext(int context)
+    {
+        m_context = context;
+    }
+
     // IPrintable
     virtual void print();
     virtual void print(JValue& json);
@@ -151,7 +161,7 @@ public:
 private:
     string m_appId;
     string m_instanceId;
-    int m_tid;
+    int m_pid;
 
     enum WindowType m_windowType;
     enum ApplicationType m_applicationType;
@@ -161,6 +171,7 @@ private:
 
     // runtime value
     int m_time;
+    int m_context;
 
 };
 

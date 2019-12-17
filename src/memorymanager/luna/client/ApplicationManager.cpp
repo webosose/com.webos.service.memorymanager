@@ -63,7 +63,7 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
         return false;
     }
 
-    sam->m_runningList.resetPid();
+    sam->m_runningList.setContext(CONTEXT_NOT_EXIST);
     Application application;
     for (JValue item : responsePayload["running"].items()) {
         enum WindowType windowType;
@@ -74,23 +74,25 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
 
         application.setAppId(item["id"].asString());
         application.setInstanceId(item["instanceId"].asString());
-        if (!item["processId"].asString().empty())
-            application.setTid(std::stoi(item["processId"].asString()));
+        if (!item["processid"].asString().empty())
+            application.setPid(std::stoi(item["processid"].asString()));
         application.setApplicationType(applicationType);
         application.setWindowType(windowType);
 
         auto it = sam->m_runningList.find(application.getAppId());
         if (it == sam->m_runningList.getRunningList().end()) {
             // Considering new app as foreground app
+            application.setContext(CONTEXT_EXIST);
             application.setApplicationStatus(ApplicationStatus_Foreground);
             sam->m_runningList.push(application);
         } else {
-            it->setTid(application.getTid());
+            it->setContext(1);
+            it->setPid(application.getPid());
             it->setApplicationType(application.getApplicationType());
             it->setWindowType(application.getWindowType());
         }
     }
-    sam->m_runningList.removeZeroPid();
+    sam->m_runningList.removeContext(CONTEXT_NOT_EXIST);
     sam->m_runningList.sort();
     if (sam->m_listener) sam->m_listener->onApplicationsChanged();
     sam->print();

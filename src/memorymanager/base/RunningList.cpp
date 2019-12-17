@@ -25,18 +25,18 @@ RunningList::~RunningList()
 {
 }
 
-void RunningList::resetPid()
+void RunningList::setContext(int context)
 {
     for (auto it = m_applications.begin(); it != m_applications.end(); ++it) {
-        it->setTid(0);
+        it->setContext(context);
     }
 }
 
-void RunningList::removeZeroPid()
+void RunningList::removeContext(int context)
 {
     auto it = m_applications.begin();
     while (it != m_applications.end()) {
-        if (it->getTid() == 0) {
+        if (it->getContext() == context) {
             it = m_applications.erase(it);
         }
         else
@@ -101,7 +101,7 @@ bool RunningList::isExist(int pid)
 {
     vector<Application>::iterator it;
     it = find_if(m_applications.begin(), m_applications.end(),
-                 [&] (const Application& application) { return application.getTid() == pid; } );
+                 [&] (const Application& application) { return application.getPid() == pid; } );
     if (it == m_applications.end()) {
         return false;
     }

@@ -35,8 +35,8 @@ public:
     vector<Application>::iterator find(string appId);
     void sort();
 
-    void resetPid();
-    void removeZeroPid();
+    void setContext(int context);
+    void removeContext(int context);
 
     vector<Application>& getRunningList();
     int getCount();

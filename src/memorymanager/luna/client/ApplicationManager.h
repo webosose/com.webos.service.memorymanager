@@ -66,6 +66,9 @@ public:
     virtual void print(JValue& json);
 
 private:
+    static const int CONTEXT_NOT_EXIST = 0;
+    static const int CONTEXT_EXIST = 1;
+
     static bool _getAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx);
     static bool _running(LSHandle *sh, LSMessage *reply, void *ctx);
 

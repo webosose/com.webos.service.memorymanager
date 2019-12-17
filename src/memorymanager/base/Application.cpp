@@ -106,12 +106,13 @@ void Application::toEnum(string str, enum ApplicationStatus& type)
 }
 
 Application::Application()
-    : m_appId("")
-    , m_tid(0)
-    , m_windowType(WindowType_Unknown)
-    , m_applicationType(ApplicationType_Unknown)
-    , m_applicationStatus(ApplicationStatus_Unknown)
-    , m_time(0)
+    : m_appId(""),
+      m_pid(0),
+      m_windowType(WindowType_Unknown),
+      m_applicationType(ApplicationType_Unknown),
+      m_applicationStatus(ApplicationStatus_Unknown),
+      m_time(0),
+      m_context(0)
 {
 }
 
@@ -129,7 +130,7 @@ void Application::print()
 {
     string msg = "STATUS(" + toString(m_applicationStatus) + ") ";
     msg += "TIME(" + to_string(m_time) + ") ";
-    msg += "PID(" + to_string(m_tid) + ") ";
+    msg += "PID(" + to_string(m_pid) + ") ";
     msg += "WINDOW(" + toString(m_windowType) + ") ";
     msg += "TYPE(" + toString(m_applicationType) + ")";
 
@@ -139,7 +140,8 @@ void Application::print()
 void Application::print(JValue& json)
 {
     json.put("appId", m_appId);
-    json.put("pid", m_tid);
+    json.put("instanceId", m_instanceId);
+    json.put("pid", m_pid);
     json.put("type", toString(m_applicationType));
     json.put("status", toString(m_applicationStatus));
     json.put("time", m_time);
