@@ -32,9 +32,9 @@ public:
     bool push(Application& application);
     Application& back();
     Application& front();
-    vector<Application>::iterator find(string appId);
-    void sort();
 
+    void sort();
+    vector<Application>::iterator find(const string& instanceId, const string& appId);
     void setContext(int context);
     void removeContext(int context);
 
@@ -47,6 +47,9 @@ public:
     bool isEmpty();
 
 private:
+    vector<Application>::iterator findByAppId(const string& appId);
+    vector<Application>::iterator findByInstanceId(const string& instanceId);
+
     vector<Application> m_applications;
 
 };

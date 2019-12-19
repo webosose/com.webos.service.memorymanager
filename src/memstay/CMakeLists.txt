@@ -20,6 +20,14 @@ pkg_check_modules(GLIB2 REQUIRED glib-2.0)
 include_directories(${GLIB2_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${GLIB2_CFLAGS_OTHER})
 
+pkg_check_modules(PBNJSON_C REQUIRED pbnjson_c)
+include_directories(${PBNJSON_C_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${PBNJSON_C_CFLAGS_OTHER})
+
+pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
+include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS_OTHER})
+
 # Environment
 set(BIN_NAME memstay)
 file(GLOB_RECURSE SRC_COMMON ${PROJECT_SOURCE_DIR}/src/common/*.cpp)
@@ -35,6 +43,8 @@ add_executable(${BIN_NAME} ${SRC_COMMON} ${SRC_MEMSTAY})
 webos_add_linker_options(ALL --no-undefined)
 set(LIBS
     ${GLIB2_LDFLAGS}
+    ${PBNJSON_C_LDFLAGS}
+    ${PBNJSON_CPP_LDFLAGS}
 )
 target_link_libraries(${BIN_NAME} ${LIBS})
 

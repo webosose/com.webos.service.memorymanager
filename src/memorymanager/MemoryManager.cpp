@@ -53,7 +53,6 @@ void MemoryManager::run()
 
 void MemoryManager::onTick()
 {
-    Logger::debug("Check memory status", LOG_NAME);
     MemoryInfoManager::getInstance().update(false);
 }
 

@@ -28,46 +28,42 @@
 using namespace std;
 using namespace pbnjson;
 
-enum WindowType {
-    WindowType_Unknown,
-    WindowType_Card,
-    WindowType_Overlay,
-};
-
-enum ApplicationType {
-    ApplicationType_Unknown,
-    ApplicationType_WebApp,
-    ApplicationType_Native,
-    ApplicationType_Qml,
-};
-
-enum ApplicationStatus {
-    ApplicationStatus_Unknown,
-    ApplicationStatus_Preload,
-    ApplicationStatus_Background,
-    ApplicationStatus_Foreground,
-};
-
 class Application : public IPrintable {
 public:
-    static string toString(enum WindowType& type);
-    static void toEnum(string str, enum WindowType& type);
+    static int getStatusPriority(const string& status)
+    {
+        if (status == "stop")
+            return 0;
+        else if (status == "close")
+            return 1;
+        else if (status == "foreground")
+            return 2;
+        else if (status == "background")
+            return 3;
+        else if (status == "preload")
+            return 4;
+        else
+            return 5;
+    }
 
-    static string toString(enum ApplicationType& type);
-    static void toEnum(string str, enum ApplicationType& type);
-
-    static string toString(enum ApplicationStatus& type);
-    static void toEnum(string str, enum ApplicationStatus& type);
-
+    static int getTypePriority(const string& type)
+    {
+        if (type == "web")
+            return 0;
+        else if (type.find("native") != std::string::npos)
+            return 1;
+        else
+            return 2;
+    }
     static bool compare(const Application& a, const Application& b)
     {
-        if (a.m_applicationStatus == b.m_applicationStatus) {
-            if (a.m_applicationType == b.m_applicationType)
+        if (a.m_status == b.m_status) {
+            if (a.m_type == b.m_type)
                 return a.m_time > b.m_time;
             else
-                return a.m_applicationType > b.m_applicationType;
+                return getTypePriority(a.m_type) < getTypePriority(b.m_type);
         } else {
-            return a.m_applicationStatus > b.m_applicationStatus;
+            return getStatusPriority(a.m_status) < getStatusPriority(b.m_status);
         }
     }
 
@@ -76,24 +72,57 @@ public:
     virtual ~Application();
 
     // setter / getter
-    void setAppId(string appId)
+    void setAppId(const string& appId)
     {
         m_appId = appId;
     }
 
-    string getAppId() const
+    const string& getAppId() const
     {
         return m_appId;
     }
 
-    void setInstanceId(string instanceId)
+    void setInstanceId(const string& instanceId)
     {
         m_instanceId = instanceId;
     }
 
-    string getInstanceId() const
+    const string& getInstanceId() const
     {
         return m_instanceId;
+    }
+
+    void setType(const string& type)
+    {
+        m_type = type;
+    }
+
+    const string& getType()
+    {
+        return m_type;
+    }
+
+    void setStatus(const string& status)
+    {
+        if (status == "foreground") {
+            updateTime();
+        }
+        m_status = status;
+    }
+
+    const string& getStatus()
+    {
+        return m_status;
+    }
+
+    void setDisplayId(const int displayId)
+    {
+        m_displayId = displayId;
+    }
+
+    const int getDisplayId() const
+    {
+        return m_displayId;
     }
 
     void setPid(int pid)
@@ -104,39 +133,6 @@ public:
     int getPid() const
     {
         return m_pid;
-    }
-
-    void setWindowType(enum WindowType type)
-    {
-        m_windowType = type;
-    }
-
-    enum WindowType getWindowType()
-    {
-        return m_windowType;
-    }
-
-    void setApplicationType(enum ApplicationType type)
-    {
-        m_applicationType = type;
-    }
-
-    enum ApplicationType getApplicationType()
-    {
-        return m_applicationType;
-    }
-
-    void setApplicationStatus(enum ApplicationStatus status)
-    {
-        if (status == ApplicationStatus_Foreground) {
-            updateTime();
-        }
-        m_applicationStatus = status;
-    }
-
-    enum ApplicationStatus getApplicationStatus()
-    {
-        return m_applicationStatus;
     }
 
     void updateTime()
@@ -161,11 +157,10 @@ public:
 private:
     string m_appId;
     string m_instanceId;
+    string m_type;
+    string m_status;
+    int m_displayId;
     int m_pid;
-
-    enum WindowType m_windowType;
-    enum ApplicationType m_applicationType;
-    enum ApplicationStatus m_applicationStatus;
 
     Process m_process;
 

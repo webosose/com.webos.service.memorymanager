@@ -66,6 +66,8 @@ public:
     virtual void print(JValue& json);
 
 private:
+    static const string NAME;
+
     static const int CONTEXT_NOT_EXIST = 0;
     static const int CONTEXT_EXIST = 1;
 
@@ -82,7 +84,7 @@ private:
     // APIs
     bool getAppLifeEvents();
     bool running();
-    bool closeByAppId(string& appId);
+    bool closeByAppId(Application& application);
     bool launch(string& appId);
 
     RunningList m_runningList;

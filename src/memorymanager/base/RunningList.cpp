@@ -59,7 +59,7 @@ string RunningList::getForegroundAppId()
     if (m_applications.empty())
         return "";
 
-    if (m_applications.front().getApplicationStatus() == ApplicationStatus_Foreground)
+    if (m_applications.front().getStatus() == "foreground")
         return m_applications.front().getAppId();
     return "";
 }
@@ -80,11 +80,26 @@ Application& RunningList::front()
     return m_applications.front();
 }
 
-vector<Application>::iterator RunningList::find(string appId)
+vector<Application>::iterator RunningList::find(const string& instanceId, const string& appId)
+{
+    if (!instanceId.empty())
+        return findByInstanceId(instanceId);
+    else
+        return findByAppId(appId);
+}
+
+vector<Application>::iterator RunningList::findByAppId(const string& appId)
 {
     vector<Application>::iterator it;
     return it = find_if(m_applications.begin(), m_applications.end(),
             [&] (const Application& application) { return application.getAppId() == appId; } );
+}
+
+vector<Application>::iterator RunningList::findByInstanceId(const string& instanceId)
+{
+    vector<Application>::iterator it;
+    return it = find_if(m_applications.begin(), m_applications.end(),
+            [&] (const Application& application) { return application.getInstanceId() == instanceId; } );
 }
 
 void RunningList::sort()

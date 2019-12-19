@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2018-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@
 
 #include "NotificationManager.h"
 #include "luna/LunaManager.h"
+#include "util/JValueUtil.h"
 #include "util/Logger.h"
+
+const string ApplicationManager::NAME = "com.webos.applicationManager";
 
 bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx)
 {
@@ -31,20 +34,21 @@ bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void 
         return false;
     }
 
-    string appId = responsePayload["appId"].asString();
+    string appId = "";
+    string instanceId = "";
+    string event = "";
+
+    JValueUtil::getValue(responsePayload, "appId", appId);
+    JValueUtil::getValue(responsePayload, "instanceId", instanceId);
+    JValueUtil::getValue(responsePayload, "event", event);
     if (appId.empty()) {
-        // SAM returns empty appid at first
         return true;
     }
 
-    enum ApplicationStatus applicationStatus;
-    Application::toEnum(responsePayload["event"].asString(), applicationStatus);
-
     // 'update' only. Adding operation occurs in 'running' handler
-    auto it = sam->m_runningList.find(appId);
-    if (it != sam->m_runningList.getRunningList().end() &&
-        it->getApplicationStatus() != applicationStatus) {
-        it->setApplicationStatus(applicationStatus);
+    auto it = sam->m_runningList.find(instanceId, appId);
+    if (it != sam->m_runningList.getRunningList().end() && it->getStatus() != event) {
+        it->setStatus(event);
         sam->m_runningList.sort();
         if (sam->m_listener) sam->m_listener->onApplicationsChanged();
         sam->print();
@@ -65,31 +69,34 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
 
     sam->m_runningList.setContext(CONTEXT_NOT_EXIST);
     Application application;
+    application.setContext(CONTEXT_EXIST);
+    application.setStatus("foreground");
     for (JValue item : responsePayload["running"].items()) {
-        enum WindowType windowType;
-        enum ApplicationType applicationType;
+        string appId = "";
+        string instanceId = "";
+        string processid = "";
+        string appType = "";
+        int displayId = 0;
 
-        Application::toEnum(item["defaultWindowType"].asString(), windowType);
-        Application::toEnum(item["appType"].asString(), applicationType);
+        if (JValueUtil::getValue(item, "id", appId))
+            application.setAppId(appId);
+        if (JValueUtil::getValue(item, "instanceId", instanceId))
+            application.setInstanceId(instanceId);
+        if (JValueUtil::getValue(item, "appType", appType))
+            application.setType(appType);
+        if (JValueUtil::getValue(item, "displayId", displayId))
+            application.setDisplayId(displayId);
+        cout << "1111 - " << application.getDisplayId() << endl;
+        if (JValueUtil::getValue(item, "processid", processid) && !processid.empty())
+            application.setPid(std::stoi(processid));
 
-        application.setAppId(item["id"].asString());
-        application.setInstanceId(item["instanceId"].asString());
-        if (!item["processid"].asString().empty())
-            application.setPid(std::stoi(item["processid"].asString()));
-        application.setApplicationType(applicationType);
-        application.setWindowType(windowType);
-
-        auto it = sam->m_runningList.find(application.getAppId());
+        auto it = sam->m_runningList.find(application.getInstanceId(), application.getAppId());
         if (it == sam->m_runningList.getRunningList().end()) {
-            // Considering new app as foreground app
-            application.setContext(CONTEXT_EXIST);
-            application.setApplicationStatus(ApplicationStatus_Foreground);
             sam->m_runningList.push(application);
         } else {
-            it->setContext(1);
+            it->setContext(CONTEXT_EXIST);
+            it->setDisplayId(application.getDisplayId());
             it->setPid(application.getPid());
-            it->setApplicationType(application.getApplicationType());
-            it->setWindowType(application.getWindowType());
         }
     }
     sam->m_runningList.removeContext(CONTEXT_NOT_EXIST);
@@ -100,7 +107,7 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
 }
 
 ApplicationManager::ApplicationManager()
-    : AbsClient("com.webos.applicationManager")
+    : AbsClient(NAME)
     , m_listener(nullptr)
 {
 }
@@ -126,18 +133,22 @@ bool ApplicationManager::closeApp(bool includeForeground)
         return false;
 
     Application& application = m_runningList.back();
-    if (!includeForeground && application.getApplicationStatus() == ApplicationStatus_Foreground)
+    if (application.getStatus() == "close" || application.getStatus() == "stop") {
+        Logger::normal(application.getAppId() + "'s status is " + application.getStatus(), m_name);
         return false;
+    }
+    if (!includeForeground && application.getStatus() == "foreground") {
+        Logger::warning("Only 'foreground' apps are exist", m_name);
+        return false;
+    }
     LunaManager::getInstace().postManagerKillingEvent(application);
 
-    string appId = application.getAppId();
-    enum ApplicationStatus status = application.getApplicationStatus();
-
-    if (status == ApplicationStatus_Foreground) {
-        NotificationManager::getInstance().createToast(appId + " is closed because of memory issue.");
+    if (application.getStatus() == "foreground") {
+        NotificationManager::getInstance().createToast(application.getAppId() + " is closed because of memory issue.");
     }
 
-    if (!closeByAppId(appId)) {
+    if (!closeByAppId(application)) {
+        Logger::warning("Failed to call closeByAppId", m_name);
         return false;
     }
     return true;
@@ -181,10 +192,13 @@ bool ApplicationManager::running()
     return subscribe(m_runningCall, "running", callPayload, _running);
 }
 
-bool ApplicationManager::closeByAppId(string& appId)
+bool ApplicationManager::closeByAppId(Application& application)
 {
     JValue callPayload = pbnjson::Object();
-    callPayload.put("id", appId);
+    if (!application.getInstanceId().empty())
+        callPayload.put("instanceId", application.getInstanceId());
+    if (!application.getAppId().empty())
+        callPayload.put("id", application.getAppId());
     callPayload.put("tryToMakeScreenshot", true);
 
     JValue returnPayload;

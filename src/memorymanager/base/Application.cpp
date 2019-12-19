@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2018-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,99 +18,11 @@
 
 #include "util/Logger.h"
 
-string Application::toString(enum WindowType& type)
-{
-    switch (type) {
-    case WindowType_Card:
-        return "card";
-
-    case WindowType_Overlay:
-        return "overlay";
-
-    default:
-        break;
-    }
-    return "unknown";
-}
-
-void Application::toEnum(string str, enum WindowType& type)
-{
-    if (str == "card" || str == "_WEBOS_WINDOW_TYPE_CARD") {
-        type = WindowType_Card;
-    } else if (str == "overlay" || str == "_WEBOS_WINDOW_TYPE_OVERLAY"){
-        type = WindowType_Overlay;
-    } else {
-        type = WindowType_Unknown;
-    }
-}
-
-string Application::toString(enum ApplicationType& type)
-{
-    switch (type) {
-    case ApplicationType_WebApp:
-        return "web";
-
-    case ApplicationType_Native:
-        return "native";
-
-    case ApplicationType_Qml:
-        return "qml";
-
-    default:
-        break;
-    }
-    return "unknown";
-}
-
-void Application::toEnum(string str, enum ApplicationType& type)
-{
-    if (str == "native" || str == "native_builtin" || str == "native_appshell") {
-        type = ApplicationType_Native;
-    } else if (str == "web") {
-        type = ApplicationType_WebApp;
-    } else if (str == "qml") {
-        type = ApplicationType_Qml;
-    } else {
-        type = ApplicationType_Unknown;
-    }
-}
-
-string Application::toString(enum ApplicationStatus& type)
-{
-    switch (type) {
-    case ApplicationStatus_Preload:
-        return "preload";
-
-    case ApplicationStatus_Background:
-        return "background";
-
-    case ApplicationStatus_Foreground:
-        return "foreground";
-
-    default:
-        break;
-    }
-    return "unknown";
-}
-
-void Application::toEnum(string str, enum ApplicationStatus& type)
-{
-    if (str == "foreground" || str == "launch")
-        type = ApplicationStatus_Foreground;
-    else if (str == "preload")
-        type = ApplicationStatus_Preload;
-    else if (str == "background")
-        type = ApplicationStatus_Background;
-    else
-        type = ApplicationStatus_Unknown;
-}
-
 Application::Application()
     : m_appId(""),
+      m_type(""),
+      m_status(""),
       m_pid(0),
-      m_windowType(WindowType_Unknown),
-      m_applicationType(ApplicationType_Unknown),
-      m_applicationStatus(ApplicationStatus_Unknown),
       m_time(0),
       m_context(0)
 {
@@ -128,21 +40,23 @@ Application::~Application()
 
 void Application::print()
 {
-    string msg = "STATUS(" + toString(m_applicationStatus) + ") ";
+    string msg = "STATUS(" + m_status + ") ";
     msg += "TIME(" + to_string(m_time) + ") ";
     msg += "PID(" + to_string(m_pid) + ") ";
-    msg += "WINDOW(" + toString(m_windowType) + ") ";
-    msg += "TYPE(" + toString(m_applicationType) + ")";
+    msg += "TYPE(" + m_type + ")";
 
     Logger::verbose(msg, m_appId);
 }
 
 void Application::print(JValue& json)
 {
+    if (!m_instanceId.empty())
+        json.put("instanceId", m_instanceId);
+
     json.put("appId", m_appId);
-    json.put("instanceId", m_instanceId);
+    json.put("displayId", m_displayId);
+    json.put("type", m_type);
+    json.put("status", m_status);
     json.put("pid", m_pid);
-    json.put("type", toString(m_applicationType));
-    json.put("status", toString(m_applicationStatus));
     json.put("time", m_time);
 }

@@ -105,17 +105,12 @@ void LunaManager::postManagerKillingEvent(Application& application)
     m_managerEventKilling.post(subscriptionResponse.stringify().c_str());
     m_managerEventKillingAll.post(subscriptionResponse.stringify().c_str());
 
-    switch(application.getApplicationType()) {
-    case ApplicationType_WebApp:
-        m_managerEventKillingWeb.post(subscriptionResponse.stringify().c_str());
-        break;
-
-    case ApplicationType_Native:
+    if (application.getType() == "native" ||
+        application.getType() == "native_builtin" ||
+        application.getType() == "native_appshell") {
         m_managerEventKillingNative.post(subscriptionResponse.stringify().c_str());
-        break;
-
-    default:
-        break;
+    } else if (application.getType() == "web") {
+        m_managerEventKillingWeb.post(subscriptionResponse.stringify().c_str());
     }
 }
 
