@@ -59,13 +59,14 @@ void MemoryManager::onTick()
 bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 {
     for (int i = 0; i < SettingManager::getInstance().getRetryCount(); ++i) {
-        if (ApplicationManager::getInstance().getRunningAppCount() == 0) {
-            errorText = "Failed to reclaim required memory. All apps were closed";
-            return false;
-        }
-
         if (MemoryInfoManager::getInstance().getExpectedLevel(requiredMemory) != MemoryLevel_CRITICAL) {
             return true;
+        }
+
+        if (ApplicationManager::getInstance().getRunningAppCount() == 0) {
+            errorText = "Failed to reclaim required memory. All apps were closed";
+            // TODO This should be reboot?
+            return false;
         }
 
         ApplicationManager::getInstance().closeApp(true);
