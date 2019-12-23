@@ -58,17 +58,25 @@ void MemoryManager::onTick()
 
 bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 {
-    for (int i = 0; i < SettingManager::getInstance().getRetryCount(); ++i) {
-        if (ApplicationManager::getInstance().getRunningAppCount() == 0) {
-            errorText = "Failed to reclaim required memory. All apps were closed";
-            return false;
-        }
+    if (SettingManager::getInstance().isSingleAppPolicy()) {
+        Logger::normal("SingleApp Policy. Skipping memory level check", LOG_NAME);
+        return true;
+    }
 
+    for (int i = 0; i < SettingManager::getInstance().getRetryCount(); ++i) {
         if (MemoryInfoManager::getInstance().getExpectedLevel(requiredMemory) != MemoryLevel_CRITICAL) {
             return true;
         }
 
+        if (ApplicationManager::getInstance().getRunningAppCount() == 0) {
+            errorText = "Failed to reclaim required memory. All apps were closed";
+            // TODO This should be reboot?
+            return false;
+        }
+
         ApplicationManager::getInstance().closeApp(true);
+
+        // TODO Need to find better way to check memory level again.
         MemoryInfoManager::getInstance().update();
     }
     errorText = "Failed to reclaim required memory. Timeout.";

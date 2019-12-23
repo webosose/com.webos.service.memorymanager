@@ -18,13 +18,9 @@
 
 #include <unistd.h>
 
-const char *SettingManager::PATH_DEVMODE_ENABLED = "/var/luna/preferences/devmode_enabled";
+#include "Environment.h"
 
 SettingManager::SettingManager()
-    : m_lowEnter(DEFAULT_LOW_ENTER)
-    , m_lowExit(DEFAULT_LOW_EXIT)
-    , m_criticalEnter(DEFAULT_CRITICAL_ENTER)
-    , m_criticalExit(DEFAULT_CRITICAL_EXIT)
 {
 }
 
@@ -39,22 +35,40 @@ void SettingManager::initialize(GMainLoop* mainloop)
 
 int SettingManager::getLowEnter()
 {
-    return m_lowEnter;
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0) {
+        return 250;
+    } else {
+        return 100;
+    }
 }
 
 int SettingManager::getLowExit()
 {
-    return m_lowExit;
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0) {
+        return 280;
+    } else {
+        return 120;
+
+    }
 }
 
 int SettingManager::getCriticalEnter()
 {
-    return m_criticalEnter;
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0) {
+        return 100;
+    } else {
+        return 50;
+
+    }
 }
 
 int SettingManager::getCriticalExit()
 {
-    return m_criticalExit;
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0) {
+        return 130;
+    } else {
+        return 70;
+    }
 }
 
 int SettingManager::getDefaultRequiredMemory()
@@ -67,15 +81,17 @@ int SettingManager::getRetryCount()
     return DEFAULT_RETRY_COUNT;
 }
 
-bool SettingManager::isDevmode()
-{
-    if (access(PATH_DEVMODE_ENABLED, F_OK) == 0)
-        return true;
-    return false;
-}
-
 bool SettingManager::isVerbose()
 {
+    return true;
+}
+
+bool SettingManager::isSingleAppPolicy()
+{
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
+        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
+        return false;
+    }
     return true;
 }
 

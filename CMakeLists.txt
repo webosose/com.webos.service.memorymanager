@@ -1,4 +1,4 @@
-# Copyright (c) 2018 LG Electronics, Inc.
+# Copyright (c) 2018-2019 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,8 +19,16 @@ cmake_minimum_required(VERSION 2.8.7)
 project(com.webos.service.memorymanager C CXX)
 
 include(webOS/webOS)
+
 webos_modules_init(1 1 1 QUALIFIER RC4)
 webos_component(1 0 0)
+
+webos_distro_dep()
+webos_distro_variant_dep()
+webos_machine_dep()
+webos_machine_impl_dep()
+
+webos_configure_source_files(cfg ${PROJECT_SOURCE_DIR}/src/Environment.h)
 
 add_subdirectory(src/memorymanager)
 add_subdirectory(src/memstay)

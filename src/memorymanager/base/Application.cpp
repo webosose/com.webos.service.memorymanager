@@ -22,6 +22,7 @@ Application::Application()
     : m_appId(""),
       m_type(""),
       m_status(""),
+      m_displayId(0),
       m_pid(0),
       m_time(0),
       m_context(0)

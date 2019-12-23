@@ -86,7 +86,6 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
             application.setType(appType);
         if (JValueUtil::getValue(item, "displayId", displayId))
             application.setDisplayId(displayId);
-        cout << "1111 - " << application.getDisplayId() << endl;
         if (JValueUtil::getValue(item, "processid", processid) && !processid.empty())
             application.setPid(std::stoi(processid));
 

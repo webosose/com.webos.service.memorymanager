@@ -112,16 +112,21 @@ enum MemoryLevel MemoryInfoManager::getCurrentLevel()
     return m_level;
 }
 
-enum MemoryLevel MemoryInfoManager::getExpectedLevel(int memory)
+enum MemoryLevel MemoryInfoManager::getExpectedLevel(int requiredMemory)
 {
-    long expectedAvailable = m_free - memory;
+    static char buffer[256];
+    long expectedAvailable = m_free - requiredMemory;
 
-    if (expectedAvailable < SettingManager::getInstance().getCriticalEnter())
+    sprintf(buffer, "Free(%d) - RequiredMemory(%d) = ExpectedMemory(%d)", m_free, requiredMemory, expectedAvailable);
+    Logger::normal(buffer, LOG_NAME);
+
+    if (expectedAvailable < SettingManager::getInstance().getCriticalEnter()) {
         return MemoryLevel_CRITICAL;
-    else if (m_free < SettingManager::getInstance().getLowEnter())
+    } else if (m_free < SettingManager::getInstance().getLowEnter()) {
         return MemoryLevel_LOW;
-    else
+    } else {
         return MemoryLevel_NORMAL;
+    }
 }
 
 void MemoryInfoManager::print()

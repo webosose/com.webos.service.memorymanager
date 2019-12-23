@@ -51,6 +51,7 @@ file(GLOB_RECURSE SRC_MEMORYMANAGER ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 # Compile
 webos_add_compiler_flags(ALL CXX -std=c++0x)
+include_directories(${PROJECT_BINARY_DIR}/Configured/src)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/common)
 add_executable(${BIN_NAME} ${SRC_COMMON} ${SRC_MEMORYMANAGER})
