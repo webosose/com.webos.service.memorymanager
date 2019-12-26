@@ -52,26 +52,15 @@ public:
     int getDefaultRequiredMemory();
     int getRetryCount();
 
-    bool isDevmode();
     bool isVerbose();
+    bool isSingleAppPolicy();
 
 private:
-    static const int DEFAULT_LOW_EXIT = 280;
-    static const int DEFAULT_LOW_ENTER = 250;
-    static const int DEFAULT_CRITICAL_EXIT = 130;
-    static const int DEFAULT_CRITICAL_ENTER = 100;
-
     static const int DEFAULT_RETRY_COUNT = 5;
     static const int DEFAULT_REQUIRED_MEMORY = 120;
 
-    static const char *PATH_DEVMODE_ENABLED;
-
     SettingManager();
 
-    int m_lowEnter;
-    int m_lowExit;
-    int m_criticalEnter;
-    int m_criticalExit;
 };
 
 #endif /* SETTING_SETTINGMANAGER_H_ */

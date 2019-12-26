@@ -58,6 +58,11 @@ void MemoryManager::onTick()
 
 bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 {
+    if (SettingManager::getInstance().isSingleAppPolicy()) {
+        Logger::normal("SingleApp Policy. Skipping memory level check", LOG_NAME);
+        return true;
+    }
+
     for (int i = 0; i < SettingManager::getInstance().getRetryCount(); ++i) {
         if (MemoryInfoManager::getInstance().getExpectedLevel(requiredMemory) != MemoryLevel_CRITICAL) {
             return true;
@@ -70,6 +75,8 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
         }
 
         ApplicationManager::getInstance().closeApp(true);
+
+        // TODO Need to find better way to check memory level again.
         MemoryInfoManager::getInstance().update();
     }
     errorText = "Failed to reclaim required memory. Timeout.";
