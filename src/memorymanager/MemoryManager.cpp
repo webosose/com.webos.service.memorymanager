@@ -47,6 +47,7 @@ void MemoryManager::initialize()
 
 void MemoryManager::run()
 {
+    MemoryManager::getInstance().onTick();
     m_tickSrc = g_timeout_add_seconds(1, tick, this);
     g_main_loop_run(m_mainloop);
 }
