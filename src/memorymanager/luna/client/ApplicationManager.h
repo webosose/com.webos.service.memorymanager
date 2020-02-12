@@ -84,7 +84,7 @@ private:
     // APIs
     bool getAppLifeEvents();
     bool running();
-    bool closeByAppId(Application& application);
+    bool close(Application& application);
     bool launch(string& appId);
 
     RunningList m_runningList;

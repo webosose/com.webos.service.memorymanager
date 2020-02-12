@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 LG Electronics, Inc.
+// Copyright (c) 2018-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #include "util/JValueUtil.h"
 #include "util/Logger.h"
 
-const string ApplicationManager::NAME = "com.webos.applicationManager";
+const string ApplicationManager::NAME = "com.webos.service.applicationmanager";
 
 bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx)
 {
@@ -146,7 +146,7 @@ bool ApplicationManager::closeApp(bool includeForeground)
         NotificationManager::getInstance().createToast(application.getAppId() + " is closed because of memory issue.");
     }
 
-    if (!closeByAppId(application)) {
+    if (!close(application)) {
         Logger::warning("Failed to call closeByAppId", m_name);
         return false;
     }
@@ -191,7 +191,7 @@ bool ApplicationManager::running()
     return subscribe(m_runningCall, "running", callPayload, _running);
 }
 
-bool ApplicationManager::closeByAppId(Application& application)
+bool ApplicationManager::close(Application& application)
 {
     JValue callPayload = pbnjson::Object();
     if (!application.getInstanceId().empty())
@@ -201,7 +201,7 @@ bool ApplicationManager::closeByAppId(Application& application)
     callPayload.put("tryToMakeScreenshot", true);
 
     JValue returnPayload;
-    return callSync("closeByAppId", callPayload, returnPayload);
+    return callSync("close", callPayload, returnPayload);
 }
 
 bool ApplicationManager::launch(string& appId)
