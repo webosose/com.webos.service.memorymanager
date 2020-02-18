@@ -23,7 +23,7 @@
 #include <luna-service2/lunaservice.hpp>
 
 #include "base/Application.h"
-#include "base/IManager.h"
+#include "interface/IManager.h"
 #include "luna/service/OldHandle.h"
 #include "luna/service/NewHandle.h"
 #include "setting/SettingManager.h"

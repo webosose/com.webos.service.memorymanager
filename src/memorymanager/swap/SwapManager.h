@@ -19,7 +19,9 @@
 
 #include <iostream>
 
-#include "base/IManager.h"
+#include "interface/IManager.h"
+#include "interface/IClassName.h"
+#include "interface/ISingleton.h"
 
 using namespace std;
 
@@ -29,36 +31,25 @@ enum SwapMode {
     SwapMode_FULL
 };
 
-class SwapManagerListener {
+class SwapManager : public ISingleton<SwapManager>,
+                    public IClassName {
+friend class ISingleton<SwapManager>;
 public:
-    SwapManagerListener() {};
-    virtual ~SwapManagerListener() {};
-
-};
-
-class SwapManager : public IManager<SwapManagerListener> {
-public:
-    static SwapManager& getInstance()
-    {
-        static SwapManager s_instance;
-        return s_instance;
-
-    }
-
     virtual ~SwapManager();
 
     // IManager
     void initialize(GMainLoop* mainloop);
 
 private:
+    static const char* PATH_EFS_CORE_MODULE;
+    static const char* PATH_EFS_ADAPTOR_MODULE;
+    static const char* NAME_EFS_CTL;
+
     SwapManager();
 
     enum SwapMode m_mode;
     int m_size;
     string m_partition;
-
-    // Enhanced Flash Swap
-    static const char* EFS_CTL_BIN;
 };
 
 #endif /* SWAP_SWAPMANAGER_H_ */

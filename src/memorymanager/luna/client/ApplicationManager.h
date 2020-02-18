@@ -24,8 +24,8 @@
 #include <pbnjson.hpp>
 
 #include "AbsClient.hpp"
+#include "interface/IPrintable.h"
 #include "base/RunningList.h"
-#include "base/IPrintable.h"
 
 using namespace std;
 using namespace pbnjson;

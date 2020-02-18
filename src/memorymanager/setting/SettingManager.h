@@ -20,7 +20,7 @@
 #include <iostream>
 #include <pbnjson.hpp>
 
-#include "base/IManager.h"
+#include "interface/IManager.h"
 
 using namespace std;
 using namespace pbnjson;
@@ -71,7 +71,7 @@ private:
 
     SettingManager();
 
-    static const char* DEFAULT_CONFIG_FILE;
+    static const string DEFAULT_CONFIG_FILE;
     JValue m_configuration;
 };
 

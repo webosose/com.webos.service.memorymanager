@@ -31,8 +31,7 @@ using namespace std;
 class MemoryManager : public SettingManagerListener,
                       public LunaManagerListener,
                       public MemoryInfoManagerListener,
-                      public ApplicationManagerListener,
-                      public SwapManagerListener {
+                      public ApplicationManagerListener {
 public:
     static MemoryManager& getInstance()
     {

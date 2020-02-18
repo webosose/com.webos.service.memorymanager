@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "base/IPrintable.h"
+#include "interface/IPrintable.h"
 
 using namespace std;
 

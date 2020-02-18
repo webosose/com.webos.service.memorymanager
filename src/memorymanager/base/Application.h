@@ -22,7 +22,7 @@
 #include <pbnjson.hpp>
 
 #include "Process.h"
-#include "base/IPrintable.h"
+#include "interface/IPrintable.h"
 #include "util/Time.h"
 
 using namespace std;

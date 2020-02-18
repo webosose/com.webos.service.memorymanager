@@ -27,12 +27,12 @@
 #define LOG_NAME "SettingManager"
 
 //const char* SettingManager::DEFAULT_CONFIG_FILE = "/etc/palm/memorymanager.json";
-const char* SettingManager::DEFAULT_CONFIG_FILE = WEBOS_INSTALL_WEBOS_SYSCONFDIR "/memorymanager.json";
+const string SettingManager::DEFAULT_CONFIG_FILE = string(WEBOS_INSTALL_WEBOS_SYSCONFDIR) + "/memorymanager.json";
 
 SettingManager::SettingManager()
     : m_configuration(Object())
 {
-    if (access(DEFAULT_CONFIG_FILE, R_OK) == 0) {
+    if (access(DEFAULT_CONFIG_FILE.c_str(), R_OK) == 0) {
         loadSetting(DEFAULT_CONFIG_FILE);
     }
 }

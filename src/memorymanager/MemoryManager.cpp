@@ -44,7 +44,6 @@ void MemoryManager::initialize()
     LunaManager::getInstace().setListener(this);
     MemoryInfoManager::getInstance().setListener(this);
     ApplicationManager::getInstance().setListener(this);
-    SwapManager::getInstance().setListener(this);
 }
 
 void MemoryManager::run()

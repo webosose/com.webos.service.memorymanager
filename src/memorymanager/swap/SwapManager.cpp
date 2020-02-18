@@ -21,13 +21,15 @@
 
 #include "Environment.h"
 
-#define LOG_NAME    "SwapManager"
-#define EFS_CORE_MODULE "/lib/modules/4.14.150/extra/dm-eswap.ko"
-#define EFS_ADAPTOR_MODULE "/lib/modules/4.14.150/extra/dm-eswap-ad.ko"
-const char* SwapManager::EFS_CTL_BIN = "efsctl";
+const char* SwapManager::PATH_EFS_CORE_MODULE = "/lib/modules/4.14.150/extra/dm-eswap.ko";
+const char* SwapManager::PATH_EFS_ADAPTOR_MODULE = "/lib/modules/4.14.150/extra/dm-eswap-ad.ko";
+const char* SwapManager::NAME_EFS_CTL = "efsctl";
 
 SwapManager::SwapManager()
+    : m_mode(SwapMode_NO),
+      m_size(0)
 {
+    setClassName("SwapManager");
 }
 
 SwapManager::~SwapManager()
@@ -44,21 +46,21 @@ void SwapManager::initialize(GMainLoop* mainloop)
     /* Set mode from conf file */
     if (strcmp(mode.c_str(), "NO") == 0) {
         m_mode = SwapMode_NO;
-        Logger::normal("Swap Mode : " + mode, LOG_NAME);
+        Logger::normal("Swap Mode : " + mode, getClassName());
         return;
     } else if (strcmp(mode.c_str(), "MEMORY") == 0) {
         m_mode = SwapMode_MEMORY;
     } else if (strcmp(mode.c_str(), "FULL") == 0) {
         m_mode = SwapMode_FULL;
     } else {
-        Logger::error("Invalid Swap Mode : " + mode, LOG_NAME);
+        Logger::error("Invalid Swap Mode : " + mode, getClassName());
         return;
     }
 
     /* Check if EFS kernel modules exist */
-    if (access(EFS_CORE_MODULE, R_OK) != 0 ||
-        access(EFS_ADAPTOR_MODULE, R_OK) != 0) {
-        Logger::error(mode + " mode requires Enhanced-Flash-Swap modules", LOG_NAME);
+    if (access(PATH_EFS_CORE_MODULE, R_OK) != 0 ||
+        access(PATH_EFS_ADAPTOR_MODULE, R_OK) != 0) {
+        Logger::error(mode + " mode requires Enhanced-Flash-Swap modules", getClassName());
         return;
     }
 
@@ -67,7 +69,7 @@ void SwapManager::initialize(GMainLoop* mainloop)
 
     /* Validate and set swap size */
     if (size < 0) {
-        Logger::error("Invalid Swap Size : " + to_string(size), LOG_NAME);
+        Logger::error("Invalid Swap Size : " + to_string(size), getClassName());
         return;
     } else {
         m_size = size;
@@ -77,10 +79,10 @@ void SwapManager::initialize(GMainLoop* mainloop)
     Logger::normal("Swap Mode : " + to_string(m_mode) + \
                    "Swap Partition : " + m_partition + \
                    "(0: No, 1: Memory, 2: Full) " + \
-                   "Swap Size : " + to_string(m_size), LOG_NAME);
+                   "Swap Size : " + to_string(m_size), getClassName());
 
     /* Create EFS */
-    cmd = EFS_CTL_BIN;
+    cmd = NAME_EFS_CTL;
     cmd += " create -p " + m_partition;
     cmd += " -s " + to_string(m_size);
     if (m_mode == SwapMode_FULL)
@@ -88,10 +90,8 @@ void SwapManager::initialize(GMainLoop* mainloop)
     system(cmd.c_str());
 
     /* Make swapspace */
-    cmd = "mkswap /dev/mapper/eswap";
-    system(cmd.c_str());
+    system("mkswap /dev/mapper/eswap");
 
     /* Swap on */
-    cmd = "swapon /dev/mapper/eswap";
-    system(cmd.c_str());
+    system("swapon /dev/mapper/eswap");
 }

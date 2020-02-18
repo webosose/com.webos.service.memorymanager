@@ -20,8 +20,8 @@
 #include <iostream>
 #include <fstream>
 
-#include "base/IManager.h"
-#include "base/IPrintable.h"
+#include "interface/IManager.h"
+#include "interface/IPrintable.h"
 
 using namespace std;
 
