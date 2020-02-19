@@ -122,7 +122,7 @@ public:
         m_displayId = displayId;
     }
 
-    const int getDisplayId() const
+    int getDisplayId() const
     {
         return m_displayId;
     }

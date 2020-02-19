@@ -117,7 +117,7 @@ enum MemoryLevel MemoryInfoManager::getExpectedLevel(int requiredMemory)
     static char buffer[256];
     long expectedAvailable = m_free - requiredMemory;
 
-    sprintf(buffer, "Free(%d) - RequiredMemory(%d) = ExpectedMemory(%d)", m_free, requiredMemory, expectedAvailable);
+    sprintf(buffer, "Free(%ld) - RequiredMemory(%d) = ExpectedMemory(%ld)", m_free, requiredMemory, expectedAvailable);
     Logger::normal(buffer, LOG_NAME);
 
     if (expectedAvailable < SettingManager::getInstance().getCriticalEnter()) {

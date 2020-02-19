@@ -42,8 +42,11 @@ public:
 
     virtual ~AbsClient()
     {
-        if (m_serverStatus) {
-            m_serverStatus.cancel();
+        try {
+            if (m_serverStatus) {
+                m_serverStatus.cancel();
+            }
+        } catch (const LS::Error& e) {
         }
     }
 
