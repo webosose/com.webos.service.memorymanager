@@ -18,10 +18,12 @@
 #define SETTING_SETTINGMANAGER_H_
 
 #include <iostream>
+#include <pbnjson.hpp>
 
 #include "base/IManager.h"
 
 using namespace std;
+using namespace pbnjson;
 
 class SettingManagerListener {
 public:
@@ -44,6 +46,8 @@ public:
     // IManager
     void initialize(GMainLoop* mainloop);
 
+    bool loadSetting(const string filename);
+
     int getLowEnter();
     int getLowExit();
     int getCriticalEnter();
@@ -55,12 +59,20 @@ public:
     bool isVerbose();
     bool isSingleAppPolicy();
 
+    bool setSetting(JValue& value, JValue& local);
+    JValue getSetting(initializer_list<const char*> list);
+    string getSwapMode();
+    string getSwapPartition();
+    int getSwapSize();
+
 private:
     static const int DEFAULT_RETRY_COUNT = 5;
     static const int DEFAULT_REQUIRED_MEMORY = 120;
 
     SettingManager();
 
+    static const char* DEFAULT_CONFIG_FILE;
+    JValue m_configuration;
 };
 
 #endif /* SETTING_SETTINGMANAGER_H_ */

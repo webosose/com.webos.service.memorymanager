@@ -38,11 +38,13 @@ void MemoryManager::initialize()
     SettingManager::getInstance().initialize(m_mainloop);
     LunaManager::getInstace().initialize(m_mainloop);
     MemoryInfoManager::getInstance().initialize(m_mainloop);
+    SwapManager::getInstance().initialize(m_mainloop);
 
     SettingManager::getInstance().setListener(this);
     LunaManager::getInstace().setListener(this);
     MemoryInfoManager::getInstance().setListener(this);
     ApplicationManager::getInstance().setListener(this);
+    SwapManager::getInstance().setListener(this);
 }
 
 void MemoryManager::run()

@@ -23,4 +23,6 @@ static const char* const WEBOS_TARGET_MACHINE        = "@WEBOS_TARGET_MACHINE@";
 static const char* const WEBOS_TARGET_MACHINE_IMPL   = "@WEBOS_TARGET_MACHINE_IMPL@";
 static const char* const WEBOS_TARGET_SOC_FAMILY     = "@WEBOS_TARGET_SOC_FAMILY@";
 
+#define WEBOS_INSTALL_WEBOS_SYSCONFDIR               "@WEBOS_INSTALL_WEBOS_SYSCONFDIR@"
+
 #endif  // ENVIRONMENT_H_

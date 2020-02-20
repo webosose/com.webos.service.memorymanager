@@ -24,13 +24,15 @@
 #include "luna/client/ApplicationManager.h"
 #include "memoryinfo/MemoryInfoManager.h"
 #include "setting/SettingManager.h"
+#include "swap/SwapManager.h"
 
 using namespace std;
 
 class MemoryManager : public SettingManagerListener,
                       public LunaManagerListener,
                       public MemoryInfoManagerListener,
-                      public ApplicationManagerListener {
+                      public ApplicationManagerListener,
+                      public SwapManagerListener {
 public:
     static MemoryManager& getInstance()
     {
