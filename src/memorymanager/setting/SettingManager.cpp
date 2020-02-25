@@ -48,30 +48,28 @@ void SettingManager::initialize(GMainLoop* mainloop)
 
 int SettingManager::getLowEnter()
 {
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0) {
-        return 250;
-    } else {
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") != 0) {
         return 100;
+    } else {
+        return 250;
     }
 }
 
 int SettingManager::getLowExit()
 {
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0) {
-        return 280;
-    } else {
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") != 0) {
         return 120;
-
+    } else {
+        return 280;
     }
 }
 
 int SettingManager::getCriticalEnter()
 {
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0) {
-        return 100;
-    } else {
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") != 0) {
         return 50;
-
+    } else {
+        return 100;
     }
 }
 
