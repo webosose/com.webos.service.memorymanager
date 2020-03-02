@@ -45,14 +45,21 @@ bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void 
         return true;
     }
 
-    // 'update' only. Adding operation occurs in 'running' handler
     auto it = sam->m_runningList.find(instanceId, appId);
-    if (it != sam->m_runningList.getRunningList().end() && it->getStatus() != event) {
+    if (it != sam->m_runningList.getRunningList().end() && it->getStatus() == event)
+        return true; // nothing
+
+    if (it != sam->m_runningList.getRunningList().end()) {
         it->setStatus(event);
-        sam->m_runningList.sort();
-        if (sam->m_listener) sam->m_listener->onApplicationsChanged();
-        sam->print();
+    } else {
+        Application& application = sam->m_runningList.push();
+        application.setAppId(appId);
+        application.setInstanceId(instanceId);
+        application.setStatus(event);
     }
+    sam->m_runningList.sort();
+    if (sam->m_listener) sam->m_listener->onApplicationsChanged();
+    sam->print();
     return true;
 }
 
@@ -68,9 +75,6 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
     }
 
     sam->m_runningList.setContext(CONTEXT_NOT_EXIST);
-    Application application;
-    application.setContext(CONTEXT_EXIST);
-    application.setStatus("foreground");
     for (JValue item : responsePayload["running"].items()) {
         string appId = "";
         string instanceId = "";
@@ -78,24 +82,28 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
         string appType = "";
         int displayId = 0;
 
-        if (JValueUtil::getValue(item, "id", appId))
-            application.setAppId(appId);
-        if (JValueUtil::getValue(item, "instanceId", instanceId))
-            application.setInstanceId(instanceId);
-        if (JValueUtil::getValue(item, "appType", appType))
-            application.setType(appType);
-        if (JValueUtil::getValue(item, "displayId", displayId))
-            application.setDisplayId(displayId);
-        if (JValueUtil::getValue(item, "processid", processid) && !processid.empty())
-            application.setPid(std::stoi(processid));
+        JValueUtil::getValue(item, "id", appId);
+        JValueUtil::getValue(item, "instanceId", instanceId);
+        JValueUtil::getValue(item, "appType", appType);
+        JValueUtil::getValue(item, "displayId", displayId);
+        JValueUtil::getValue(item, "processid", processid);
 
-        auto it = sam->m_runningList.find(application.getInstanceId(), application.getAppId());
+        auto it = sam->m_runningList.find(instanceId, appId);
         if (it == sam->m_runningList.getRunningList().end()) {
-            sam->m_runningList.push(application);
+            Application& application = sam->m_runningList.push();
+            application.setContext(CONTEXT_EXIST);
+            application.setAppId(appId);
+            application.setInstanceId(instanceId);
+            application.setType(appType);
+            application.setDisplayId(displayId);
+            application.setStatus("foreground");
+            if (!processid.empty())
+                application.setPid(std::stoi(processid));
         } else {
             it->setContext(CONTEXT_EXIST);
-            it->setDisplayId(application.getDisplayId());
-            it->setPid(application.getPid());
+            it->setDisplayId(displayId);
+            if (!processid.empty())
+                it->setPid(std::stoi(processid));
         }
     }
     sam->m_runningList.removeContext(CONTEXT_NOT_EXIST);

@@ -29,7 +29,7 @@ public:
     RunningList();
     virtual ~RunningList();
 
-    bool push(Application& application);
+    Application& push();
     Application& back();
     Application& front();
 

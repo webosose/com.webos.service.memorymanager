@@ -64,10 +64,10 @@ string RunningList::getForegroundAppId()
     return "";
 }
 
-bool RunningList::push(Application& application)
+Application& RunningList::push()
 {
-    m_applications.emplace_back(application);
-    return true;
+    m_applications.emplace_back();
+    return m_applications.back();
 }
 
 Application& RunningList::back()
