@@ -44,6 +44,9 @@ bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void 
     if (appId.empty()) {
         return true;
     }
+    if (event == "splash") {
+        return true;
+    }
 
     auto it = sam->m_runningList.find(instanceId, appId);
     if (it != sam->m_runningList.getRunningList().end() && it->getStatus() == event)

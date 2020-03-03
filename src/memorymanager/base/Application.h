@@ -38,14 +38,16 @@ public:
             return 1;
         else if (status == "launch")
             return 2;
-        else if (status == "foreground")
+        else if (status == "pause")
             return 3;
-        else if (status == "background")
+        else if (status == "foreground")
             return 4;
-        else if (status == "preload")
+        else if (status == "background")
             return 5;
-        else
+        else if (status == "preload")
             return 6;
+        else
+            return 7;
     }
 
     static int getTypePriority(const string& type)
