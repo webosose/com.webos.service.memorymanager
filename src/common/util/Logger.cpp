@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2018-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,27 +18,27 @@
 
 #include <string.h>
 
-void Logger::verbose(string msg, string name)
+void Logger::verbose(const string& msg, const string& name)
 {
     getInstance().write(msg, name, LogLevel_VERBOSE);
 }
 
-void Logger::debug(string msg, string name)
+void Logger::debug(const string& msg, const string& name)
 {
     getInstance().write(msg, name, LogLevel_DEBUG);
 }
 
-void Logger::normal(string msg, string name)
+void Logger::normal(const string& msg, const string& name)
 {
     getInstance().write(msg, name, LogLevel_NORMAL);
 }
 
-void Logger::warning(string msg, string name)
+void Logger::warning(const string& msg, const string& name)
 {
     getInstance().write(msg, name, LogLevel_WARNING);
 }
 
-void Logger::error(string msg, string name)
+void Logger::error(const string& msg, const string& name)
 {
     getInstance().write(msg, name, LogLevel_ERROR);
 }
@@ -90,7 +90,7 @@ void Logger::setType(enum LogType type)
     m_type = type;
 }
 
-void Logger::write(string& msg, string& name, enum LogLevel level)
+void Logger::write(const string& msg, const string& name, enum LogLevel level)
 {
     if (level < m_level)
         return;

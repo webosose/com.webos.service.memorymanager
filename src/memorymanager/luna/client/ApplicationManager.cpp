@@ -44,13 +44,19 @@ bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void 
     if (appId.empty()) {
         return true;
     }
-    if (event == "splash") {
+
+    // "splash" should be ignored because this is not valid event from MM.
+    // If MM returns "false", then "splash" application should be removed.
+    // In addition, "splash" status is just virtual status.
+    // The application doesn't exist in running list.
+    if (event == "splash" || event == "stop") {
         return true;
     }
-
     auto it = sam->m_runningList.find(instanceId, appId);
-    if (it != sam->m_runningList.getRunningList().end() && it->getStatus() == event)
-        return true; // nothing
+    if (it != sam->m_runningList.getRunningList().end() && it->getStatus() == event) {
+        // SAME event again ==> nothing to do
+        return true;
+    }
 
     if (it != sam->m_runningList.getRunningList().end()) {
         it->setStatus(event);
@@ -61,7 +67,6 @@ bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void 
         application.setStatus(event);
     }
     sam->m_runningList.sort();
-    if (sam->m_listener) sam->m_listener->onApplicationsChanged();
     sam->print();
     return true;
 }
@@ -99,20 +104,20 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
             application.setInstanceId(instanceId);
             application.setType(appType);
             application.setDisplayId(displayId);
-            application.setStatus("foreground");
             if (!processid.empty())
                 application.setPid(std::stoi(processid));
         } else {
             it->setContext(CONTEXT_EXIST);
             it->setDisplayId(displayId);
+            it->setType(appType);
             if (!processid.empty())
                 it->setPid(std::stoi(processid));
         }
     }
     sam->m_runningList.removeContext(CONTEXT_NOT_EXIST);
     sam->m_runningList.sort();
-    if (sam->m_listener) sam->m_listener->onApplicationsChanged();
     sam->print();
+    if (sam->m_listener) sam->m_listener->onApplicationsChanged();
     return true;
 }
 
@@ -137,16 +142,14 @@ void ApplicationManager::clear()
     }
 }
 
-bool ApplicationManager::closeApp(bool includeForeground)
+bool ApplicationManager::closeApp(bool includeForeground, string& errorText)
 {
-    if (m_runningList.isEmpty())
-        return false;
-
-    Application& application = m_runningList.back();
-    if (application.getStatus() == "close" || application.getStatus() == "stop") {
-        Logger::normal(application.getAppId() + "'s status is " + application.getStatus(), m_name);
+    if (m_runningList.isEmpty() || !m_runningList.back().isCloseable()) {
+        errorText = "Failed to reclaim required memory. All apps were closed";
         return false;
     }
+
+    Application& application = m_runningList.back();
     if (!includeForeground && application.getStatus() == "foreground") {
         Logger::warning("Only 'foreground' apps are exist", m_name);
         return false;
@@ -181,6 +184,7 @@ bool ApplicationManager::onStatusChange(bool isConnected)
         running();
         getAppLifeEvents();
     } else {
+        Logger::normal("Disconnected", m_name);
         clear();
     }
     return true;

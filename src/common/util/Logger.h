@@ -38,11 +38,11 @@ enum LogType {
 
 class Logger {
 public:
-    static void verbose(string msg, string name = "");
-    static void debug(string msg, string name = "");
-    static void normal(string msg, string name = "");
-    static void warning(string msg, string name = "");
-    static void error(string msg, string name = "");
+    static void verbose(const string& msg, const string& name = "");
+    static void debug(const string& msg, const string& name = "");
+    static void normal(const string& msg, const string& name = "");
+    static void warning(const string& msg, const string& name = "");
+    static void error(const string& msg, const string& name = "");
 
     static Logger& getInstance()
     {
@@ -60,7 +60,7 @@ private:
 
     Logger();
 
-    void write(string& msg, string& name, enum LogLevel level = LogLevel_DEBUG);
+    void write(const string& msg, const string& name, enum LogLevel level = LogLevel_DEBUG);
     void writeConsole(string& log, enum LogLevel& level);
 
     enum LogLevel m_level;

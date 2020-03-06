@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2018-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,24 +30,27 @@ using namespace pbnjson;
 
 class Application : public IPrintable {
 public:
+    static bool isCloseable(const string& status)
+    {
+        if (status == "stop" || status == "close" || status == "splash" || status == "launch")
+            return false;
+        return true;
+    }
+
     static int getStatusPriority(const string& status)
     {
-        if (status == "stop")
+        if (!isCloseable(status))
             return 0;
-        else if (status == "close")
-            return 1;
-        else if (status == "launch")
-            return 2;
         else if (status == "pause")
-            return 3;
+            return 1;
         else if (status == "foreground")
-            return 4;
+            return 2;
         else if (status == "background")
-            return 5;
+            return 3;
         else if (status == "preload")
-            return 6;
+            return 4;
         else
-            return 7;
+            return 5;
     }
 
     static int getTypePriority(const string& type)
@@ -117,6 +120,11 @@ public:
     const string& getStatus()
     {
         return m_status;
+    }
+
+    const bool isCloseable()
+    {
+        return isCloseable(m_status);
     }
 
     void setDisplayId(const int displayId)

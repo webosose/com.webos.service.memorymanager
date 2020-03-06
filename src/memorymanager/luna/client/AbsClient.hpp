@@ -90,11 +90,7 @@ public:
     {
         string url = "luna://" + m_name + "/" + key;
 
-        if (call.isActive()) {
-            Logger::warning("The call is already active.", m_name);
-            call.cancel();
-        }
-
+        call.cancel();
         try {
             LunaManager::getInstace().logCall(url, requestPayload);
             call = m_handle->callMultiReply(

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2018-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,15 +70,12 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
             return true;
         }
 
-        if (ApplicationManager::getInstance().getRunningAppCount() == 0) {
-            errorText = "Failed to reclaim required memory. All apps were closed";
-            // TODO This should be reboot?
+        if (!ApplicationManager::getInstance().closeApp(true, errorText)) {
             return false;
         }
 
-        ApplicationManager::getInstance().closeApp(true);
-
         // TODO Need to find better way to check memory level again.
+        // because it takes time to free allocated memory after closing application
         MemoryInfoManager::getInstance().update();
     }
     errorText = "Failed to reclaim required memory. Timeout.";
@@ -122,7 +119,10 @@ void MemoryManager::onLow()
     if (m_lock)
         return;
     m_lock = true;
-    ApplicationManager::getInstance().closeApp(false);
+    string errorText = "";
+    if (!ApplicationManager::getInstance().closeApp(false, errorText)) {
+        Logger::error(errorText, LOG_NAME);
+    }
     m_lock = false;
 }
 
@@ -131,7 +131,10 @@ void MemoryManager::onCritical()
     if (m_lock)
         return;
     m_lock = true;
-    ApplicationManager::getInstance().closeApp(true);
+    string errorText = "";
+    if (!ApplicationManager::getInstance().closeApp(true, errorText)) {
+        Logger::error(errorText, LOG_NAME);
+    }
     m_lock = false;
 }
 

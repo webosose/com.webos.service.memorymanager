@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 LG Electronics, Inc.
+// Copyright (c) 2018-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@
 #include "util/Logger.h"
 
 Application::Application()
-    : m_appId(""),
-      m_type(""),
-      m_status(""),
+    : m_appId("unknown"),
+      m_type("unknown"),
+      m_status("unknown"),
       m_displayId(0),
       m_pid(0),
       m_time(0),
@@ -41,12 +41,9 @@ Application::~Application()
 
 void Application::print()
 {
-    string msg = "STATUS(" + m_status + ") ";
-    msg += "TIME(" + to_string(m_time) + ") ";
-    msg += "PID(" + to_string(m_pid) + ") ";
-    msg += "TYPE(" + m_type + ")";
-
-    Logger::verbose(msg, m_appId);
+    static char buffer[1024];
+    sprintf(buffer , "%20s %15s %10s %10d %10d", m_appId.c_str(), m_status.c_str(), m_type.c_str(), m_pid, m_time);
+    Logger::verbose(buffer, "Application");
 }
 
 void Application::print(JValue& json)

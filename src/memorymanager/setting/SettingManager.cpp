@@ -26,7 +26,6 @@
 
 #define LOG_NAME "SettingManager"
 
-//const char* SettingManager::DEFAULT_CONFIG_FILE = "/etc/palm/memorymanager.json";
 const string SettingManager::DEFAULT_CONFIG_FILE = string(WEBOS_INSTALL_WEBOS_SYSCONFDIR) + "/memorymanager.json";
 
 SettingManager::SettingManager()
@@ -48,34 +47,38 @@ void SettingManager::initialize(GMainLoop* mainloop)
 
 int SettingManager::getLowEnter()
 {
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") != 0) {
-        return 100;
-    } else {
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
+        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
         return 250;
+    } else {
+        return 100;
     }
 }
 
 int SettingManager::getLowExit()
 {
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") != 0) {
-        return 120;
-    } else {
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
+        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
         return 280;
+    } else {
+        return 120;
     }
 }
 
 int SettingManager::getCriticalEnter()
 {
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") != 0) {
-        return 50;
-    } else {
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
+        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
         return 100;
+    } else {
+        return 50;
     }
 }
 
 int SettingManager::getCriticalExit()
 {
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0) {
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
+        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
         return 130;
     } else {
         return 70;

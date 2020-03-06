@@ -1,5 +1,0 @@
-[  340.657884] usb 1-1.3: USB disconnect, device number 6
-[  340.663510] usb 1-1.3.4: USB disconnect, device number 8
-[  340.889692] usb 1-1.4: USB disconnect, device number 7
-[  340.895160] usb 1-1.4.4: USB disconnect, device number 9
-[  342.181139] msm-dwc3 a800000.ssusb: DWC3 in low power mode
