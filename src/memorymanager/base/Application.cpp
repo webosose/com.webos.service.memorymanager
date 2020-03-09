@@ -48,6 +48,8 @@ void Application::print()
 
 void Application::print(JValue& json)
 {
+    if (!m_sessionId.empty())
+        json.put("sessionId", m_instanceId);
     if (!m_instanceId.empty())
         json.put("instanceId", m_instanceId);
 

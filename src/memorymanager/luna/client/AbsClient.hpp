@@ -33,9 +33,9 @@ using namespace LS;
 class AbsClient {
 public:
     AbsClient(string name)
-        : m_name(name)
-        , m_handle(nullptr)
-        , m_timeout(5000)
+        : m_name(name),
+          m_handle(nullptr),
+          m_timeout(5000)
     {
 
     }

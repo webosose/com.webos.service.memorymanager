@@ -18,6 +18,7 @@
 
 #include "NotificationManager.h"
 #include "luna/LunaManager.h"
+#include "util/LSMessageUtil.h"
 #include "util/JValueUtil.h"
 #include "util/Logger.h"
 
@@ -26,6 +27,8 @@ const string ApplicationManager::NAME = "com.webos.service.applicationmanager";
 bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx)
 {
     ApplicationManager* sam = (ApplicationManager*)ctx;
+    string sessionId = LSMessageUtil::getSessionId(reply);
+
     Message response(reply);
     JValue responsePayload = JDomParser::fromString(response.getPayload());
 
@@ -63,6 +66,7 @@ bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void 
     } else {
         Application& application = sam->m_runningList.push();
         application.setAppId(appId);
+        application.setSessionId(sessionId);
         application.setInstanceId(instanceId);
         application.setStatus(event);
     }
@@ -74,6 +78,7 @@ bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void 
 bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
 {
     ApplicationManager* sam = (ApplicationManager*)ctx;
+    string sessionId = LSMessageUtil::LSMessageUtil::getSessionId(reply);
     Message response(reply);
     JValue responsePayload = JDomParser::fromString(response.getPayload());
 
@@ -101,6 +106,7 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
             Application& application = sam->m_runningList.push();
             application.setContext(CONTEXT_EXIST);
             application.setAppId(appId);
+            application.setSessionId(sessionId);
             application.setInstanceId(instanceId);
             application.setType(appType);
             application.setDisplayId(displayId);
@@ -122,8 +128,8 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
 }
 
 ApplicationManager::ApplicationManager()
-    : AbsClient(NAME)
-    , m_listener(nullptr)
+    : AbsClient(NAME),
+      m_listener(nullptr)
 {
 }
 

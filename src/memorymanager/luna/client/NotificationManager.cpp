@@ -20,8 +20,8 @@
 const string NotificationManager::NAME = "com.webos.notification";
 
 NotificationManager::NotificationManager()
-    : AbsClient(NAME)
-    , m_isConnected(false)
+    : AbsClient(NAME),
+      m_isConnected(false)
 {
 }
 
