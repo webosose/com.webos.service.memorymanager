@@ -122,7 +122,7 @@ public:
         return m_status;
     }
 
-    const bool isCloseable()
+    bool isCloseable()
     {
         return isCloseable(m_status);
     }
