@@ -16,8 +16,8 @@
 
 #include "LunaManager.h"
 
-#include "client/ApplicationManager.h"
 #include "client/NotificationManager.h"
+#include "client/SAM.h"
 #include "client/SessionManager.h"
 #include "util/Logger.h"
 
@@ -73,7 +73,7 @@ void LunaManager::initialize(GMainLoop* mainloop)
     m_managerEventKillingWeb.setServiceHandle(&m_oldHandle);
     m_managerEventKillingNative.setServiceHandle(&m_oldHandle);
 
-    ApplicationManager::getInstance().initialize(&m_newHandle);
+    SAM::getInstance().initialize(&m_newHandle);
     NotificationManager::getInstance().initialize(&m_newHandle);
     SessionManager::getInstance().initialize(&m_newHandle);
 }

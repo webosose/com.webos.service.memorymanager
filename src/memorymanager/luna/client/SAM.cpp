@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "ApplicationManager.h"
+#include "luna/client/SAM.h"
 
 #include "NotificationManager.h"
 #include "luna/LunaManager.h"
@@ -22,9 +22,11 @@
 #include "util/JValueUtil.h"
 #include "util/Logger.h"
 
-bool ApplicationManager::onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx)
+RunningList SAM::s_runningList;
+
+bool SAM::onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx)
 {
-    ApplicationManager* sam = (ApplicationManager*)ctx;
+    SAM* sam = (SAM*)ctx;
     string sessionId = LSMessageUtil::getSessionId(reply);
 
     Message response(reply);
@@ -53,29 +55,29 @@ bool ApplicationManager::onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void
     if (event == "splash" || event == "stop") {
         return true;
     }
-    auto it = sam->m_runningList.find(instanceId, appId);
-    if (it != sam->m_runningList.getRunningList().end() && it->getStatus() == event) {
+    auto it = s_runningList.find(instanceId, appId);
+    if (it != s_runningList.getRunningList().end() && it->getStatus() == event) {
         // SAME event again ==> nothing to do
         return true;
     }
 
-    if (it != sam->m_runningList.getRunningList().end()) {
+    if (it != s_runningList.getRunningList().end()) {
         it->setStatus(event);
     } else {
-        Application& application = sam->m_runningList.push();
+        Application& application = s_runningList.push();
         application.setAppId(appId);
         application.setSessionId(sessionId);
         application.setInstanceId(instanceId);
         application.setStatus(event);
     }
-    sam->m_runningList.sort();
+    s_runningList.sort();
     sam->print();
     return true;
 }
 
-bool ApplicationManager::onRunning(LSHandle *sh, LSMessage *reply, void *ctx)
+bool SAM::onRunning(LSHandle *sh, LSMessage *reply, void *ctx)
 {
-    ApplicationManager* sam = (ApplicationManager*)ctx;
+    SAM* sam = (SAM*)ctx;
     string sessionId = LSMessageUtil::LSMessageUtil::getSessionId(reply);
     Message response(reply);
     JValue responsePayload = JDomParser::fromString(response.getPayload());
@@ -85,7 +87,7 @@ bool ApplicationManager::onRunning(LSHandle *sh, LSMessage *reply, void *ctx)
         return false;
     }
 
-    sam->m_runningList.setContext(CONTEXT_NOT_EXIST);
+    s_runningList.setContext(CONTEXT_NOT_EXIST);
     for (JValue item : responsePayload["running"].items()) {
         string appId = "";
         string instanceId = "";
@@ -99,9 +101,9 @@ bool ApplicationManager::onRunning(LSHandle *sh, LSMessage *reply, void *ctx)
         JValueUtil::getValue(item, "displayId", displayId);
         JValueUtil::getValue(item, "processid", processid);
 
-        auto it = sam->m_runningList.find(instanceId, appId);
-        if (it == sam->m_runningList.getRunningList().end()) {
-            Application& application = sam->m_runningList.push();
+        auto it = s_runningList.find(instanceId, appId);
+        if (it == s_runningList.getRunningList().end()) {
+            Application& application = s_runningList.push();
             application.setContext(CONTEXT_EXIST);
             application.setAppId(appId);
             application.setSessionId(sessionId);
@@ -118,24 +120,24 @@ bool ApplicationManager::onRunning(LSHandle *sh, LSMessage *reply, void *ctx)
                 it->setPid(std::stoi(processid));
         }
     }
-    sam->m_runningList.removeContext(CONTEXT_NOT_EXIST);
-    sam->m_runningList.sort();
+    s_runningList.removeContext(CONTEXT_NOT_EXIST);
+    s_runningList.sort();
     sam->print();
     if (sam->m_listener) sam->m_listener->onApplicationsChanged();
     return true;
 }
 
-ApplicationManager::ApplicationManager()
+SAM::SAM()
     : AbsClient("com.webos.service.applicationmanager")
 {
 }
 
-ApplicationManager::~ApplicationManager()
+SAM::~SAM()
 {
     this->clear();
 }
 
-void ApplicationManager::clear()
+void SAM::clear()
 {
     if (m_getAppLifeEventsCall.isActive()) {
         m_getAppLifeEventsCall.cancel();
@@ -145,14 +147,14 @@ void ApplicationManager::clear()
     }
 }
 
-bool ApplicationManager::closeApp(bool includeForeground, string& errorText)
+bool SAM::closeApp(bool includeForeground, string& errorText)
 {
-    if (m_runningList.isEmpty() || !m_runningList.back().isCloseable()) {
+    if (s_runningList.isEmpty() || !s_runningList.back().isCloseable()) {
         errorText = "Failed to reclaim required memory. All apps were closed";
         return false;
     }
 
-    Application& application = m_runningList.back();
+    Application& application = s_runningList.back();
     if (!includeForeground && application.getStatus() == "foreground") {
         Logger::warning("Only 'foreground' apps are exist", m_serviceName);
         return false;
@@ -170,17 +172,17 @@ bool ApplicationManager::closeApp(bool includeForeground, string& errorText)
     return true;
 }
 
-string ApplicationManager::getForegroundAppId()
+string SAM::getForegroundAppId()
 {
-    return m_runningList.getForegroundAppId();
+    return s_runningList.getForegroundAppId();
 }
 
-int ApplicationManager::getRunningAppCount()
+int SAM::getRunningAppCount()
 {
-    return m_runningList.getCount();
+    return s_runningList.getCount();
 }
 
-bool ApplicationManager::onStatusChange(bool isConnected)
+bool SAM::onStatusChange(bool isConnected)
 {
     if (isConnected) {
         Logger::normal("Connected", m_serviceName);
@@ -193,7 +195,7 @@ bool ApplicationManager::onStatusChange(bool isConnected)
     return true;
 }
 
-bool ApplicationManager::getAppLifeEvents()
+bool SAM::getAppLifeEvents()
 {
     JValue callPayload = pbnjson::Object();
     callPayload.put("subscribe", true);
@@ -201,7 +203,7 @@ bool ApplicationManager::getAppLifeEvents()
     return subscribe(m_getAppLifeEventsCall, "getAppLifeEvents", callPayload, onGetAppLifeEvents);
 }
 
-bool ApplicationManager::running()
+bool SAM::running()
 {
     JValue callPayload = pbnjson::Object();
     callPayload.put("subscribe", true);
@@ -209,7 +211,7 @@ bool ApplicationManager::running()
     return subscribe(m_runningCall, "running", callPayload, onRunning);
 }
 
-bool ApplicationManager::close(Application& application)
+bool SAM::close(Application& application)
 {
     JValue callPayload = pbnjson::Object();
     if (!application.getInstanceId().empty())
@@ -222,7 +224,7 @@ bool ApplicationManager::close(Application& application)
     return callSync("close", callPayload, returnPayload);
 }
 
-bool ApplicationManager::launch(string& appId)
+bool SAM::launch(string& appId)
 {
     JValue callPayload = pbnjson::Object();
     callPayload.put("id", appId);
@@ -231,24 +233,24 @@ bool ApplicationManager::launch(string& appId)
     return callSync("launch", callPayload, returnPayload);
 }
 
-void ApplicationManager::print()
+void SAM::print()
 {
-    if (m_runningList.getRunningList().size() == 0) {
+    if (s_runningList.getRunningList().size() == 0) {
         Logger::verbose("Application List : Empty", m_serviceName);
         return;
     }
     if (SettingManager::getInstance().isVerbose()) {
         Logger::verbose("Application List", m_serviceName);
-        for (auto it = m_runningList.getRunningList().begin(); it != m_runningList.getRunningList().end(); ++it) {
+        for (auto it = s_runningList.getRunningList().begin(); it != s_runningList.getRunningList().end(); ++it) {
             it->print();
         }
     }
 }
 
-void ApplicationManager::print(JValue& json)
+void SAM::print(JValue& json)
 {
     JValue array = pbnjson::Array();
-    for (auto it = m_runningList.getRunningList().begin(); it != m_runningList.getRunningList().end(); ++it) {
+    for (auto it = s_runningList.getRunningList().begin(); it != s_runningList.getRunningList().end(); ++it) {
         JValue item = pbnjson::Object();
         it->print(item);
         array.append(item);

@@ -17,7 +17,7 @@
 #include "OldHandle.h"
 
 #include "luna/LunaManager.h"
-#include "luna/client/ApplicationManager.h"
+#include "luna/client/SAM.h"
 #include "util/Logger.h"
 
 const string OldHandle::NAME_SERVICE = "com.webos.memorymanager";
@@ -64,8 +64,8 @@ void OldHandle::sendThresholdChangedSignal(string& prev, string& cur)
     pbnjson::JValue signalPayload = pbnjson::Object();
     signalPayload.put("previous", prev);
     signalPayload.put("current", cur);
-    signalPayload.put("foregroundAppId", ApplicationManager::getInstance().getForegroundAppId());
-    signalPayload.put("remainCount", ApplicationManager::getInstance().getRunningAppCount());
+    signalPayload.put("foregroundAppId", SAM::getInstance().getForegroundAppId());
+    signalPayload.put("remainCount", SAM::getInstance().getRunningAppCount());
 
     this->sendSignal(uri.c_str(), signalPayload.stringify().c_str(), false);
 }

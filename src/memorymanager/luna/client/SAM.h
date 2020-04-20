@@ -14,8 +14,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef LUNA_CLIENT_APPLICATIONMANAGER_H_
-#define LUNA_CLIENT_APPLICATIONMANAGER_H_
+#ifndef LUNA_CLIENT_SAM_H_
+#define LUNA_CLIENT_SAM_H_
 
 #include <iostream>
 #include <vector>
@@ -41,13 +41,13 @@ public:
     virtual void onApplicationsChanged() = 0;
 };
 
-class ApplicationManager : public AbsClient,
-                           public ISingleton<ApplicationManager>,
+class SAM : public AbsClient,
+                           public ISingleton<SAM>,
                            public IListener<ApplicationManagerListener>,
                            public IPrintable {
-friend class ISingleton<ApplicationManager>;
+friend class ISingleton<SAM>;
 public:
-    virtual ~ApplicationManager();
+    virtual ~SAM();
 
     // public
     bool closeApp(bool includeForeground, string& errorText);
@@ -71,7 +71,7 @@ private:
     static bool onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx);
     static bool onRunning(LSHandle *sh, LSMessage *reply, void *ctx);
 
-    ApplicationManager();
+    SAM();
 
     virtual void clear();
 
@@ -84,10 +84,11 @@ private:
     bool close(Application& application);
     bool launch(string& appId);
 
-    RunningList m_runningList;
+    static RunningList s_runningList;
+
     Call m_getAppLifeEventsCall;
     Call m_runningCall;
 
 };
 
-#endif /* LUNA_CLIENT_APPLICATIONMANAGER_H_ */
+#endif /* LUNA_CLIENT_SAM_H_ */

@@ -16,7 +16,7 @@
 
 #include "MemoryManager.h"
 
-#include "luna/client/ApplicationManager.h"
+#include "luna/client/SAM.h"
 #include "util/Logger.h"
 
 #define LOG_NAME "MemoryManager"
@@ -43,7 +43,7 @@ void MemoryManager::initialize()
     SettingManager::getInstance().setListener(this);
     LunaManager::getInstance().setListener(this);
     MemoryInfoManager::getInstance().setListener(this);
-    ApplicationManager::getInstance().setListener(this);
+    SAM::getInstance().setListener(this);
     SessionManager::getInstance().setListener(this);
 }
 
@@ -71,7 +71,7 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
             return true;
         }
 
-        if (!ApplicationManager::getInstance().closeApp(true, errorText)) {
+        if (!SAM::getInstance().closeApp(true, errorText)) {
             return false;
         }
 
@@ -86,7 +86,7 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 bool MemoryManager::onMemoryStatus(JValue& responsePayload)
 {
     MemoryInfoManager::getInstance().print(responsePayload);
-    ApplicationManager::getInstance().print(responsePayload);
+    SAM::getInstance().print(responsePayload);
     return true;
 }
 
@@ -121,7 +121,7 @@ void MemoryManager::onLow()
         return;
     m_lock = true;
     string errorText = "";
-    if (!ApplicationManager::getInstance().closeApp(false, errorText)) {
+    if (!SAM::getInstance().closeApp(false, errorText)) {
         Logger::error(errorText, LOG_NAME);
     }
     m_lock = false;
@@ -133,7 +133,7 @@ void MemoryManager::onCritical()
         return;
     m_lock = true;
     string errorText = "";
-    if (!ApplicationManager::getInstance().closeApp(true, errorText)) {
+    if (!SAM::getInstance().closeApp(true, errorText)) {
         Logger::error(errorText, LOG_NAME);
     }
     m_lock = false;

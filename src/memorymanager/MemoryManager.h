@@ -21,7 +21,7 @@
 #include <glib.h>
 
 #include "luna/LunaManager.h"
-#include "luna/client/ApplicationManager.h"
+#include "luna/client/SAM.h"
 #include "luna/client/SessionManager.h"
 #include "memoryinfo/MemoryInfoManager.h"
 #include "setting/SettingManager.h"
