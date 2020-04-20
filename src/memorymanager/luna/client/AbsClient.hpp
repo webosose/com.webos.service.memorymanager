@@ -23,7 +23,6 @@
 #include <luna-service2/lunaservice.hpp>
 #include <pbnjson.hpp>
 
-#include "luna/LunaManager.h"
 #include "util/Logger.h"
 #include "util/JValueUtil.h"
 
@@ -42,6 +41,12 @@ public:
         bool connected = true;
         if (JValueUtil::getValue(subscriptionPayload, "connected", connected)) {
             client->m_isConnected = connected;
+
+            if (client->m_isConnected) {
+                Logger::normal(client->m_serviceName + " is up", "AbsClient");
+            } else {
+                Logger::normal(client->m_serviceName + " is down", "AbsClient");
+            }
             client->onStatusChange(connected);
         }
         return true;
@@ -79,56 +84,13 @@ public:
         m_handle = handle;
     }
 
-    // This callback is called when target service status is changed
-    virtual bool onStatusChange(bool isConnected) = 0;
-
-    bool callSync(string key, JValue& callPayload, JValue& returnPayload)
-    {
-        string url = "luna://" + m_serviceName + "/" + key;
-
-        LunaManager::getInstance().logCall(url, callPayload);
-        auto call = m_handle->callOneReply(
-            url.c_str(),
-            callPayload.stringify().c_str()
-        );
-        auto reply = call.get(m_timeout);
-        if (!reply) {
-            Logger::error("No reply during timeout");
-            return false;
-        }
-        if (reply.isHubError()) {
-            Logger::error(reply.getPayload());
-            return false;
-        }
-        returnPayload = JDomParser::fromString(reply.getPayload());
-        LunaManager::getInstance().logReturn(reply, returnPayload);
-        return true;
-    }
-
-    bool subscribe(Call& call, string key, JValue& requestPayload, LSFilterFunc callback)
-    {
-        string url = "luna://" + m_serviceName + "/" + key;
-
-        call.cancel();
-        try {
-            LunaManager::getInstance().logCall(url, requestPayload);
-            call = m_handle->callMultiReply(
-                url.c_str(),
-                requestPayload.stringify().c_str()
-            );
-            call.continueWith(callback, this);
-        }
-        catch (const LS::Error &e) {
-            Logger::error(string(e.what()), m_serviceName);
-            return false;
-        }
-        return true;
-    }
-
     string& getServiceName()
     {
         return m_serviceName;
     }
+
+    // This callback is called when target service status is changed
+    virtual bool onStatusChange(bool isConnected) = 0;
 
 protected:
     string m_serviceName;

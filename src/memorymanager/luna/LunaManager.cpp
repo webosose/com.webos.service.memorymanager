@@ -73,9 +73,30 @@ void LunaManager::initialize(GMainLoop* mainloop)
     m_managerEventKillingWeb.setServiceHandle(&m_oldHandle);
     m_managerEventKillingNative.setServiceHandle(&m_oldHandle);
 
-    SAM::getInstance().initialize(&m_newHandle);
-    NotificationManager::getInstance().initialize(&m_newHandle);
+    if (!SettingManager::getInstance().isSessionEnabled()) {
+        m_sams.emplace("host", "");
+        m_sams["host"].initialize(&m_newHandle);
+    } else {
+        SessionManager::getInstance().initialize(&m_newHandle);
+        SessionManager::getInstance().setListener(this);
+    }
     SessionManager::getInstance().initialize(&m_newHandle);
+}
+
+void LunaManager::onSessionChanged(JValue& subscriptionPayload)
+{
+    JValue sessionList;
+
+    JValueUtil::getValue(subscriptionPayload, "sessionList", sessionList);
+    for (JValue session : sessionList.items()) {
+        string sessionId = "";
+        if (!JValueUtil::getValue(session, "sessionId", sessionId)) continue;
+
+        if (m_sams.find(sessionId) == m_sams.end()) {
+            m_sams.emplace(sessionId, sessionId);
+            m_sams[sessionId].initialize(&m_newHandle);
+        }
+    }
 }
 
 void LunaManager::signalLevelChanged(string prev, string cur)

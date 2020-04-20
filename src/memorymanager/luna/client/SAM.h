@@ -33,56 +33,37 @@ using namespace std;
 using namespace pbnjson;
 using namespace LS;
 
-class ApplicationManagerListener {
-public:
-    ApplicationManagerListener() {};
-    virtual ~ApplicationManagerListener() {};
-
-    virtual void onApplicationsChanged() = 0;
-};
-
-class SAM : public AbsClient,
-                           public ISingleton<SAM>,
-                           public IListener<ApplicationManagerListener>,
-                           public IPrintable {
+class SAM : public AbsClient {
 friend class ISingleton<SAM>;
 public:
+    static bool close(bool includeForeground, string& errorText);
+    static string getForegroundAppId();
+    static int getRunningAppCount();
+    static void print();
+    static void print(JValue& json);
+
+    SAM(const string& sessionId = "");
     virtual ~SAM();
-
-    // public
-    bool closeApp(bool includeForeground, string& errorText);
-
-    string getForegroundAppId();
-    int getRunningAppCount();
-
-    virtual void setListener(ApplicationManagerListener* listener)
-    {
-        m_listener = listener;
-    }
-
-    // IPrintable
-    virtual void print();
-    virtual void print(JValue& json);
 
 private:
     static const int CONTEXT_NOT_EXIST = 0;
     static const int CONTEXT_EXIST = 1;
 
+    static string getSessionId(LSMessage *reply)
+    {
+#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
+        return LSMessageGetSessionId(reply);
+#else
+        return "";
+#endif
+    }
+
+    static bool onClose(LSHandle *sh, LSMessage *reply, void *ctx);
     static bool onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx);
     static bool onRunning(LSHandle *sh, LSMessage *reply, void *ctx);
 
-    SAM();
-
-    virtual void clear();
-
     // AbsService
     virtual bool onStatusChange(bool isConnected);
-
-    // APIs
-    bool getAppLifeEvents();
-    bool running();
-    bool close(Application& application);
-    bool launch(string& appId);
 
     static RunningList s_runningList;
 

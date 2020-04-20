@@ -64,8 +64,8 @@ void OldHandle::sendThresholdChangedSignal(string& prev, string& cur)
     pbnjson::JValue signalPayload = pbnjson::Object();
     signalPayload.put("previous", prev);
     signalPayload.put("current", cur);
-    signalPayload.put("foregroundAppId", SAM::getInstance().getForegroundAppId());
-    signalPayload.put("remainCount", SAM::getInstance().getRunningAppCount());
+    signalPayload.put("foregroundAppId", SAM::getForegroundAppId());
+    signalPayload.put("remainCount", SAM::getRunningAppCount());
 
     this->sendSignal(uri.c_str(), signalPayload.stringify().c_str(), false);
 }

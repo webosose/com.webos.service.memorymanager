@@ -25,10 +25,11 @@ RunningList::~RunningList()
 {
 }
 
-void RunningList::setContext(int context)
+void RunningList::setContext(int context, const string& sessionId)
 {
     for (auto it = m_applications.begin(); it != m_applications.end(); ++it) {
-        it->setContext(context);
+        if(it->getSessionId() == sessionId)
+            it->setContext(context);
     }
 }
 

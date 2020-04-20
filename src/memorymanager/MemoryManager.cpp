@@ -40,11 +40,8 @@ void MemoryManager::initialize()
     MemoryInfoManager::getInstance().initialize(m_mainloop);
     SwapManager::getInstance().initialize(m_mainloop);
 
-    SettingManager::getInstance().setListener(this);
     LunaManager::getInstance().setListener(this);
     MemoryInfoManager::getInstance().setListener(this);
-    SAM::getInstance().setListener(this);
-    SessionManager::getInstance().setListener(this);
 }
 
 void MemoryManager::run()
@@ -71,7 +68,7 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
             return true;
         }
 
-        if (!SAM::getInstance().closeApp(true, errorText)) {
+        if (!SAM::close(true, errorText)) {
             return false;
         }
 
@@ -86,7 +83,7 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 bool MemoryManager::onMemoryStatus(JValue& responsePayload)
 {
     MemoryInfoManager::getInstance().print(responsePayload);
-    SAM::getInstance().print(responsePayload);
+    SAM::print(responsePayload);
     return true;
 }
 
@@ -121,7 +118,7 @@ void MemoryManager::onLow()
         return;
     m_lock = true;
     string errorText = "";
-    if (!SAM::getInstance().closeApp(false, errorText)) {
+    if (!SAM::close(false, errorText)) {
         Logger::error(errorText, LOG_NAME);
     }
     m_lock = false;
@@ -133,18 +130,8 @@ void MemoryManager::onCritical()
         return;
     m_lock = true;
     string errorText = "";
-    if (!SAM::getInstance().closeApp(true, errorText)) {
+    if (!SAM::close(true, errorText)) {
         Logger::error(errorText, LOG_NAME);
     }
     m_lock = false;
-}
-
-void MemoryManager::onApplicationsChanged()
-{
-    LunaManager::getInstance().postMemoryStatus();
-}
-
-void MemoryManager::onSessionChanged(JValue& subscriptionPayload)
-{
-    cout << subscriptionPayload.stringify("    ") << endl;
 }

@@ -42,14 +42,17 @@ Application::~Application()
 void Application::print()
 {
     static char buffer[1024];
-    sprintf(buffer , "%20s %15s %10s %10d %10d", m_appId.c_str(), m_status.c_str(), m_type.c_str(), m_pid, m_time);
+    if (m_sessionId.empty())
+        sprintf(buffer , "%-30s %15s %10s %10d %10d", m_appId.c_str(), m_status.c_str(), m_type.c_str(), m_pid, m_time);
+    else
+        sprintf(buffer , "%-40s %-30s %15s %10s %10d %10d", m_sessionId.c_str(), m_appId.c_str(), m_status.c_str(), m_type.c_str(), m_pid, m_time);
     Logger::verbose(buffer, "Application");
 }
 
 void Application::print(JValue& json)
 {
     if (!m_sessionId.empty())
-        json.put("sessionId", m_instanceId);
+        json.put("sessionId", m_sessionId);
     if (!m_instanceId.empty())
         json.put("instanceId", m_instanceId);
 

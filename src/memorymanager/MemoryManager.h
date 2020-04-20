@@ -30,11 +30,8 @@
 using namespace std;
 
 class MemoryManager : public ISingleton<MemoryManager>,
-                      public SettingManagerListener,
                       public LunaManagerListener,
-                      public MemoryInfoManagerListener,
-                      public ApplicationManagerListener,
-                      public SessionManagerListener {
+                      public MemoryInfoManagerListener {
 friend class ISingleton<MemoryManager>;
 public:
     virtual ~MemoryManager();
@@ -54,12 +51,6 @@ public:
     virtual void onEnter(enum MemoryLevel prev, enum MemoryLevel cur);
     virtual void onLow();
     virtual void onCritical();
-
-    // ApplicationManagerListener
-    virtual void onApplicationsChanged();
-
-    // SessionManagerListener
-    virtual void onSessionChanged(JValue& subscriptionPayload) override;
 
 private:
     static gboolean tick(gpointer user_data)

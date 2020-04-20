@@ -35,7 +35,7 @@ public:
 
     void sort();
     vector<Application>::iterator find(const string& instanceId, const string& appId);
-    void setContext(int context);
+    void setContext(int context, const string& sessionId);
     void removeContext(int context);
 
     vector<Application>& getRunningList();

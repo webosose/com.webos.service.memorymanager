@@ -15,45 +15,41 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "NotificationManager.h"
+
+#include "luna/LunaManager.h"
 #include "util/Logger.h"
-
-NotificationManager::NotificationManager()
-    : AbsClient("com.webos.notification")
-{
-}
-
-NotificationManager::~NotificationManager()
-{
-
-}
-
-bool NotificationManager::onStatusChange(bool isConnected)
-{
-    return true;
-}
 
 bool NotificationManager::onCreateToast(LSHandle *sh, LSMessage *reply, void *ctx)
 {
     return true;
 }
 
-void NotificationManager::createToast(string message)
+void NotificationManager::createToast(string message, const string& sessionId)
 {
-    if (!m_isConnected) {
-        Logger::error("Notification service is not running", m_serviceName);
-        return;
-    }
     JValue requestPayload = pbnjson::Object();
     requestPayload.put("sourceId", "com.webos.service.memorymanager");
     requestPayload.put("message", message);
 
-    LSCallOneReply(
-        m_handle->get(),
+#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
+    LSCallSessionOneReply(
+        LunaManager::getInstance().getHandle().get(),
         "luna://com.webos.notification/createToast",
         requestPayload.stringify().c_str(),
+        sessionId.c_str(),
         onCreateToast,
-        this,
+        nullptr,
         nullptr,
         nullptr
     );
+#else
+    LSCallOneReply(
+        LunaManager::getInstance().getHandle().get(),
+        "luna://com.webos.notification/createToast",
+        requestPayload.stringify().c_str(),
+        onCreateToast,
+        nullptr,
+        nullptr,
+        nullptr
+    );
+#endif
 }

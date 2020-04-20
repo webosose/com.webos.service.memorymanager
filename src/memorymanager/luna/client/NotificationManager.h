@@ -27,21 +27,16 @@
 using namespace std;
 using namespace pbnjson;
 
-class NotificationManager : public AbsClient,
-                            public ISingleton<NotificationManager> {
-friend class ISingleton<NotificationManager>;
+class NotificationManager {
 public:
-    virtual ~NotificationManager();
+    NotificationManager() {};
+    virtual ~NotificationManager() {};
 
-    void createToast(string message);
-
-protected:
-    virtual bool onStatusChange(bool isConnected) override;
+    static void createToast(string message, const string& sessionId);
 
 private:
     static bool onCreateToast(LSHandle *sh, LSMessage *reply, void *ctx);
 
-    NotificationManager();
 
 };
 

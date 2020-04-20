@@ -29,7 +29,8 @@
 const string SettingManager::DEFAULT_CONFIG_FILE = string(WEBOS_INSTALL_WEBOS_SYSCONFDIR) + "/memorymanager.json";
 
 SettingManager::SettingManager()
-    : m_configuration(Object())
+    : m_configuration(Object()),
+      m_isSessionEnabled(false)
 {
     if (access(DEFAULT_CONFIG_FILE.c_str(), R_OK) == 0) {
         loadSetting(DEFAULT_CONFIG_FILE);
@@ -42,7 +43,10 @@ SettingManager::~SettingManager()
 
 void SettingManager::initialize(GMainLoop* mainloop)
 {
-
+    string ls2EnableSession = getenv("LS2_ENABLE_SESSION");
+    if (!ls2EnableSession.empty() && ls2EnableSession == "true") {
+        m_isSessionEnabled = true;
+    }
 }
 
 int SettingManager::getLowEnter()
