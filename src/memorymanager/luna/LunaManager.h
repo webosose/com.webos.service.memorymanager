@@ -116,8 +116,7 @@ private:
     SubscriptionPoint m_managerEventKillingWeb;
     SubscriptionPoint m_managerEventKillingNative;
 
-    map<string, SAM> m_sams;
-
+    map<string, bool> m_sessions;
 };
 
 #endif /* LUNA_LUNAMANAGER_H_ */

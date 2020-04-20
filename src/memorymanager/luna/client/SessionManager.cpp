@@ -38,6 +38,7 @@ SessionManager::~SessionManager()
 
 bool SessionManager::onStatusChange(bool isConnected)
 {
+    m_getSessionList.cancel();
     if (isConnected) {
         JValue requestPayload = pbnjson::Object();
         requestPayload.put("subscribe", true);
@@ -50,8 +51,6 @@ bool SessionManager::onStatusChange(bool isConnected)
                 NULL,
                 NULL
         );
-    } else {
-        m_getSessionList.cancel();
     }
     return true;
 }

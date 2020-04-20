@@ -116,16 +116,69 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *reply, void *ctx)
                 it->setPid(std::stoi(processid));
         }
     }
-    s_runningList.removeContext(CONTEXT_NOT_EXIST);
+    s_runningList.removeByContext(CONTEXT_NOT_EXIST);
     s_runningList.sort();
     print();
     LunaManager::getInstance().postMemoryStatus();
     return true;
 }
 
-bool SAM::onClose(LSHandle *sh, LSMessage *reply, void *ctx)
+void SAM::subscribe(const string& sessionId)
 {
-    return true;
+    JValue requestPayload = pbnjson::Object();
+    requestPayload.put("subscribe", true);
+
+    if (sessionId.empty()) {
+        LSCall(
+            LunaManager::getInstance().getHandle().get(),
+            "luna://com.webos.service.applicationmanager/getAppLifeEvents",
+            requestPayload.stringify().c_str(),
+            onGetAppLifeEvents,
+            nullptr,
+            nullptr,
+            nullptr
+        );
+
+        LSCall(
+            LunaManager::getInstance().getHandle().get(),
+            "luna://com.webos.service.applicationmanager/running",
+            requestPayload.stringify().c_str(),
+            onRunning,
+            nullptr,
+            nullptr,
+            nullptr
+        );
+        return;
+    }
+
+#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
+    LSCallSession(
+        LunaManager::getInstance().getHandle().get(),
+        "luna://com.webos.service.applicationmanager/getAppLifeEvents",
+        requestPayload.stringify().c_str(),
+        sessionId.c_str(),
+        onGetAppLifeEvents,
+        nullptr,
+        nullptr,
+        nullptr
+    );
+
+    LSCallSession(
+        LunaManager::getInstance().getHandle().get(),
+        "luna://com.webos.service.applicationmanager/running",
+        requestPayload.stringify().c_str(),
+        sessionId.c_str(),
+        onRunning,
+        nullptr,
+        nullptr,
+        nullptr
+    );
+#endif
+}
+
+void SAM::unsubscribe(const string& sessionId)
+{
+    s_runningList.removeBySessionId(sessionId);
 }
 
 bool SAM::close(bool includeForeground, string& errorText)
@@ -211,43 +264,4 @@ void SAM::print(JValue& json)
         array.append(item);
     }
     json.put("applications", array);
-}
-
-SAM::SAM(const string& sessionId)
-    : AbsClient("com.webos.service.applicationmanager", sessionId)
-{
-}
-
-SAM::~SAM()
-{
-    m_getAppLifeEventsCall.cancel();
-    m_runningCall.cancel();
-}
-
-bool SAM::onStatusChange(bool isConnected)
-{
-    JValue requestPayload = pbnjson::Object();
-    requestPayload.put("subscribe", true);
-
-    m_getAppLifeEventsCall.cancel();
-    m_runningCall.cancel();
-    if (isConnected) {
-        m_getAppLifeEventsCall = m_handle->callMultiReply(
-            "luna://com.webos.service.applicationmanager/getAppLifeEvents",
-            requestPayload.stringify().c_str(),
-            onGetAppLifeEvents,
-            this,
-            nullptr,
-            m_sessionId.empty() ? nullptr : m_sessionId.c_str()
-        );
-        m_runningCall = m_handle->callMultiReply(
-            "luna://com.webos.service.applicationmanager/running",
-            requestPayload.stringify().c_str(),
-            onRunning,
-            this,
-            nullptr,
-            m_sessionId.empty() ? nullptr : m_sessionId.c_str()
-        );
-    }
-    return true;
 }

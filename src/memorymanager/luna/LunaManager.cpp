@@ -74,28 +74,41 @@ void LunaManager::initialize(GMainLoop* mainloop)
     m_managerEventKillingNative.setServiceHandle(&m_oldHandle);
 
     if (!SettingManager::getInstance().isSessionEnabled()) {
-        m_sams.emplace("host", "");
-        m_sams["host"].initialize(&m_newHandle);
+        SAM::subscribe();
     } else {
         SessionManager::getInstance().initialize(&m_newHandle);
         SessionManager::getInstance().setListener(this);
     }
-    SessionManager::getInstance().initialize(&m_newHandle);
 }
 
 void LunaManager::onSessionChanged(JValue& subscriptionPayload)
 {
-    JValue sessionList;
+    JValue sessionList = pbnjson::Array();
+
+    // mark sessionId as removed
+    for (auto it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+        it->second = false;
+    }
 
     JValueUtil::getValue(subscriptionPayload, "sessionList", sessionList);
     for (JValue session : sessionList.items()) {
         string sessionId = "";
         if (!JValueUtil::getValue(session, "sessionId", sessionId)) continue;
 
-        if (m_sams.find(sessionId) == m_sams.end()) {
-            m_sams.emplace(sessionId, sessionId);
-            m_sams[sessionId].initialize(&m_newHandle);
+        if (m_sessions.find(sessionId) == m_sessions.end()) {
+            m_sessions[sessionId] = true;
+            SAM::subscribe(sessionId);
         }
+    }
+
+    // deleted removed sessionId
+    for (auto it = m_sessions.cbegin(); it != m_sessions.cend();) {
+      if (it->second == false) {
+          m_sessions.erase(it++);
+          SAM::unsubscribe(it->first);
+      } else {
+        ++it;
+      }
     }
 }
 

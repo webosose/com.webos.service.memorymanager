@@ -36,21 +36,30 @@ using namespace LS;
 class SAM : public AbsClient {
 friend class ISingleton<SAM>;
 public:
+    static void subscribe(const string& sessionId = "");
+    static void unsubscribe(const string& sessionId = "");
+
     static bool close(bool includeForeground, string& errorText);
+
     static string getForegroundAppId();
     static int getRunningAppCount();
+
     static void print();
     static void print(JValue& json);
 
-    SAM(const string& sessionId = "");
-    virtual ~SAM();
+    virtual ~SAM(){};
 
 private:
     static const int CONTEXT_NOT_EXIST = 0;
     static const int CONTEXT_EXIST = 1;
 
+    SAM();
+
     static string getSessionId(LSMessage *reply)
     {
+        if (LSMessageIsHubErrorMessage(reply)) {
+            return "";
+        }
 #if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
         return LSMessageGetSessionId(reply);
 #else
@@ -58,7 +67,6 @@ private:
 #endif
     }
 
-    static bool onClose(LSHandle *sh, LSMessage *reply, void *ctx);
     static bool onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx);
     static bool onRunning(LSHandle *sh, LSMessage *reply, void *ctx);
 
@@ -66,9 +74,6 @@ private:
     virtual bool onStatusChange(bool isConnected);
 
     static RunningList s_runningList;
-
-    Call m_getAppLifeEventsCall;
-    Call m_runningCall;
 
 };
 
