@@ -22,9 +22,7 @@
 #include "util/JValueUtil.h"
 #include "util/Logger.h"
 
-const string ApplicationManager::NAME = "com.webos.service.applicationmanager";
-
-bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx)
+bool ApplicationManager::onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx)
 {
     ApplicationManager* sam = (ApplicationManager*)ctx;
     string sessionId = LSMessageUtil::getSessionId(reply);
@@ -32,7 +30,7 @@ bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void 
     Message response(reply);
     JValue responsePayload = JDomParser::fromString(response.getPayload());
 
-    LunaManager::getInstace().logSubscription("getAppLifeEvents", responsePayload);
+    LunaManager::getInstance().logSubscription("getAppLifeEvents", responsePayload);
     if (response.isHubError()) {
         return false;
     }
@@ -75,14 +73,14 @@ bool ApplicationManager::_getAppLifeEvents(LSHandle *sh, LSMessage *reply, void 
     return true;
 }
 
-bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
+bool ApplicationManager::onRunning(LSHandle *sh, LSMessage *reply, void *ctx)
 {
     ApplicationManager* sam = (ApplicationManager*)ctx;
     string sessionId = LSMessageUtil::LSMessageUtil::getSessionId(reply);
     Message response(reply);
     JValue responsePayload = JDomParser::fromString(response.getPayload());
 
-    LunaManager::getInstace().logSubscription("running", responsePayload);
+    LunaManager::getInstance().logSubscription("running", responsePayload);
     if (response.isHubError()) {
         return false;
     }
@@ -128,8 +126,7 @@ bool ApplicationManager::_running(LSHandle *sh, LSMessage *reply, void *ctx)
 }
 
 ApplicationManager::ApplicationManager()
-    : AbsClient(NAME),
-      m_listener(nullptr)
+    : AbsClient("com.webos.service.applicationmanager")
 {
 }
 
@@ -157,17 +154,17 @@ bool ApplicationManager::closeApp(bool includeForeground, string& errorText)
 
     Application& application = m_runningList.back();
     if (!includeForeground && application.getStatus() == "foreground") {
-        Logger::warning("Only 'foreground' apps are exist", m_name);
+        Logger::warning("Only 'foreground' apps are exist", m_serviceName);
         return false;
     }
-    LunaManager::getInstace().postManagerKillingEvent(application);
+    LunaManager::getInstance().postManagerKillingEvent(application);
 
     if (application.getStatus() == "foreground") {
         NotificationManager::getInstance().createToast(application.getAppId() + " is closed because of memory issue.");
     }
 
     if (!close(application)) {
-        Logger::warning("Failed to call closeByAppId", m_name);
+        Logger::warning("Failed to call closeByAppId", m_serviceName);
         return false;
     }
     return true;
@@ -186,11 +183,11 @@ int ApplicationManager::getRunningAppCount()
 bool ApplicationManager::onStatusChange(bool isConnected)
 {
     if (isConnected) {
-        Logger::normal("Connected", m_name);
+        Logger::normal("Connected", m_serviceName);
         running();
         getAppLifeEvents();
     } else {
-        Logger::normal("Disconnected", m_name);
+        Logger::normal("Disconnected", m_serviceName);
         clear();
     }
     return true;
@@ -201,7 +198,7 @@ bool ApplicationManager::getAppLifeEvents()
     JValue callPayload = pbnjson::Object();
     callPayload.put("subscribe", true);
 
-    return subscribe(m_getAppLifeEventsCall, "getAppLifeEvents", callPayload, _getAppLifeEvents);
+    return subscribe(m_getAppLifeEventsCall, "getAppLifeEvents", callPayload, onGetAppLifeEvents);
 }
 
 bool ApplicationManager::running()
@@ -209,7 +206,7 @@ bool ApplicationManager::running()
     JValue callPayload = pbnjson::Object();
     callPayload.put("subscribe", true);
 
-    return subscribe(m_runningCall, "running", callPayload, _running);
+    return subscribe(m_runningCall, "running", callPayload, onRunning);
 }
 
 bool ApplicationManager::close(Application& application)
@@ -237,11 +234,11 @@ bool ApplicationManager::launch(string& appId)
 void ApplicationManager::print()
 {
     if (m_runningList.getRunningList().size() == 0) {
-        Logger::verbose("Application List : Empty", m_name);
+        Logger::verbose("Application List : Empty", m_serviceName);
         return;
     }
     if (SettingManager::getInstance().isVerbose()) {
-        Logger::verbose("Application List", m_name);
+        Logger::verbose("Application List", m_serviceName);
         for (auto it = m_runningList.getRunningList().begin(); it != m_runningList.getRunningList().end(); ++it) {
             it->print();
         }

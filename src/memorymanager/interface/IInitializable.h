@@ -28,18 +28,18 @@ public:
 
     virtual bool initialize(GMainLoop* mainloop) final
     {
-        Logger::info(getClassName(), "Start initialization");
+        Logger::normal(getClassName(), "Start initialization");
         m_mainloop = mainloop;
         m_isInitalized = onInitialization();
-        Logger::info(getClassName(), "End initialization");
+        Logger::normal(getClassName(), "End initialization");
         return m_isInitalized;
     }
 
     virtual bool finalize() final
     {
-        Logger::info(getClassName(), "Start finalization");
+        Logger::normal(getClassName(), "Start finalization");
         m_isFinalized = onFinalization();
-        Logger::info(getClassName(), "End finalization");
+        Logger::normal(getClassName(), "End finalization");
         return m_isFinalized;
     }
 
@@ -72,7 +72,7 @@ protected:
 
     void ready()
     {
-        Logger::info(getClassName(), "Ready");
+        Logger::normal(getClassName(), "Ready");
         m_isReady = true;
     }
 

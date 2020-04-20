@@ -18,6 +18,7 @@
 
 #include "client/ApplicationManager.h"
 #include "client/NotificationManager.h"
+#include "client/SessionManager.h"
 #include "util/Logger.h"
 
 #define NAME    "LunaManager"
@@ -74,6 +75,7 @@ void LunaManager::initialize(GMainLoop* mainloop)
 
     ApplicationManager::getInstance().initialize(&m_newHandle);
     NotificationManager::getInstance().initialize(&m_newHandle);
+    SessionManager::getInstance().initialize(&m_newHandle);
 }
 
 void LunaManager::signalLevelChanged(string prev, string cur)

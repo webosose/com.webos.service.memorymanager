@@ -25,6 +25,7 @@
 
 #include "luna/LunaManager.h"
 #include "util/Logger.h"
+#include "util/JValueUtil.h"
 
 using namespace std;
 using namespace pbnjson;
@@ -32,8 +33,24 @@ using namespace LS;
 
 class AbsClient {
 public:
-    AbsClient(string name)
-        : m_name(name),
+    static bool onStatusChange(LSHandle *sh, LSMessage *reply, void *ctx)
+    {
+        LS::Message response(reply);
+        JValue subscriptionPayload = JDomParser::fromString(response.getPayload());
+        AbsClient* client = (AbsClient*)ctx;
+
+        bool connected = true;
+        if (JValueUtil::getValue(subscriptionPayload, "connected", connected)) {
+            client->m_isConnected = connected;
+            client->onStatusChange(connected);
+        }
+        return true;
+    }
+
+    AbsClient(string serviceName, const string& sessionId = "")
+        : m_serviceName(serviceName),
+          m_sessionId(sessionId),
+          m_isConnected(false),
           m_handle(nullptr),
           m_timeout(5000)
     {
@@ -42,21 +59,23 @@ public:
 
     virtual ~AbsClient()
     {
-        try {
-            if (m_serverStatus) {
-                m_serverStatus.cancel();
-            }
-        } catch (const LS::Error& e) {
-        }
+        m_serverStatus.cancel();
     }
 
     virtual void initialize(Handle* handle)
     {
-        if (m_serverStatus) {
-            m_serverStatus.cancel();
-        }
-        m_serverStatus = handle->registerServerStatus(m_name.c_str(),
-                                                      bind(&AbsClient::onStatusChange, this, std::placeholders::_1));
+        m_serverStatus.cancel();
+
+        JValue requestPayload = pbnjson::Object();
+        requestPayload.put("serviceName", m_serviceName);
+        if (!m_sessionId.empty())
+            requestPayload.put("sessionId", m_sessionId);
+        m_serverStatus = handle->callMultiReply(
+                "luna://com.webos.service.bus/signal/registerServerStatus",
+                requestPayload.stringify().c_str(),
+                onStatusChange,
+                this
+        );
         m_handle = handle;
     }
 
@@ -65,9 +84,9 @@ public:
 
     bool callSync(string key, JValue& callPayload, JValue& returnPayload)
     {
-        string url = "luna://" + m_name + "/" + key;
+        string url = "luna://" + m_serviceName + "/" + key;
 
-        LunaManager::getInstace().logCall(url, callPayload);
+        LunaManager::getInstance().logCall(url, callPayload);
         auto call = m_handle->callOneReply(
             url.c_str(),
             callPayload.stringify().c_str()
@@ -82,17 +101,17 @@ public:
             return false;
         }
         returnPayload = JDomParser::fromString(reply.getPayload());
-        LunaManager::getInstace().logReturn(reply, returnPayload);
+        LunaManager::getInstance().logReturn(reply, returnPayload);
         return true;
     }
 
     bool subscribe(Call& call, string key, JValue& requestPayload, LSFilterFunc callback)
     {
-        string url = "luna://" + m_name + "/" + key;
+        string url = "luna://" + m_serviceName + "/" + key;
 
         call.cancel();
         try {
-            LunaManager::getInstace().logCall(url, requestPayload);
+            LunaManager::getInstance().logCall(url, requestPayload);
             call = m_handle->callMultiReply(
                 url.c_str(),
                 requestPayload.stringify().c_str()
@@ -100,24 +119,26 @@ public:
             call.continueWith(callback, this);
         }
         catch (const LS::Error &e) {
-            Logger::error(string(e.what()), m_name);
+            Logger::error(string(e.what()), m_serviceName);
             return false;
         }
         return true;
     }
 
-    string& getName()
+    string& getServiceName()
     {
-        return m_name;
+        return m_serviceName;
     }
 
 protected:
-    string m_name;
+    string m_serviceName;
+    string m_sessionId;
+    bool m_isConnected;
     Handle *m_handle;
     int m_timeout;
 
 private:
-    ServerStatus m_serverStatus;
+    Call m_serverStatus;
 
 };
 

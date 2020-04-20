@@ -24,6 +24,7 @@
 
 #include "base/Application.h"
 #include "interface/IManager.h"
+#include "interface/ISingleton.h"
 #include "luna/service/OldHandle.h"
 #include "luna/service/NewHandle.h"
 #include "setting/SettingManager.h"
@@ -52,13 +53,10 @@ public:
 
 };
 
-class LunaManager : public IManager<LunaManagerListener> {
+class LunaManager : public IManager<LunaManagerListener>,
+                    public ISingleton<LunaManager> {
+friend class ISingleton<LunaManager>;
 public:
-    static LunaManager& getInstace()
-    {
-        static LunaManager s_instance;
-        return s_instance;
-    }
     virtual ~LunaManager();
 
     // IManager

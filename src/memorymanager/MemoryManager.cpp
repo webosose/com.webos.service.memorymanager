@@ -22,8 +22,8 @@
 #define LOG_NAME "MemoryManager"
 
 MemoryManager::MemoryManager()
-    : m_tickSrc(-1)
-    , m_lock(false)
+    : m_tickSrc(-1),
+      m_lock(false)
 {
     m_mainloop = g_main_loop_new(NULL, FALSE);
 }
@@ -36,14 +36,15 @@ MemoryManager::~MemoryManager()
 void MemoryManager::initialize()
 {
     SettingManager::getInstance().initialize(m_mainloop);
-    LunaManager::getInstace().initialize(m_mainloop);
+    LunaManager::getInstance().initialize(m_mainloop);
     MemoryInfoManager::getInstance().initialize(m_mainloop);
     SwapManager::getInstance().initialize(m_mainloop);
 
     SettingManager::getInstance().setListener(this);
-    LunaManager::getInstace().setListener(this);
+    LunaManager::getInstance().setListener(this);
     MemoryInfoManager::getInstance().setListener(this);
     ApplicationManager::getInstance().setListener(this);
+    SessionManager::getInstance().setListener(this);
 }
 
 void MemoryManager::run()
@@ -96,8 +97,8 @@ bool MemoryManager::onManagerStatus(JValue& responsePayload)
 
 void MemoryManager::onEnter(enum MemoryLevel prev, enum MemoryLevel cur)
 {
-    LunaManager::getInstace().postMemoryStatus();
-    LunaManager::getInstace().signalLevelChanged(MemoryInfoManager::toString(prev), MemoryInfoManager::toString(cur));
+    LunaManager::getInstance().postMemoryStatus();
+    LunaManager::getInstance().signalLevelChanged(MemoryInfoManager::toString(prev), MemoryInfoManager::toString(cur));
 
     switch (cur) {
     case MemoryLevel_NORMAL:
@@ -140,5 +141,10 @@ void MemoryManager::onCritical()
 
 void MemoryManager::onApplicationsChanged()
 {
-    LunaManager::getInstace().postMemoryStatus();
+    LunaManager::getInstance().postMemoryStatus();
+}
+
+void MemoryManager::onSessionChanged(JValue& subscriptionPayload)
+{
+    cout << subscriptionPayload.stringify("    ") << endl;
 }

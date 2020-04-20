@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2018-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,8 @@
 #include "NotificationManager.h"
 #include "util/Logger.h"
 
-const string NotificationManager::NAME = "com.webos.notification";
-
 NotificationManager::NotificationManager()
-    : AbsClient(NAME),
-      m_isConnected(false)
+    : AbsClient("com.webos.notification")
 {
 }
 
@@ -32,21 +29,31 @@ NotificationManager::~NotificationManager()
 
 bool NotificationManager::onStatusChange(bool isConnected)
 {
-    m_isConnected = isConnected;
+    return true;
+}
+
+bool NotificationManager::onCreateToast(LSHandle *sh, LSMessage *reply, void *ctx)
+{
     return true;
 }
 
 void NotificationManager::createToast(string message)
 {
     if (!m_isConnected) {
-        Logger::error("Notification service is not running", NAME);
+        Logger::error("Notification service is not running", m_serviceName);
         return;
     }
-    JValue callPayload = pbnjson::Object();
-    // TODO: sourceId is duplicated with NewHandle class
-    callPayload.put("sourceId", "com.webos.service.memorymanager");
-    callPayload.put("message", message);
+    JValue requestPayload = pbnjson::Object();
+    requestPayload.put("sourceId", "com.webos.service.memorymanager");
+    requestPayload.put("message", message);
 
-    JValue returnPayload;
-    callSync("createToast", callPayload, returnPayload);
+    LSCallOneReply(
+        m_handle->get(),
+        "luna://com.webos.notification/createToast",
+        requestPayload.stringify().c_str(),
+        onCreateToast,
+        this,
+        nullptr,
+        nullptr
+    );
 }

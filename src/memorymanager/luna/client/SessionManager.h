@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,35 +14,47 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef LUNA_CLIENT_NOTIFICATIONMANAGER_H_
-#define LUNA_CLIENT_NOTIFICATIONMANAGER_H_
+#ifndef LUNA_CLIENT_SESSIONMANAGER_H_
+#define LUNA_CLIENT_SESSIONMANAGER_H_
 
 #include "AbsClient.hpp"
 
 #include <iostream>
 #include <pbnjson.hpp>
+#include <luna-service2/lunaservice.hpp>
 
+#include "interface/IListener.h"
 #include "interface/ISingleton.h"
 
 using namespace std;
 using namespace pbnjson;
+using namespace LS;
 
-class NotificationManager : public AbsClient,
-                            public ISingleton<NotificationManager> {
-friend class ISingleton<NotificationManager>;
+class SessionManagerListener {
 public:
-    virtual ~NotificationManager();
+    SessionManagerListener() {};
+    virtual ~SessionManagerListener() {};
 
-    void createToast(string message);
+    virtual void onSessionChanged(JValue& subscriptionPayload) = 0;
+
+};
+
+class SessionManager : public AbsClient,
+                       public IListener<SessionManagerListener>,
+                       public ISingleton<SessionManager> {
+friend class ISingleton<SessionManager>;
+public:
+    SessionManager();
+    virtual ~SessionManager();
 
 protected:
     virtual bool onStatusChange(bool isConnected) override;
 
 private:
-    static bool onCreateToast(LSHandle *sh, LSMessage *reply, void *ctx);
+    static bool onGetSessionList(LSHandle *sh, LSMessage *reply, void *ctx);
 
-    NotificationManager();
+    Call m_getSessionList;
 
 };
 
-#endif /* LUNA_CLIENT_NOTIFICATIONMANAGER_H_ */
+#endif /* LUNA_CLIENT_SESSIONMANAGER_H_ */

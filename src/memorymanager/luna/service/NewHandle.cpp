@@ -66,9 +66,9 @@ bool NewHandle::getManagerEvent(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().getManagerEvent(request, requestPayload, responsePayload);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().getManagerEvent(request, requestPayload, responsePayload);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -81,9 +81,9 @@ bool NewHandle::getMemoryStatus(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().getMemoryStatus(request, requestPayload, responsePayload);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().getMemoryStatus(request, requestPayload, responsePayload);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -96,9 +96,9 @@ bool NewHandle::requireMemory(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().requireMemory(request, requestPayload, responsePayload);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().requireMemory(request, requestPayload, responsePayload);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;

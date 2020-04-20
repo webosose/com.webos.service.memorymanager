@@ -21,6 +21,7 @@
 #include <pbnjson.hpp>
 
 #include "interface/IManager.h"
+#include "interface/ISingleton.h"
 
 using namespace std;
 using namespace pbnjson;
@@ -32,15 +33,10 @@ public:
 
 };
 
-class SettingManager : public IManager<SettingManagerListener> {
+class SettingManager : public IManager<SettingManagerListener>,
+                       public ISingleton<SettingManager> {
+friend class ISingleton<SettingManager>;
 public:
-    static SettingManager& getInstance()
-    {
-        static SettingManager s_instance;
-        return s_instance;
-
-    }
-
     virtual ~SettingManager();
 
     // IManager

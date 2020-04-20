@@ -25,6 +25,8 @@
 
 #include "AbsClient.hpp"
 #include "interface/IPrintable.h"
+#include "interface/ISingleton.h"
+#include "interface/IListener.h"
 #include "base/RunningList.h"
 
 using namespace std;
@@ -37,17 +39,14 @@ public:
     virtual ~ApplicationManagerListener() {};
 
     virtual void onApplicationsChanged() = 0;
-
 };
 
-class ApplicationManager : public AbsClient, public IPrintable {
+class ApplicationManager : public AbsClient,
+                           public ISingleton<ApplicationManager>,
+                           public IListener<ApplicationManagerListener>,
+                           public IPrintable {
+friend class ISingleton<ApplicationManager>;
 public:
-    static ApplicationManager& getInstance()
-    {
-        static ApplicationManager s_instance;
-        return s_instance;
-    }
-
     virtual ~ApplicationManager();
 
     // public
@@ -66,13 +65,11 @@ public:
     virtual void print(JValue& json);
 
 private:
-    static const string NAME;
-
     static const int CONTEXT_NOT_EXIST = 0;
     static const int CONTEXT_EXIST = 1;
 
-    static bool _getAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx);
-    static bool _running(LSHandle *sh, LSMessage *reply, void *ctx);
+    static bool onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx);
+    static bool onRunning(LSHandle *sh, LSMessage *reply, void *ctx);
 
     ApplicationManager();
 
@@ -91,7 +88,6 @@ private:
     Call m_getAppLifeEventsCall;
     Call m_runningCall;
 
-    ApplicationManagerListener* m_listener;
 };
 
 #endif /* LUNA_CLIENT_APPLICATIONMANAGER_H_ */
