@@ -16,14 +16,14 @@
 
 #include "MemoryManager.h"
 
-#include "luna/client/ApplicationManager.h"
+#include "luna/client/SAM.h"
 #include "util/Logger.h"
 
 #define LOG_NAME "MemoryManager"
 
 MemoryManager::MemoryManager()
-    : m_tickSrc(-1)
-    , m_lock(false)
+    : m_tickSrc(-1),
+      m_lock(false)
 {
     m_mainloop = g_main_loop_new(NULL, FALSE);
 }
@@ -36,14 +36,12 @@ MemoryManager::~MemoryManager()
 void MemoryManager::initialize()
 {
     SettingManager::getInstance().initialize(m_mainloop);
-    LunaManager::getInstace().initialize(m_mainloop);
+    LunaManager::getInstance().initialize(m_mainloop);
     MemoryInfoManager::getInstance().initialize(m_mainloop);
     SwapManager::getInstance().initialize(m_mainloop);
 
-    SettingManager::getInstance().setListener(this);
-    LunaManager::getInstace().setListener(this);
+    LunaManager::getInstance().setListener(this);
     MemoryInfoManager::getInstance().setListener(this);
-    ApplicationManager::getInstance().setListener(this);
 }
 
 void MemoryManager::run()
@@ -70,7 +68,7 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
             return true;
         }
 
-        if (!ApplicationManager::getInstance().closeApp(true, errorText)) {
+        if (!SAM::close(true, errorText)) {
             return false;
         }
 
@@ -85,7 +83,7 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 bool MemoryManager::onMemoryStatus(JValue& responsePayload)
 {
     MemoryInfoManager::getInstance().print(responsePayload);
-    ApplicationManager::getInstance().print(responsePayload);
+    SAM::print(responsePayload);
     return true;
 }
 
@@ -96,8 +94,8 @@ bool MemoryManager::onManagerStatus(JValue& responsePayload)
 
 void MemoryManager::onEnter(enum MemoryLevel prev, enum MemoryLevel cur)
 {
-    LunaManager::getInstace().postMemoryStatus();
-    LunaManager::getInstace().signalLevelChanged(MemoryInfoManager::toString(prev), MemoryInfoManager::toString(cur));
+    LunaManager::getInstance().postMemoryStatus();
+    LunaManager::getInstance().signalLevelChanged(MemoryInfoManager::toString(prev), MemoryInfoManager::toString(cur));
 
     switch (cur) {
     case MemoryLevel_NORMAL:
@@ -120,7 +118,7 @@ void MemoryManager::onLow()
         return;
     m_lock = true;
     string errorText = "";
-    if (!ApplicationManager::getInstance().closeApp(false, errorText)) {
+    if (!SAM::close(false, errorText)) {
         Logger::error(errorText, LOG_NAME);
     }
     m_lock = false;
@@ -132,13 +130,8 @@ void MemoryManager::onCritical()
         return;
     m_lock = true;
     string errorText = "";
-    if (!ApplicationManager::getInstance().closeApp(true, errorText)) {
+    if (!SAM::close(true, errorText)) {
         Logger::error(errorText, LOG_NAME);
     }
     m_lock = false;
-}
-
-void MemoryManager::onApplicationsChanged()
-{
-    LunaManager::getInstace().postMemoryStatus();
 }

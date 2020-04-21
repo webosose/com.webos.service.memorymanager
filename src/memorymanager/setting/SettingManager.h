@@ -21,26 +21,14 @@
 #include <pbnjson.hpp>
 
 #include "interface/IManager.h"
+#include "interface/ISingleton.h"
 
 using namespace std;
 using namespace pbnjson;
 
-class SettingManagerListener {
+class SettingManager : public ISingleton<SettingManager> {
+friend class ISingleton<SettingManager>;
 public:
-    SettingManagerListener() {};
-    virtual ~SettingManagerListener() {};
-
-};
-
-class SettingManager : public IManager<SettingManagerListener> {
-public:
-    static SettingManager& getInstance()
-    {
-        static SettingManager s_instance;
-        return s_instance;
-
-    }
-
     virtual ~SettingManager();
 
     // IManager
@@ -58,6 +46,10 @@ public:
 
     bool isVerbose();
     bool isSingleAppPolicy();
+    bool isSessionEnabled()
+    {
+        return m_isSessionEnabled;
+    }
 
     bool setSetting(JValue& value, JValue& local);
     JValue getSetting(initializer_list<const char*> list);
@@ -72,7 +64,9 @@ private:
     SettingManager();
 
     static const string DEFAULT_CONFIG_FILE;
+
     JValue m_configuration;
+    bool m_isSessionEnabled;
 };
 
 #endif /* SETTING_SETTINGMANAGER_H_ */

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,30 +14,32 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef LUNA_CLIENT_NOTIFICATIONMANAGER_H_
-#define LUNA_CLIENT_NOTIFICATIONMANAGER_H_
-
-#include "AbsClient.hpp"
+#ifndef INTERFACE_ILISTENER_H_
+#define INTERFACE_ILISTENER_H_
 
 #include <iostream>
-#include <pbnjson.hpp>
-
-#include "interface/ISingleton.h"
 
 using namespace std;
-using namespace pbnjson;
 
-class NotificationManager {
+template <class T>
+class IListener {
 public:
-    NotificationManager() {};
-    virtual ~NotificationManager() {};
+    IListener() : m_listener(nullptr) {};
+    virtual ~IListener() {};
 
-    static void createToast(string message, const string& sessionId);
+    void setListener(T* listener)
+    {
+        m_listener = listener;
+    }
 
-private:
-    static bool onCreateToast(LSHandle *sh, LSMessage *reply, void *ctx);
+    T* getListener()
+    {
+        return m_listener;
+    }
 
+protected:
+    T* m_listener;
 
 };
 
-#endif /* LUNA_CLIENT_NOTIFICATIONMANAGER_H_ */
+#endif /* INTERFACE_ILISTENER_H_ */

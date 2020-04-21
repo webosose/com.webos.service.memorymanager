@@ -25,18 +25,31 @@ RunningList::~RunningList()
 {
 }
 
-void RunningList::setContext(int context)
+void RunningList::setContext(int context, const string& sessionId)
 {
     for (auto it = m_applications.begin(); it != m_applications.end(); ++it) {
-        it->setContext(context);
+        if(it->getSessionId() == sessionId)
+            it->setContext(context);
     }
 }
 
-void RunningList::removeContext(int context)
+void RunningList::removeByContext(int context)
 {
     auto it = m_applications.begin();
     while (it != m_applications.end()) {
         if (it->getContext() == context) {
+            it = m_applications.erase(it);
+        }
+        else
+            ++it;
+    }
+}
+
+void RunningList::removeBySessionId(const string& sessionId)
+{
+    auto it = m_applications.begin();
+    while (it != m_applications.end()) {
+        if (it->getSessionId() == sessionId) {
             it = m_applications.erase(it);
         }
         else

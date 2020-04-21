@@ -17,7 +17,7 @@
 #include "OldHandle.h"
 
 #include "luna/LunaManager.h"
-#include "luna/client/ApplicationManager.h"
+#include "luna/client/SAM.h"
 #include "util/Logger.h"
 
 const string OldHandle::NAME_SERVICE = "com.webos.memorymanager";
@@ -64,8 +64,8 @@ void OldHandle::sendThresholdChangedSignal(string& prev, string& cur)
     pbnjson::JValue signalPayload = pbnjson::Object();
     signalPayload.put("previous", prev);
     signalPayload.put("current", cur);
-    signalPayload.put("foregroundAppId", ApplicationManager::getInstance().getForegroundAppId());
-    signalPayload.put("remainCount", ApplicationManager::getInstance().getRunningAppCount());
+    signalPayload.put("foregroundAppId", SAM::getForegroundAppId());
+    signalPayload.put("remainCount", SAM::getRunningAppCount());
 
     this->sendSignal(uri.c_str(), signalPayload.stringify().c_str(), false);
 }
@@ -77,7 +77,7 @@ bool OldHandle::getCloseAppId(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
 
     if (requestPayload.hasKey("appType") && requestPayload["appType"].asString() == "web") {
         requestPayload.put("type", "killingWeb");
@@ -86,8 +86,8 @@ bool OldHandle::getCloseAppId(LSMessage &message)
     } else if (requestPayload.hasKey("appType") && requestPayload["appType"].asString() == "all") {
         requestPayload.put("type", "killingAll");
     }
-    LunaManager::getInstace().getManagerEvent(request, requestPayload, responsePayload);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().getManagerEvent(request, requestPayload, responsePayload);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -100,9 +100,9 @@ bool OldHandle::getCustomThreshold(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().replyError(responsePayload, ErrorCode_UnsupportedAPI);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().replyError(responsePayload, ErrorCode_UnsupportedAPI);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -114,9 +114,9 @@ bool OldHandle::getCurrentMemState(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().getMemoryStatus(request, requestPayload, responsePayload);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().getMemoryStatus(request, requestPayload, responsePayload);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -130,9 +130,9 @@ bool OldHandle::setRequiredMemory(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().requireMemory(request, requestPayload, responsePayload);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().requireMemory(request, requestPayload, responsePayload);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -145,9 +145,9 @@ bool OldHandle::getGroupInfo(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().replyError(responsePayload, ErrorCode_UnsupportedAPI);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().replyError(responsePayload, ErrorCode_UnsupportedAPI);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -160,9 +160,9 @@ bool OldHandle::getPolicy(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().replyError(responsePayload, ErrorCode_UnsupportedAPI);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().replyError(responsePayload, ErrorCode_UnsupportedAPI);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -175,9 +175,9 @@ bool OldHandle::getUnitList(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().replyError(responsePayload, ErrorCode_UnsupportedAPI);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().replyError(responsePayload, ErrorCode_UnsupportedAPI);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -190,9 +190,9 @@ bool OldHandle::startMemNotifier(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().replyError(responsePayload, ErrorCode_UnsupportedAPI);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().replyError(responsePayload, ErrorCode_UnsupportedAPI);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -205,9 +205,9 @@ bool OldHandle::sendLowMemPopupTest(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().replyError(responsePayload, ErrorCode_UnsupportedAPI);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().replyError(responsePayload, ErrorCode_UnsupportedAPI);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -220,9 +220,9 @@ bool OldHandle::getEFS(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().replyError(responsePayload, ErrorCode_UnsupportedAPI);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().replyError(responsePayload, ErrorCode_UnsupportedAPI);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;
@@ -235,9 +235,9 @@ bool OldHandle::setMriHelper(LSMessage &message)
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
 
-    LunaManager::getInstace().logRequest(request, requestPayload, NAME_SERVICE);
-    LunaManager::getInstace().replyError(responsePayload, ErrorCode_UnsupportedAPI);
-    LunaManager::getInstace().logResponse(request, responsePayload, NAME_SERVICE);
+    LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
+    LunaManager::getInstance().replyError(responsePayload, ErrorCode_UnsupportedAPI);
+    LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
 
     request.respond(responsePayload.stringify().c_str());
     return true;

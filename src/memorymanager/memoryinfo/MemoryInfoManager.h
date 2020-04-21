@@ -21,6 +21,7 @@
 #include <fstream>
 
 #include "interface/IManager.h"
+#include "interface/ISingleton.h"
 #include "interface/IPrintable.h"
 
 using namespace std;
@@ -41,15 +42,12 @@ public :
     virtual void onCritical() = 0;
 };
 
-class MemoryInfoManager : public IManager<MemoryInfoManagerListener>, public IPrintable {
+class MemoryInfoManager : public IManager<MemoryInfoManagerListener>,
+                          public ISingleton<MemoryInfoManager>,
+                          public IPrintable {
+friend class ISingleton<MemoryInfoManager>;
 public:
     static string toString(enum MemoryLevel level);
-
-    static MemoryInfoManager& getInstance()
-    {
-        static MemoryInfoManager s_instance;
-        return s_instance;
-    }
 
     virtual ~MemoryInfoManager();
 

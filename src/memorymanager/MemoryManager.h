@@ -21,24 +21,19 @@
 #include <glib.h>
 
 #include "luna/LunaManager.h"
-#include "luna/client/ApplicationManager.h"
+#include "luna/client/SAM.h"
+#include "luna/client/SessionManager.h"
 #include "memoryinfo/MemoryInfoManager.h"
 #include "setting/SettingManager.h"
 #include "swap/SwapManager.h"
 
 using namespace std;
 
-class MemoryManager : public SettingManagerListener,
+class MemoryManager : public ISingleton<MemoryManager>,
                       public LunaManagerListener,
-                      public MemoryInfoManagerListener,
-                      public ApplicationManagerListener {
+                      public MemoryInfoManagerListener {
+friend class ISingleton<MemoryManager>;
 public:
-    static MemoryManager& getInstance()
-    {
-        static MemoryManager s_instance;
-        return s_instance;
-    }
-
     virtual ~MemoryManager();
 
     void initialize();
@@ -56,9 +51,6 @@ public:
     virtual void onEnter(enum MemoryLevel prev, enum MemoryLevel cur);
     virtual void onLow();
     virtual void onCritical();
-
-    // ApplicationManagerListener
-    virtual void onApplicationsChanged();
 
 private:
     static gboolean tick(gpointer user_data)

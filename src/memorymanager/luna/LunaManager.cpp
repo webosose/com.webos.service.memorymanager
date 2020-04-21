@@ -16,8 +16,9 @@
 
 #include "LunaManager.h"
 
-#include "client/ApplicationManager.h"
 #include "client/NotificationManager.h"
+#include "client/SAM.h"
+#include "client/SessionManager.h"
 #include "util/Logger.h"
 
 #define NAME    "LunaManager"
@@ -72,8 +73,43 @@ void LunaManager::initialize(GMainLoop* mainloop)
     m_managerEventKillingWeb.setServiceHandle(&m_oldHandle);
     m_managerEventKillingNative.setServiceHandle(&m_oldHandle);
 
-    ApplicationManager::getInstance().initialize(&m_newHandle);
-    NotificationManager::getInstance().initialize(&m_newHandle);
+    if (!SettingManager::getInstance().isSessionEnabled()) {
+        SAM::subscribe();
+    } else {
+        SessionManager::getInstance().initialize(&m_newHandle);
+        SessionManager::getInstance().setListener(this);
+    }
+}
+
+void LunaManager::onSessionChanged(JValue& subscriptionPayload)
+{
+    JValue sessionList = pbnjson::Array();
+
+    // mark sessionId as removed
+    for (auto it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+        it->second = false;
+    }
+
+    JValueUtil::getValue(subscriptionPayload, "sessionList", sessionList);
+    for (JValue session : sessionList.items()) {
+        string sessionId = "";
+        if (!JValueUtil::getValue(session, "sessionId", sessionId)) continue;
+
+        if (m_sessions.find(sessionId) == m_sessions.end()) {
+            m_sessions[sessionId] = true;
+            SAM::subscribe(sessionId);
+        }
+    }
+
+    // deleted removed sessionId
+    for (auto it = m_sessions.cbegin(); it != m_sessions.cend();) {
+      if (it->second == false) {
+          m_sessions.erase(it++);
+          SAM::unsubscribe(it->first);
+      } else {
+        ++it;
+      }
+    }
 }
 
 void LunaManager::signalLevelChanged(string prev, string cur)

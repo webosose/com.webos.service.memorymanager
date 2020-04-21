@@ -24,6 +24,10 @@
 
 #include "base/Application.h"
 #include "interface/IManager.h"
+#include "interface/ISingleton.h"
+#include "luna/client/NotificationManager.h"
+#include "luna/client/SAM.h"
+#include "luna/client/SessionManager.h"
 #include "luna/service/OldHandle.h"
 #include "luna/service/NewHandle.h"
 #include "setting/SettingManager.h"
@@ -52,17 +56,18 @@ public:
 
 };
 
-class LunaManager : public IManager<LunaManagerListener> {
+class LunaManager : public IManager<LunaManagerListener>,
+                    public ISingleton<LunaManager>,
+                    public SessionManagerListener {
+friend class ISingleton<LunaManager>;
 public:
-    static LunaManager& getInstace()
-    {
-        static LunaManager s_instance;
-        return s_instance;
-    }
     virtual ~LunaManager();
 
     // IManager
     void initialize(GMainLoop* mainloop);
+
+    // SessionManagerListener
+    virtual void onSessionChanged(JValue& subscriptionPayload) override;
 
     // Signal
     void signalLevelChanged(string prev, string cur);
@@ -83,6 +88,11 @@ public:
     void logCall(string& url, JValue& callPayload);
     void logReturn(Message& response, JValue& returnPayload);
     void replyError(JValue& response, enum ErrorCode code);
+
+    Handle& getHandle()
+    {
+        return m_newHandle;
+    }
 
 private:
     static const string toString(enum ErrorCode code);
@@ -106,6 +116,7 @@ private:
     SubscriptionPoint m_managerEventKillingWeb;
     SubscriptionPoint m_managerEventKillingNative;
 
+    map<string, bool> m_sessions;
 };
 
 #endif /* LUNA_LUNAMANAGER_H_ */

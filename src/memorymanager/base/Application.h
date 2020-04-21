@@ -79,6 +79,16 @@ public:
     virtual ~Application();
 
     // setter / getter
+    void setSessionId(const string& sessionId)
+    {
+        m_sessionId = sessionId;
+    }
+
+    const string& getSessionId() const
+    {
+        return m_sessionId;
+    }
+
     void setAppId(const string& appId)
     {
         m_appId = appId;
@@ -167,6 +177,7 @@ public:
     virtual void print(JValue& json);
 
 private:
+    string m_sessionId;
     string m_appId;
     string m_instanceId;
     string m_type;
