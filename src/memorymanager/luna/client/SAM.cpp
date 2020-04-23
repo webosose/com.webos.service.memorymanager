@@ -126,7 +126,7 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *reply, void *ctx)
 void SAM::subscribe(const string& sessionId)
 {
     JValue requestPayload = pbnjson::Object();
-    requestPayload.put("subscribe", true);
+    JValueUtil::putValue(requestPayload, "subscribe", true);
 
     if (sessionId.empty()) {
         LSCall(
@@ -203,11 +203,13 @@ bool SAM::close(bool includeForeground, string& errorText)
     }
 
     JValue requestPayload = pbnjson::Object();
-    if (!application.getInstanceId().empty())
-        requestPayload.put("instanceId", application.getInstanceId());
-    if (!application.getAppId().empty())
-        requestPayload.put("id", application.getAppId());
-    requestPayload.put("tryToMakeScreenshot", true);
+    if (!application.getInstanceId().empty()) {
+        JValueUtil::putValue(requestPayload, "instanceId", application.getInstanceId());
+    }
+    if (!application.getAppId().empty()) {
+        JValueUtil::putValue(requestPayload, "id", application.getAppId());
+    }
+    JValueUtil::putValue(requestPayload, "tryToMakeScreenshot", true);
 
     LS::Call call;
 #if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)

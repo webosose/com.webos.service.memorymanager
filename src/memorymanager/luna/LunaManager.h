@@ -52,7 +52,7 @@ public:
     virtual ~LunaManagerListener() {};
 
     virtual bool onRequireMemory(int requiredMemory, string& errorText) = 0;
-    virtual bool onMemoryStatus(JValue& responsePayload) = 0;
+    virtual void onMemoryStatus(JValue& responsePayload) = 0;
 
 };
 
@@ -96,13 +96,6 @@ public:
 
 private:
     static const string toString(enum ErrorCode code);
-
-    bool handleRequired(JValue& requestPayload, JValue& responsePayload, string key, string& value);
-    bool handleRequired(JValue& requestPayload, JValue& responsePayload, string key, int& value);
-    bool handleRequired(JValue& requestPayload, JValue& responsePayload, string key, bool& value);
-    bool handleOptional(JValue& requestPayload, JValue& responsePayload, string key, string& value);
-    bool handleOptional(JValue& requestPayload, JValue& responsePayload, string key, int& value);
-    bool handleOptional(JValue& requestPayload, JValue& responsePayload, string key, bool& value);
 
     LunaManager();
 

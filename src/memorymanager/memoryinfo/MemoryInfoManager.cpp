@@ -17,6 +17,7 @@
 #include "MemoryInfoManager.h"
 
 #include "setting/SettingManager.h"
+#include "util/JValueUtil.h"
 #include "util/Logger.h"
 #include "util/Proc.h"
 
@@ -137,21 +138,22 @@ void MemoryInfoManager::print()
 void MemoryInfoManager::print(JValue& json)
 {
     JValue current = pbnjson::Object();
-    current.put("level", toString(m_level));
-    current.put("total", (int)m_total);
-    current.put("free", (int)m_free);
-    json.put("system", current);
+    JValueUtil::putValue(current, "level", toString(m_level));
+    JValueUtil::putValue(current, "total", (int)m_total);
+    JValueUtil::putValue(current, "free", (int)m_free);
+    JValueUtil::putValue(json, "system", current);
 
     JValue low = pbnjson::Object();
-    low.put("enter", SettingManager::getInstance().getLowEnter());
-    low.put("exit", SettingManager::getInstance().getLowExit());
+    JValueUtil::putValue(low, "enter", SettingManager::getInstance().getLowEnter());
+    JValueUtil::putValue(low, "exit", SettingManager::getInstance().getLowExit());
 
     JValue critical = pbnjson::Object();
-    critical.put("enter", SettingManager::getInstance().getCriticalEnter());
-    critical.put("exit", SettingManager::getInstance().getCriticalExit());
+    JValueUtil::putValue(critical, "enter", SettingManager::getInstance().getCriticalEnter());
+    JValueUtil::putValue(critical, "exit", SettingManager::getInstance().getCriticalExit());
 
     JValue threshold = pbnjson::Object();
-    threshold.put("low", low);
-    threshold.put("critical", critical);
-    json.put("threshold", threshold);
+    JValueUtil::putValue(threshold, "low", low);
+    JValueUtil::putValue(threshold, "critical", critical);
+    JValueUtil::putValue(json, "threshold", threshold);
+
 }

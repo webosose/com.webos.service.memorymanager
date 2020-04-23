@@ -1,6 +1,6 @@
 /* @@@LICENSE
  *
- * Copyright (c) 2019 LG Electronics, Inc.
+ * Copyright (c) 2019-2020 LG Electronics, Inc.
  *
  * Confidential computer software. Valid license from LG required for
  * possession, use or copying. Consistent with FAR 12.211 and 12.212,
@@ -154,6 +154,18 @@ bool JValueUtil::getValue(const JValue& json, const string& key, bool& value)
         return false;
     }
     return true;
+}
+
+void JValueUtil::putValue(JValue& json, const string& key, JValue value, bool replace)
+{
+    if (!json)
+        return;
+    if (!replace && json.hasKey(key))
+        return;
+
+    if (json.put(key, value)) {
+        // Nothing to do
+    }
 }
 
 bool JValueUtil::hasKey(const JValue& json, const string& firstKey, const string& secondKey, const string& thirdKey)

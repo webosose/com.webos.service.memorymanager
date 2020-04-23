@@ -72,9 +72,9 @@ public:
         m_serverStatus.cancel();
 
         JValue requestPayload = pbnjson::Object();
-        requestPayload.put("serviceName", m_serviceName);
+        JValueUtil::putValue(requestPayload, "serviceName", m_serviceName);
         if (!m_sessionId.empty())
-            requestPayload.put("sessionId", m_sessionId);
+            JValueUtil::putValue(requestPayload, "sessionId", m_sessionId);
         m_serverStatus = handle->callMultiReply(
                 "luna://com.webos.service.bus/signal/registerServerStatus",
                 requestPayload.stringify().c_str(),

@@ -52,7 +52,9 @@ void MemStay::setFree(bool free)
 
 void MemStay::configure()
 {
-    g_timeout_add(m_interval, _tick, NULL);
+    if (0 <= g_timeout_add(m_interval, _tick, NULL)) {
+        cerr << "[memstay] Failed to configure" << endl;
+    }
 }
 
 gboolean MemStay::_tick(gpointer data)
@@ -60,8 +62,7 @@ gboolean MemStay::_tick(gpointer data)
     long totalMemory;
     long freeMemory;
 
-    if (!Proc::getMemoryInfo(totalMemory, freeMemory))
-        return G_SOURCE_CONTINUE;
+    Proc::getMemoryInfo(totalMemory, freeMemory);
 
     int size = MemStay::getInstance().m_unit * 1024 * 1024;
     void* buffer = NULL;

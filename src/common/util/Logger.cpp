@@ -95,11 +95,11 @@ void Logger::write(const string& msg, const string& name, enum LogLevel level)
     if (level < m_level)
         return;
 
-    string log = "[" + convertLevel(level) + "][" + (name.empty() ? "UNKNOWN" : name)  + "] " + msg;
+    string txt = "[" + convertLevel(level) + "][" + (name.empty() ? "UNKNOWN" : name)  + "] " + msg;
 
     switch (m_type) {
     case LogType_CONSOLE:
-        writeConsole(log, level);
+        writeConsole(txt, level);
         break;
 
     default:
