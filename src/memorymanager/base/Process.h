@@ -44,8 +44,6 @@ public:
         return a.getPss() > b.getPss();
     }
 
-    static bool fromPid(pid_t pid, Process& process);
-
     Process();
     virtual ~Process();
 

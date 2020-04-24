@@ -45,7 +45,7 @@ public:
     // LunaManagerListener
     virtual bool onRequireMemory(int requiredMemory, string& errorText);
     virtual bool onManagerStatus(JValue& responsePayload);
-    virtual bool onMemoryStatus(JValue& responsePayload);
+    virtual void onMemoryStatus(JValue& responsePayload);
 
     // MemoryInfoManagerListener
     virtual void onEnter(enum MemoryLevel prev, enum MemoryLevel cur);

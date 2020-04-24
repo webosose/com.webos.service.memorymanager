@@ -19,6 +19,7 @@
 #include "client/NotificationManager.h"
 #include "client/SAM.h"
 #include "client/SessionManager.h"
+#include "util/JValueUtil.h"
 #include "util/Logger.h"
 
 #define NAME    "LunaManager"
@@ -120,13 +121,12 @@ void LunaManager::signalLevelChanged(string prev, string cur)
 
 void LunaManager::postMemoryStatus()
 {
-    JValue subscriptionResponse = pbnjson::Object();
+    JValue subscriptionPayload = pbnjson::Object();
 
-    if (m_listener->onMemoryStatus(subscriptionResponse)) {
-        subscriptionResponse.put("returnValue", true);
-        subscriptionResponse.put("subscribed", true);
-        m_memoryStatus.post(subscriptionResponse.stringify().c_str());
-    }
+    m_listener->onMemoryStatus(subscriptionPayload);
+    subscriptionPayload.put("returnValue", true);
+    subscriptionPayload.put("subscribed", true);
+    m_memoryStatus.post(subscriptionPayload.stringify().c_str());
 }
 
 void LunaManager::postManagerKillingEvent(Application& application)
@@ -169,8 +169,9 @@ void LunaManager::getManagerEvent(Message& request, JValue& requestPayload, JVal
     string type;
     bool subscribe;
 
-    if (!handleRequired(requestPayload, responsePayload, "type", type) ||
-        !handleRequired(requestPayload, responsePayload, "subscribe", subscribe)) {
+    if (!JValueUtil::getValue(requestPayload, "type", type) ||
+        !JValueUtil::getValue(requestPayload, "subscribe", subscribe)) {
+        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
         return;
     }
 
@@ -198,13 +199,13 @@ void LunaManager::getManagerEvent(Message& request, JValue& requestPayload, JVal
 void LunaManager::requireMemory(Message& request, JValue& requestPayload, JValue& responsePayload)
 {
     int requiredMemory;
-    if (!handleRequired(requestPayload, responsePayload, "requiredMemory", requiredMemory)) {
+    if (!JValueUtil::getValue(requestPayload, "requiredMemory", requiredMemory)) {
+        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
         return;
     }
 
     bool relaunch = false;
-    if (!handleOptional(requestPayload, responsePayload, "relaunch", relaunch))
-        return;
+    JValueUtil::getValue(requestPayload, "relaunch", relaunch);
 
     bool returnValue = true;
     string errorText = "";
@@ -278,58 +279,4 @@ void LunaManager::replyError(JValue& responsePayload, enum ErrorCode code)
 {
     responsePayload.put("errorCode", code);
     responsePayload.put("errorText", toString(code));
-}
-
-bool LunaManager::handleRequired(JValue& requestPayload, JValue& responsePayload, string key, string& value)
-{
-    if (!requestPayload.hasKey(key) || requestPayload[key].asString(value) != CONV_OK) {
-        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
-        return false;
-    }
-    return true;
-}
-
-bool LunaManager::handleRequired(JValue& requestPayload, JValue& responsePayload, string key, int& value)
-{
-    if (!requestPayload.hasKey(key) || requestPayload[key].asNumber(value) != CONV_OK) {
-        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
-        return false;
-    }
-    return true;
-}
-
-bool LunaManager::handleRequired(JValue& requestPayload, JValue& responsePayload, string key, bool& value)
-{
-    if (!requestPayload.hasKey(key) || requestPayload[key].asBool(value) != CONV_OK) {
-        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
-        return false;
-    }
-    return true;
-}
-
-bool LunaManager::handleOptional(JValue& requestPayload, JValue& responsePayload, string key, string& value)
-{
-    if (requestPayload.hasKey(key) && requestPayload[key].asString(value) != CONV_OK) {
-        replyError(responsePayload, ErrorCode_InvalidParametersError);
-        return false;
-    }
-    return true;
-}
-
-bool LunaManager::handleOptional(JValue& requestPayload, JValue& responsePayload, string key, int& value)
-{
-    if (requestPayload.hasKey(key) && requestPayload[key].asNumber(value) != CONV_OK) {
-        replyError(responsePayload, ErrorCode_InvalidParametersError);
-        return false;
-    }
-    return true;
-}
-
-bool LunaManager::handleOptional(JValue& requestPayload, JValue& responsePayload, string key, bool& value)
-{
-    if (requestPayload.hasKey(key) && requestPayload[key].asBool(value) != CONV_OK) {
-        replyError(responsePayload, ErrorCode_InvalidParametersError);
-        return false;
-    }
-    return true;
 }

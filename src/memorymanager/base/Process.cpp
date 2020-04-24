@@ -19,30 +19,15 @@
 
 #define LOG_NAME    "Process"
 
-bool Process::fromPid(pid_t pid, Process& process)
-{
-    PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS | PROC_PID, &pid);
-    if (proc == nullptr)
-        return false;
-
-    proc_t processInfo;
-    memset(&processInfo, 0, sizeof(processInfo));
-    if (readproc(proc, &processInfo) != NULL) {
-        process.fromProc(processInfo);
-    }
-    closeproc(proc);
-    return false;
-}
-
 Process::Process()
-    : m_ppid(-1)
-    , m_tid(-1)
-    , m_cmd("")
-    , m_size(-1)
-    , m_rss(-1)
-    , m_shared(-1)
-    , m_text(-1)
-    , m_data(-1)
+    : m_ppid(-1),
+      m_tid(-1),
+      m_cmd(""),
+      m_size(-1),
+      m_rss(-1),
+      m_shared(-1),
+      m_text(-1),
+      m_data(-1)
 {
 }
 

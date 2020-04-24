@@ -18,11 +18,11 @@
 #include "util/Proc.h"
 
 MemStay::MemStay()
-    : m_target(0)
-    , m_interval(0)
-    , m_unit(0)
-    , m_free(false)
-    , m_allocationSize(0)
+    : m_target(0),
+      m_interval(0),
+      m_unit(0),
+      m_free(false),
+      m_allocationSize(0)
 {
 }
 
@@ -52,7 +52,9 @@ void MemStay::setFree(bool free)
 
 void MemStay::configure()
 {
-    g_timeout_add(m_interval, _tick, NULL);
+    if (g_timeout_add(m_interval, _tick, NULL) <= 0) {
+        cerr << "[memstay] g_timeout_add fails" << endl;
+    }
 }
 
 gboolean MemStay::_tick(gpointer data)
@@ -60,8 +62,7 @@ gboolean MemStay::_tick(gpointer data)
     long totalMemory;
     long freeMemory;
 
-    if (!Proc::getMemoryInfo(totalMemory, freeMemory))
-        return G_SOURCE_CONTINUE;
+    Proc::getMemoryInfo(totalMemory, freeMemory);
 
     int size = MemStay::getInstance().m_unit * 1024 * 1024;
     void* buffer = NULL;
@@ -69,10 +70,13 @@ gboolean MemStay::_tick(gpointer data)
     if (freeMemory > MemStay::getInstance().m_target && freeMemory - MemStay::getInstance().m_unit > 0) {
         buffer = malloc(size);
         if (buffer == NULL) {
-            cerr << "[memstay] Allocation Fails" << endl;
+            cerr << "[memstay] Allocation fails" << endl;
             return TRUE;
         }
-        memset(buffer, 1, size);
+        if (memset(buffer, 1, size) == NULL) {
+            cerr << "[memstay] memset fails" << endl;
+            return TRUE;
+	}
 
         MemStay::getInstance().m_allocationSize += MemStay::getInstance().m_unit;
         MemStay::getInstance().m_allocations.push_back(buffer);
