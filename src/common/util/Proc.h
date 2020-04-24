@@ -32,7 +32,7 @@ public:
     Proc() {}
     virtual ~Proc() {}
 
-    static void getMemoryInfo(long& total, long& available);
+    static bool getMemoryInfo(long& total, long& available);
 };
 
 #endif /* UTIL_PROC_H_ */

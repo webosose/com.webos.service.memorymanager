@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 LG Electronics, Inc.
+// Copyright (c) 2018 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "SettingManager.h"
+#include "util/Logger.h"
 
 #include <glib.h>
 #include <strings.h>
@@ -22,8 +23,6 @@
 #include <pbnjson.h>
 
 #include "Environment.h"
-#include "util/JValueUtil.h"
-#include "util/Logger.h"
 
 #define LOG_NAME "SettingManager"
 
@@ -151,7 +150,7 @@ bool SettingManager::loadSetting(const string filename)
 {
     JValue value = JDomParser::fromFile(filename.c_str());
     if (!value.isValid() || value.isNull()) {
-        Logger::error("Fail Invalid Json formatted file " + filename, LOG_NAME);
+        Logger::error("Fail Invalid Json formmated file " + filename, LOG_NAME);
         return false;
     }
     return setSetting(value, m_configuration);
@@ -159,24 +158,27 @@ bool SettingManager::loadSetting(const string filename)
 
 string SettingManager::getSwapMode()
 {
-    string mode = "";
-    if (!JValueUtil::getValue(m_configuration,"swap", "mode", mode))
+    JValue value = m_configuration["swap"]["mode"];
+    if (value.isNull()) {
         return "";
-    return mode;
+    }
+    return value.asString();
 }
 
 string SettingManager::getSwapPartition()
 {
-    string partition = "";
-    if (!JValueUtil::getValue(m_configuration,"swap", "partition", partition))
+    JValue value = m_configuration["swap"]["partition"];
+    if (value.isNull()) {
         return "";
-    return partition;
+    }
+    return value.asString();
 }
 
 int SettingManager::getSwapSize()
 {
-    int size = 0;
-    if (!JValueUtil::getValue(m_configuration,"swap", "size", size))
+    JValue value = m_configuration["swap"]["size"];
+    if (value.isNull()) {
         return 0;
-    return size;
+    }
+    return value.asNumber<int32_t>();
 }

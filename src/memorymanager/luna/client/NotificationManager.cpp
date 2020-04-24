@@ -27,8 +27,8 @@ bool NotificationManager::onCreateToast(LSHandle *sh, LSMessage *reply, void *ct
 void NotificationManager::createToast(string message, const string& sessionId)
 {
     JValue requestPayload = pbnjson::Object();
-    JValueUtil::putValue(requestPayload, "sourceId", "com.webos.service.memorymanager");
-    JValueUtil::putValue(requestPayload, "message", message);
+    requestPayload.put("sourceId", "com.webos.service.memorymanager");
+    requestPayload.put("message", message);
 
 #if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
     LSCallSessionOneReply(

@@ -53,8 +53,8 @@ void NewHandle::sendLevelChangedSignal(string& prev, string& cur)
     static string uri = "luna://" + NAME_SERVICE + "/" + NAME_SIGNAL + "/" + "levelChanged";
 
     pbnjson::JValue signalPayload = pbnjson::Object();
-    JValueUtil::putValue(signalPayload, "previous", prev);
-    JValueUtil::putValue(signalPayload, "current", cur);
+    signalPayload.put("previous", prev);
+    signalPayload.put("current", cur);
 
     this->sendSignal(uri.c_str(), signalPayload.stringify().c_str(), false);
 }

@@ -41,13 +41,14 @@ bool SessionManager::onStatusChange(bool isConnected)
     m_getSessionList.cancel();
     if (isConnected) {
         JValue requestPayload = pbnjson::Object();
-        JValueUtil::putValue(requestPayload, "subscribe", true);
+        requestPayload.put("subscribe", true);
 
         m_getSessionList = m_handle->callMultiReply(
                 "luna://com.webos.service.sessionmanager/getSessionList",
                 requestPayload.stringify().c_str(),
                 onGetSessionList,
                 this,
+                NULL,
                 NULL
         );
     }

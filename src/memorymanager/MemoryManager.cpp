@@ -80,10 +80,16 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
     return false;
 }
 
-void MemoryManager::onMemoryStatus(JValue& responsePayload)
+bool MemoryManager::onMemoryStatus(JValue& responsePayload)
 {
     MemoryInfoManager::getInstance().print(responsePayload);
     SAM::print(responsePayload);
+    return true;
+}
+
+bool MemoryManager::onManagerStatus(JValue& responsePayload)
+{
+    return true;
 }
 
 void MemoryManager::onEnter(enum MemoryLevel prev, enum MemoryLevel cur)

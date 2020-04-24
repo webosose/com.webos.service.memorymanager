@@ -41,8 +41,6 @@ public:
     static bool getValue(const JValue& json, const string& key, int& value);
     static bool getValue(const JValue& json, const string& key, bool& value);
 
-    static void putValue(JValue& json, const string& key, JValue value, bool replace = true);
-
     static bool hasKey(const JValue& json, const string& firstKey, const string& secondKey = "", const string& thirdKey = "");
 };
 

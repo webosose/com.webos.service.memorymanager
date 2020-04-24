@@ -122,44 +122,46 @@ void LunaManager::postMemoryStatus()
 {
     JValue subscriptionResponse = pbnjson::Object();
 
-    m_listener->onMemoryStatus(subscriptionResponse);
-    JValueUtil::putValue(subscriptionResponse, "returnValue", true);
-    JValueUtil::putValue(subscriptionResponse, "subscribed", true);
-    m_memoryStatus.post(subscriptionResponse.stringify().c_str());
+    if (m_listener->onMemoryStatus(subscriptionResponse)) {
+        subscriptionResponse.put("returnValue", true);
+        subscriptionResponse.put("subscribed", true);
+        m_memoryStatus.post(subscriptionResponse.stringify().c_str());
+    }
 }
 
 void LunaManager::postManagerKillingEvent(Application& application)
 {
-    JValue subscriptionPayload = pbnjson::Object();
-    JValueUtil::putValue(subscriptionPayload, "id", application.getAppId());
-    JValueUtil::putValue(subscriptionPayload, "instanceId", application.getInstanceId());
-    JValueUtil::putValue(subscriptionPayload, "type", "killing");
-    JValueUtil::putValue(subscriptionPayload, "returnValue", true);
-    JValueUtil::putValue(subscriptionPayload, "subscribed", true);
+    JValue subscriptionResponse = pbnjson::Object();
+    subscriptionResponse.put("id", application.getAppId());
+    subscriptionResponse.put("instanceId", application.getInstanceId());
+    subscriptionResponse.put("type", "killing");
+    subscriptionResponse.put("returnValue", true);
+    subscriptionResponse.put("subscribed", true);
 
-    m_managerEventKilling.post(subscriptionPayload.stringify().c_str());
-    m_managerEventKillingAll.post(subscriptionPayload.stringify().c_str());
+    m_managerEventKilling.post(subscriptionResponse.stringify().c_str());
+    m_managerEventKillingAll.post(subscriptionResponse.stringify().c_str());
 
     if (application.getType() == "native" ||
         application.getType() == "native_builtin" ||
         application.getType() == "native_appshell") {
-        m_managerEventKillingNative.post(subscriptionPayload.stringify().c_str());
+        m_managerEventKillingNative.post(subscriptionResponse.stringify().c_str());
     } else if (application.getType() == "web") {
-        m_managerEventKillingWeb.post(subscriptionPayload.stringify().c_str());
+        m_managerEventKillingWeb.post(subscriptionResponse.stringify().c_str());
     }
 }
 
 void LunaManager::getMemoryStatus(Message& request, JValue& requestPayload, JValue& responsePayload)
 {
-    m_listener->onMemoryStatus(responsePayload);
     if (request.isSubscription()) {
         if (m_memoryStatus.subscribe(request)) {
-            JValueUtil::putValue(responsePayload, "subscribed", true);
+            responsePayload.put("subscribed", true);
         } else {
-            JValueUtil::putValue(responsePayload, "subscribed", false);
+            responsePayload.put("subscribed", false);
         }
     }
-    JValueUtil::putValue(responsePayload, "returnValue", true);
+
+    m_listener->onMemoryStatus(responsePayload);
+    responsePayload.put("returnValue", true);
 }
 
 void LunaManager::getManagerEvent(Message& request, JValue& requestPayload, JValue& responsePayload)
@@ -167,14 +169,11 @@ void LunaManager::getManagerEvent(Message& request, JValue& requestPayload, JVal
     string type;
     bool subscribe;
 
-    if (!JValueUtil::getValue(requestPayload, "type", type)) {
-        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
+    if (!handleRequired(requestPayload, responsePayload, "type", type) ||
+        !handleRequired(requestPayload, responsePayload, "subscribe", subscribe)) {
         return;
     }
-    if (!JValueUtil::getValue(requestPayload, "subscribe", subscribe)) {
-        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
-         return;
-    }
+
     if (!subscribe) {
         replyError(responsePayload, ErrorCode_InvalidParametersError);
         return;
@@ -192,20 +191,20 @@ void LunaManager::getManagerEvent(Message& request, JValue& requestPayload, JVal
         replyError(responsePayload, ErrorCode_InvalidParametersError);
         return;
     }
-    JValueUtil::putValue(responsePayload, "returnValue", true);
-    JValueUtil::putValue(responsePayload, "subscribed", true);
+    responsePayload.put("returnValue", true);
+    responsePayload.put("subscribed", true);
 }
 
 void LunaManager::requireMemory(Message& request, JValue& requestPayload, JValue& responsePayload)
 {
-    int requiredMemory = 0;
-    if (!JValueUtil::getValue(requestPayload, "requiredMemory", requiredMemory)) {
-        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
+    int requiredMemory;
+    if (!handleRequired(requestPayload, responsePayload, "requiredMemory", requiredMemory)) {
         return;
     }
 
     bool relaunch = false;
-    JValueUtil::getValue(requestPayload, "relaunch", relaunch);
+    if (!handleOptional(requestPayload, responsePayload, "relaunch", relaunch))
+        return;
 
     bool returnValue = true;
     string errorText = "";
@@ -221,9 +220,9 @@ void LunaManager::requireMemory(Message& request, JValue& requestPayload, JValue
 
 Done:
     if (!returnValue) {
-        JValueUtil::putValue(responsePayload, "errorText", errorText);
+        responsePayload.put("errorText", errorText);
     }
-    JValueUtil::putValue(responsePayload, "returnValue", returnValue);
+    responsePayload.put("returnValue", returnValue);
 }
 
 void LunaManager::logRequest(Message& request, JValue& requestPayload, string name)
@@ -277,6 +276,60 @@ void LunaManager::logReturn(Message& response, JValue& returnPayload)
 
 void LunaManager::replyError(JValue& responsePayload, enum ErrorCode code)
 {
-    JValueUtil::putValue(responsePayload, "errorCode", code);
-    JValueUtil::putValue(responsePayload, "errorText", toString(code));
+    responsePayload.put("errorCode", code);
+    responsePayload.put("errorText", toString(code));
+}
+
+bool LunaManager::handleRequired(JValue& requestPayload, JValue& responsePayload, string key, string& value)
+{
+    if (!requestPayload.hasKey(key) || requestPayload[key].asString(value) != CONV_OK) {
+        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
+        return false;
+    }
+    return true;
+}
+
+bool LunaManager::handleRequired(JValue& requestPayload, JValue& responsePayload, string key, int& value)
+{
+    if (!requestPayload.hasKey(key) || requestPayload[key].asNumber(value) != CONV_OK) {
+        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
+        return false;
+    }
+    return true;
+}
+
+bool LunaManager::handleRequired(JValue& requestPayload, JValue& responsePayload, string key, bool& value)
+{
+    if (!requestPayload.hasKey(key) || requestPayload[key].asBool(value) != CONV_OK) {
+        replyError(responsePayload, ErrorCode_NoRequiredParametersError);
+        return false;
+    }
+    return true;
+}
+
+bool LunaManager::handleOptional(JValue& requestPayload, JValue& responsePayload, string key, string& value)
+{
+    if (requestPayload.hasKey(key) && requestPayload[key].asString(value) != CONV_OK) {
+        replyError(responsePayload, ErrorCode_InvalidParametersError);
+        return false;
+    }
+    return true;
+}
+
+bool LunaManager::handleOptional(JValue& requestPayload, JValue& responsePayload, string key, int& value)
+{
+    if (requestPayload.hasKey(key) && requestPayload[key].asNumber(value) != CONV_OK) {
+        replyError(responsePayload, ErrorCode_InvalidParametersError);
+        return false;
+    }
+    return true;
+}
+
+bool LunaManager::handleOptional(JValue& requestPayload, JValue& responsePayload, string key, bool& value)
+{
+    if (requestPayload.hasKey(key) && requestPayload[key].asBool(value) != CONV_OK) {
+        replyError(responsePayload, ErrorCode_InvalidParametersError);
+        return false;
+    }
+    return true;
 }

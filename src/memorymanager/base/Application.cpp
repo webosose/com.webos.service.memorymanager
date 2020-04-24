@@ -16,7 +16,6 @@
 
 #include "Application.h"
 
-#include "util/JValueUtil.h"
 #include "util/Logger.h"
 
 Application::Application()
@@ -53,14 +52,14 @@ void Application::print()
 void Application::print(JValue& json)
 {
     if (!m_sessionId.empty())
-        JValueUtil::putValue(json, "sessionId", m_sessionId);
+        json.put("sessionId", m_sessionId);
     if (!m_instanceId.empty())
-        JValueUtil::putValue(json, "instanceId", m_instanceId);
+        json.put("instanceId", m_instanceId);
 
-    JValueUtil::putValue(json, "appId", m_appId);
-    JValueUtil::putValue(json, "displayId", m_displayId);
-    JValueUtil::putValue(json, "type", m_type);
-    JValueUtil::putValue(json, "status", m_status);
-    JValueUtil::putValue(json, "pid", m_pid);
-    JValueUtil::putValue(json, "time", m_time);
+    json.put("appId", m_appId);
+    json.put("displayId", m_displayId);
+    json.put("type", m_type);
+    json.put("status", m_status);
+    json.put("pid", m_pid);
+    json.put("time", m_time);
 }

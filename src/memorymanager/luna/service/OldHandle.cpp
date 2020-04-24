@@ -18,7 +18,6 @@
 
 #include "luna/LunaManager.h"
 #include "luna/client/SAM.h"
-#include "util/JValueUtil.h"
 #include "util/Logger.h"
 
 const string OldHandle::NAME_SERVICE = "com.webos.memorymanager";
@@ -63,10 +62,10 @@ void OldHandle::sendThresholdChangedSignal(string& prev, string& cur)
     static string uri = "luna://" + NAME_SERVICE + "/" + NAME_SIGNAL + "/" + "thresholdChanged";
 
     pbnjson::JValue signalPayload = pbnjson::Object();
-    JValueUtil::putValue(signalPayload, "previous", prev);
-    JValueUtil::putValue(signalPayload, "current", cur);
-    JValueUtil::putValue(signalPayload, "foregroundAppId", SAM::getForegroundAppId());
-    JValueUtil::putValue(signalPayload, "remainCount", SAM::getRunningAppCount());
+    signalPayload.put("previous", prev);
+    signalPayload.put("current", cur);
+    signalPayload.put("foregroundAppId", SAM::getForegroundAppId());
+    signalPayload.put("remainCount", SAM::getRunningAppCount());
 
     this->sendSignal(uri.c_str(), signalPayload.stringify().c_str(), false);
 }
@@ -80,15 +79,12 @@ bool OldHandle::getCloseAppId(LSMessage &message)
 
     LunaManager::getInstance().logRequest(request, requestPayload, NAME_SERVICE);
 
-    string appType = "";
-    JValueUtil::getValue(requestPayload, "appType", appType);
-
-    if (appType == "web") {
-        JValueUtil::putValue(requestPayload, "type", "killingWeb");
-    } else if (appType == "native") {
-        JValueUtil::putValue(requestPayload, "type", "killingNative");
-    } else if (appType == "all") {
-        JValueUtil::putValue(requestPayload, "type", "killingAll");
+    if (requestPayload.hasKey("appType") && requestPayload["appType"].asString() == "web") {
+        requestPayload.put("type", "killingWeb");
+    } else if (requestPayload.hasKey("appType") && requestPayload["appType"].asString() == "native") {
+        requestPayload.put("type", "killingNative");
+    } else if (requestPayload.hasKey("appType") && requestPayload["appType"].asString() == "all") {
+        requestPayload.put("type", "killingAll");
     }
     LunaManager::getInstance().getManagerEvent(request, requestPayload, responsePayload);
     LunaManager::getInstance().logResponse(request, responsePayload, NAME_SERVICE);
