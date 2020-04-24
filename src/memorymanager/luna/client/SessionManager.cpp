@@ -48,7 +48,6 @@ bool SessionManager::onStatusChange(bool isConnected)
                 requestPayload.stringify().c_str(),
                 onGetSessionList,
                 this,
-                NULL,
                 NULL
         );
     }

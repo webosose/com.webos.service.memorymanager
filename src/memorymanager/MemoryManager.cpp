@@ -80,11 +80,10 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
     return false;
 }
 
-bool MemoryManager::onMemoryStatus(JValue& responsePayload)
+void MemoryManager::onMemoryStatus(JValue& responsePayload)
 {
     MemoryInfoManager::getInstance().print(responsePayload);
     SAM::print(responsePayload);
-    return true;
 }
 
 bool MemoryManager::onManagerStatus(JValue& responsePayload)
