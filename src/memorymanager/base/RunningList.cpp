@@ -16,6 +16,10 @@
 
 #include "RunningList.h"
 
+#include "luna/LunaManager.h"
+#include "setting/SettingManager.h"
+#include "util/Logger.h"
+
 RunningList::RunningList()
 {
 
@@ -118,6 +122,8 @@ vector<Application>::iterator RunningList::findByInstanceId(const string& instan
 void RunningList::sort()
 {
     std::sort(m_applications.begin(), m_applications.end(), Application::compare);
+    print();
+    LunaManager::getInstance().postMemoryStatus();
 }
 
 bool RunningList::isEmpty()
@@ -145,4 +151,18 @@ bool RunningList::isExist(string appId)
         return false;
     }
     return true;
+}
+
+void RunningList::print()
+{
+    if (m_applications.size() == 0) {
+        Logger::verbose("Application List : Empty", "SAM");
+        return;
+    }
+    if (SettingManager::getInstance().isVerbose()) {
+        Logger::verbose("Application List", "SAM");
+        for (auto it = m_applications.begin(); it != m_applications.end(); ++it) {
+            it->print();
+        }
+    }
 }

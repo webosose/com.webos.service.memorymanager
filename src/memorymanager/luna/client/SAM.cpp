@@ -23,24 +23,61 @@
 
 RunningList SAM::s_runningList;
 
+bool SAM::onStatusChange(LSHandle *sh, LSMessage *reply, void *ctx)
+{
+    LS::Message response(reply);
+    JValue subscriptionPayload = JDomParser::fromString(response.getPayload());
+
+    LunaManager::getInstance().logSubscription("registerServerStatus", subscriptionPayload);
+    if (response.isHubError()) {
+        return false;
+    }
+
+    bool connected = false;
+    if (JValueUtil::getValue(subscriptionPayload, "connected", connected) && connected) {
+        JValue requestPayload = pbnjson::Object();
+        requestPayload.put("subscribe", true);
+        LSCall(
+            LunaManager::getInstance().getHandle().get(),
+            "luna://com.webos.service.applicationmanager/getAppLifeEvents",
+            requestPayload.stringify().c_str(),
+            onGetAppLifeEvents,
+            nullptr,
+            nullptr,
+            nullptr
+        );
+
+        LSCall(
+            LunaManager::getInstance().getHandle().get(),
+            "luna://com.webos.service.applicationmanager/running",
+            requestPayload.stringify().c_str(),
+            onRunning,
+            nullptr,
+            nullptr,
+            nullptr
+        );
+    }
+    return true;
+}
+
 bool SAM::onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx)
 {
     string sessionId = getSessionId(reply);
     Message response(reply);
-    JValue responsePayload = JDomParser::fromString(response.getPayload());
+    JValue subscriptionPayload = JDomParser::fromString(response.getPayload());
 
-    LunaManager::getInstance().logSubscription("getAppLifeEvents", responsePayload);
+    LunaManager::getInstance().logSubscription("getAppLifeEvents", subscriptionPayload);
     if (response.isHubError()) {
-        return false;
+        return true;
     }
 
     string appId = "";
     string instanceId = "";
     string event = "";
 
-    JValueUtil::getValue(responsePayload, "appId", appId);
-    JValueUtil::getValue(responsePayload, "instanceId", instanceId);
-    JValueUtil::getValue(responsePayload, "event", event);
+    JValueUtil::getValue(subscriptionPayload, "appId", appId);
+    JValueUtil::getValue(subscriptionPayload, "instanceId", instanceId);
+    JValueUtil::getValue(subscriptionPayload, "event", event);
     if (appId.empty()) {
         return true;
     }
@@ -68,7 +105,6 @@ bool SAM::onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx)
         application.setStatus(event);
     }
     s_runningList.sort();
-    print();
     return true;
 }
 
@@ -76,15 +112,15 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *reply, void *ctx)
 {
     string sessionId = getSessionId(reply);
     Message response(reply);
-    JValue responsePayload = JDomParser::fromString(response.getPayload());
+    JValue subscriptionPayload = JDomParser::fromString(response.getPayload());
 
-    LunaManager::getInstance().logSubscription("running", responsePayload);
+    LunaManager::getInstance().logSubscription("running", subscriptionPayload);
     if (response.isHubError()) {
-        return false;
+        return true;
     }
 
     s_runningList.setContext(CONTEXT_NOT_EXIST, sessionId);
-    for (JValue item : responsePayload["running"].items()) {
+    for (JValue item : subscriptionPayload["running"].items()) {
         string appId = "";
         string instanceId = "";
         string processid = "";
@@ -118,8 +154,6 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *reply, void *ctx)
     }
     s_runningList.removeByContext(CONTEXT_NOT_EXIST);
     s_runningList.sort();
-    print();
-    LunaManager::getInstance().postMemoryStatus();
     return true;
 }
 
@@ -129,21 +163,12 @@ void SAM::subscribe(const string& sessionId)
     requestPayload.put("subscribe", true);
 
     if (sessionId.empty()) {
+        requestPayload.put("serviceName", "com.webos.service.applicationmanager");
         LSCall(
             LunaManager::getInstance().getHandle().get(),
-            "luna://com.webos.service.applicationmanager/getAppLifeEvents",
+            "luna://com.webos.service.bus/signal/registerServerStatus",
             requestPayload.stringify().c_str(),
-            onGetAppLifeEvents,
-            nullptr,
-            nullptr,
-            nullptr
-        );
-
-        LSCall(
-            LunaManager::getInstance().getHandle().get(),
-            "luna://com.webos.service.applicationmanager/running",
-            requestPayload.stringify().c_str(),
-            onRunning,
+            onStatusChange,
             nullptr,
             nullptr,
             nullptr
@@ -179,6 +204,7 @@ void SAM::subscribe(const string& sessionId)
 void SAM::unsubscribe(const string& sessionId)
 {
     s_runningList.removeBySessionId(sessionId);
+    s_runningList.sort();
 }
 
 bool SAM::close(bool includeForeground, string& errorText)
@@ -241,21 +267,7 @@ int SAM::getRunningAppCount()
     return s_runningList.getCount();
 }
 
-void SAM::print()
-{
-    if (s_runningList.getRunningList().size() == 0) {
-        Logger::verbose("Application List : Empty", "SAM");
-        return;
-    }
-    if (SettingManager::getInstance().isVerbose()) {
-        Logger::verbose("Application List", "SAM");
-        for (auto it = s_runningList.getRunningList().begin(); it != s_runningList.getRunningList().end(); ++it) {
-            it->print();
-        }
-    }
-}
-
-void SAM::print(JValue& json)
+void SAM::toJson(JValue& json)
 {
     JValue array = pbnjson::Array();
     for (auto it = s_runningList.getRunningList().begin(); it != s_runningList.getRunningList().end(); ++it) {

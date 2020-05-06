@@ -47,6 +47,8 @@ public:
     bool isExist(string appId);
     bool isEmpty();
 
+    void print();
+
 private:
     vector<Application>::iterator findByAppId(const string& appId);
     vector<Application>::iterator findByInstanceId(const string& instanceId);

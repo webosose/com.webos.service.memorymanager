@@ -36,9 +36,13 @@ MemoryManager::~MemoryManager()
 void MemoryManager::initialize()
 {
     SettingManager::getInstance().initialize(m_mainloop);
+    Logger::normal("Initialized SettingManager", LOG_NAME);
     LunaManager::getInstance().initialize(m_mainloop);
+    Logger::normal("Initialized LunaManager", LOG_NAME);
     MemoryInfoManager::getInstance().initialize(m_mainloop);
+    Logger::normal("Initialized MemoryInfoManager", LOG_NAME);
     SwapManager::getInstance().initialize(m_mainloop);
+    Logger::normal("Initialized SwapManager", LOG_NAME);
 
     LunaManager::getInstance().setListener(this);
     MemoryInfoManager::getInstance().setListener(this);
@@ -48,6 +52,7 @@ void MemoryManager::run()
 {
     MemoryManager::getInstance().onTick();
     m_tickSrc = g_timeout_add_seconds(1, tick, this);
+    Logger::normal("Start to handle LS2 request", LOG_NAME);
     g_main_loop_run(m_mainloop);
 }
 
@@ -83,7 +88,7 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 void MemoryManager::onMemoryStatus(JValue& responsePayload)
 {
     MemoryInfoManager::getInstance().print(responsePayload);
-    SAM::print(responsePayload);
+    SAM::toJson(responsePayload);
 }
 
 bool MemoryManager::onManagerStatus(JValue& responsePayload)
