@@ -97,16 +97,16 @@ void LunaManager::onSessionChanged(JValue& subscriptionPayload)
         if (!JValueUtil::getValue(session, "sessionId", sessionId)) continue;
 
         if (m_sessions.find(sessionId) == m_sessions.end()) {
-            m_sessions[sessionId] = true;
             SAM::subscribe(sessionId);
         }
+        m_sessions[sessionId] = true;
     }
 
     // deleted removed sessionId
     for (auto it = m_sessions.cbegin(); it != m_sessions.cend();) {
       if (it->second == false) {
-          m_sessions.erase(it++);
           SAM::unsubscribe(it->first);
+          m_sessions.erase(it++);
       } else {
         ++it;
       }

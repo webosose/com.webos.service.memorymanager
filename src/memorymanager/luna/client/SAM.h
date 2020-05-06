@@ -23,7 +23,6 @@
 #include <luna-service2/lunaservice.hpp>
 #include <pbnjson.hpp>
 
-#include "AbsClient.hpp"
 #include "interface/IPrintable.h"
 #include "interface/ISingleton.h"
 #include "interface/IListener.h"
@@ -33,7 +32,7 @@ using namespace std;
 using namespace pbnjson;
 using namespace LS;
 
-class SAM : public AbsClient {
+class SAM {
 friend class ISingleton<SAM>;
 public:
     static void subscribe(const string& sessionId = "");
@@ -44,34 +43,28 @@ public:
     static string getForegroundAppId();
     static int getRunningAppCount();
 
-    static void print();
-    static void print(JValue& json);
+    static void toJson(JValue& json);
 
     virtual ~SAM(){};
 
 private:
-    static const int CONTEXT_NOT_EXIST = 0;
-    static const int CONTEXT_EXIST = 1;
-
-    SAM();
-
-    static string getSessionId(LSMessage *reply)
-    {
-        if (LSMessageIsHubErrorMessage(reply)) {
-            return "";
-        }
-#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
-        return LSMessageGetSessionId(reply);
-#else
-        return "";
-#endif
-    }
-
+    static bool onStatusChange(LSHandle *sh, LSMessage *reply, void *ctx);
     static bool onGetAppLifeEvents(LSHandle *sh, LSMessage *reply, void *ctx);
     static bool onRunning(LSHandle *sh, LSMessage *reply, void *ctx);
 
-    // AbsService
-    virtual bool onStatusChange(bool isConnected);
+    static string getSessionId(LSMessage *reply)
+    {
+#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
+        if (LSMessageGetSessionId(reply) != NULL)
+            return LSMessageGetSessionId(reply);
+#endif
+        return "";
+    }
+
+    SAM();
+
+    static const int CONTEXT_NOT_EXIST = 0;
+    static const int CONTEXT_EXIST = 1;
 
     static RunningList s_runningList;
 

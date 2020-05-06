@@ -43,8 +43,8 @@ SettingManager::~SettingManager()
 
 void SettingManager::initialize(GMainLoop* mainloop)
 {
-    string ls2EnableSession = getenv("LS2_ENABLE_SESSION");
-    if (!ls2EnableSession.empty() && ls2EnableSession == "true") {
+    char* ls2EnableSession = getenv("LS2_ENABLE_SESSION");
+    if (ls2EnableSession != NULL && strcmp(ls2EnableSession, "true") == 0) {
         m_isSessionEnabled = true;
     }
 }
