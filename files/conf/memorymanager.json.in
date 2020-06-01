@@ -1,7 +1,6 @@
 {
     "swap": {
         "mode": "NO",
-        "partition": "",
         "size": 0
     }
 }

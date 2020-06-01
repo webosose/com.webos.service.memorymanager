@@ -40,16 +40,23 @@ public:
     // IManager
     void initialize(GMainLoop* mainloop);
 
-private:
-    static const char* PATH_EFS_CORE_MODULE;
-    static const char* PATH_EFS_ADAPTOR_MODULE;
-    static const char* NAME_EFS_CTL;
+    bool setMode(const string mode);
+    void setPartition(const string partition);
+    bool setSize(const int size);
 
+private:
+    static const string EFS_CTL_BIN;
+    static const string EFS_MAPPER_PATH;
+    static const string EFS_PARTLABEL;
+
+    string findPartitionByPartLabel(const string partLabel);
+    bool createEFS(const enum SwapMode mode, const string partition, const int size);
+    bool createSwap(const string device);
     SwapManager();
 
     enum SwapMode m_mode;
-    int m_size;
     string m_partition;
+    int m_size;
 };
 
 #endif /* SWAP_SWAPMANAGER_H_ */
