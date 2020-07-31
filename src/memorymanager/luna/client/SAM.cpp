@@ -235,26 +235,50 @@ bool SAM::close(bool includeForeground, string& errorText)
         requestPayload.put("id", application.getAppId());
     requestPayload.put("tryToMakeScreenshot", true);
 
-    LS::Call call;
+    try {
+        LS::Call call;
 #if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
-    call = LunaManager::getInstance().getHandle().callOneReply(
-            "luna://com.webos.service.applicationmanager/close",
-            requestPayload.stringify().c_str(),
-            nullptr,
-            application.getSessionId().c_str()
-    );
+        call = LunaManager::getInstance().getHandle().callOneReply(
+                "luna://com.webos.service.applicationmanager/close",
+                requestPayload.stringify().c_str(),
+                nullptr,
+                application.getSessionId().c_str()
+        );
 #else
-    call = LunaManager::getInstance().getHandle().callOneReply(
-            "luna://com.webos.service.applicationmanager/close",
-            requestPayload.stringify().c_str(),
-            nullptr
-    );
+        call = LunaManager::getInstance().getHandle().callOneReply(
+                "luna://com.webos.service.applicationmanager/close",
+                requestPayload.stringify().c_str(),
+                nullptr
+        );
 #endif
-    Message response = call.get(5000);
-    JValue responsePayload = JDomParser::fromString(response.getPayload());
+        Message response = call.get(5000);
+        if (!response) {
+            Logger::error("Error: No response from SAM in 5s", "SAM");
+            return false;
+        }
+        if (response.isHubError()) {
+            Logger::error("Error: " + string(response.getPayload()), "SAM");
+            return false;
+        }
 
-    // TODO Need to add some log message here
-    return true;
+        JValue responsePayload = JDomParser::fromString(response.getPayload());
+
+        bool returnValue = false;
+        JValueUtil::getValue(responsePayload, "returnValue", returnValue);
+        if (returnValue != true) {
+            Logger::error("Error: " + string(response.getPayload()), "SAM");
+            return false;
+        }
+
+        /* Successful response from SAM */
+        return true;
+    } catch(const LS::Error& lse) {
+        Logger::error("Exception: " + string(lse.what()), "SAM");
+        return false;
+    } catch(const std::exception& e) {
+        Logger::error("Exception: " + string(e.what()), "SAM");
+        return false;
+    }
 }
 
 string SAM::getForegroundAppId()
