@@ -168,16 +168,19 @@ void LunaManager::getManagerEvent(Message& request, JValue& requestPayload, JVal
 {
     string type;
     bool subscribe;
+    bool returnValue = true;
 
     if (!JValueUtil::getValue(requestPayload, "type", type) ||
         !JValueUtil::getValue(requestPayload, "subscribe", subscribe)) {
         replyError(responsePayload, ErrorCode_NoRequiredParametersError);
-        return;
+        returnValue = false;
+        goto Done;
     }
 
     if (!subscribe) {
         replyError(responsePayload, ErrorCode_InvalidParametersError);
-        return;
+        returnValue = false;
+        goto Done;
     }
 
     if (type == "killing") {
@@ -190,10 +193,13 @@ void LunaManager::getManagerEvent(Message& request, JValue& requestPayload, JVal
         m_managerEventKillingNative.subscribe(request);
     } else {
         replyError(responsePayload, ErrorCode_InvalidParametersError);
-        return;
+        returnValue = false;
+        goto Done;
     }
-    responsePayload.put("returnValue", true);
-    responsePayload.put("subscribed", true);
+
+Done:
+    responsePayload.put("returnValue", returnValue);
+    responsePayload.put("subscribed", subscribe);
 }
 
 void LunaManager::requireMemory(Message& request, JValue& requestPayload, JValue& responsePayload)
