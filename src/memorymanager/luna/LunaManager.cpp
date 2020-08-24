@@ -158,6 +158,8 @@ void LunaManager::getMemoryStatus(Message& request, JValue& requestPayload, JVal
         } else {
             responsePayload.put("subscribed", false);
         }
+    } else {
+        responsePayload.put("subscribed", false);
     }
 
     m_listener->onMemoryStatus(responsePayload);
@@ -167,11 +169,14 @@ void LunaManager::getMemoryStatus(Message& request, JValue& requestPayload, JVal
 void LunaManager::getManagerEvent(Message& request, JValue& requestPayload, JValue& responsePayload)
 {
     string type;
-    bool subscribe;
+    bool subscribe = false;
     bool returnValue = true;
+    bool required = true;
 
-    if (!JValueUtil::getValue(requestPayload, "type", type) ||
-        !JValueUtil::getValue(requestPayload, "subscribe", subscribe)) {
+    required &= JValueUtil::getValue(requestPayload, "type", type);
+    required &= JValueUtil::getValue(requestPayload, "subscribe", subscribe);
+
+    if (!required) {
         replyError(responsePayload, ErrorCode_NoRequiredParametersError);
         returnValue = false;
         goto Done;
