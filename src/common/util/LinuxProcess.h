@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 LG Electronics, Inc.
+// Copyright (c) 2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,24 +14,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef UTIL_PROC_H_
-#define UTIL_PROC_H_
+#ifndef UTIL_LINUXPROCESS_H_
+#define UTIL_LINUXPROCESS_H_
 
 #include <iostream>
-#include <fstream>
+#include <fcntl.h>
+
+#include "util/Logger.h"
 
 using namespace std;
 
-class Proc {
+class LinuxProcess {
 public:
-    Proc() {}
-    virtual ~Proc() {}
-
-    static void getMemoryInfo(long& total, long& available);
-    static string findPidNS(int pid);
+    static pid_t forkAsyncProcess(const char **argv, const char **envp);
+    static bool forkSyncProcess(const char **argv, const char **envp);
+    static string getStdoutFromCmd(const string& cmd);
 
 private:
-    static const string PATH_READLINK_CMD;
+    static const string CLASS_NAME;
+
+    LinuxProcess() {}
+    virtual ~LinuxProcess() {}
 };
 
-#endif /* UTIL_PROC_H_ */
+#endif /* UTIL_LINUXPROCESS_H_ */

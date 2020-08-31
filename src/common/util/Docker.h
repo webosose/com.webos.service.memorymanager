@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 LG Electronics, Inc.
+// Copyright (c) 2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,24 +14,25 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef UTIL_PROC_H_
-#define UTIL_PROC_H_
+#ifndef UTIL_DOCKER_H_
+#define UTIL_DOCKER_H_
 
 #include <iostream>
-#include <fstream>
 
 using namespace std;
 
-class Proc {
+class Docker {
 public:
-    Proc() {}
-    virtual ~Proc() {}
+    Docker() {}
+    virtual ~Docker() {}
 
-    static void getMemoryInfo(long& total, long& available);
-    static string findPidNS(int pid);
+    static string inspect(const string& sessionId, const string& item);
+
+    static const string INSPECT_PID;
+    static const string INSPECT_CONTAINER_ID;
 
 private:
-    static const string PATH_READLINK_CMD;
+    static const string PATH_DOCKER_CMD;
 };
 
-#endif /* UTIL_PROC_H_ */
+#endif /* UTIL_DOCKER_H_ */

@@ -40,6 +40,10 @@ pkg_check_modules(PMLOG REQUIRED PmLogLib)
 include_directories(${PMLOG_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PMLOG_CFLAGS_OTHER})
 
+find_package(Boost REQUIRED COMPONENTS regex system filesystem)
+include_directories(${Boost_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${Boost_CFLAGS_OTHER})
+
 pkg_check_modules(PROCPS REQUIRED libprocps)
 include_directories(PROCPS_INCLUDE_DIRS)
 webos_add_compiler_flags(ALL ${PROCPS_CFLAGS})
@@ -62,6 +66,7 @@ set(LIBS
     ${LUNASERVICE2_LDFLAGS}
     ${LUNASERVICE2CPP_LDFLAGS}
     ${PMLOG_LDFLAGS}
+    ${Boost_LIBRARIES}
     ${PBNJSON_C_LDFLAGS}
     ${PBNJSON_CPP_LDFLAGS}
     ${PROCPS_LDFLAGS}

@@ -15,6 +15,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "Proc.h"
+#include "LinuxProcess.h"
+
+#include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
+
+const string Proc::PATH_READLINK_CMD = "/usr/bin/readlink";
 
 void Proc::getMemoryInfo(long& total, long& available)
 {
@@ -35,4 +41,28 @@ void Proc::getMemoryInfo(long& total, long& available)
         }
     }
     meminfo.close();
+}
+
+string Proc::findPidNS(int pid)
+{
+    /*
+     * cmd             : readlink /proc/[pid]/ns/pid
+     * expected result : pid:[4026531836]
+     */
+    string cmd = Proc::PATH_READLINK_CMD + " /proc/" + to_string(pid) + "/ns/pid";
+    string result = LinuxProcess::getStdoutFromCmd(cmd);
+
+    /*
+     * expected regex_match from "pid:[40266318836]"
+     * what[0] : pid:[4026531836]
+     * what[1] : 4026531836
+     */
+    boost::regex expr("pid:\\[([0-9]+)\\]");
+    boost::smatch what;
+    bool isMatchFound = boost::regex_match(result, what, expr);
+    if (isMatchFound) {
+        return what[1];
+    }
+
+    return "";
 }

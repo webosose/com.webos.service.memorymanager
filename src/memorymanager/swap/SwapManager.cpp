@@ -14,17 +14,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 #include "SwapManager.h"
+
 #include "setting/SettingManager.h"
 #include "util/Logger.h"
+#include "util/LinuxProcess.h"
 
-#include <unistd.h>
 #include <regex>
+
 
 #include "Environment.h"
 
-const string SwapManager::EFS_CTL_BIN = "efsctl";
 const string SwapManager::EFS_MAPPER_PATH = "/dev/mapper/eswap";
 const string SwapManager::EFS_PARTLABEL = "swap";
+const string SwapManager::SBIN_EFSCTL = "/sbin/efsctl";
+const string SwapManager::SBIN_MKSWAP = "/sbin/mkswap";
+const string SwapManager::SBIN_SWAPON = "/sbin/swapon";
+const string SwapManager::BIN_SYNC = "/bin/sync";
 
 SwapManager::SwapManager()
     : m_mode(SwapMode_NO),
@@ -84,9 +89,7 @@ string SwapManager::findPartitionByPartLabel(const string partLabel)
 {
     string cmd = "ls -l /dev/disk/by-partlabel/";
     cmd += partLabel;
-    string result = execCmd(cmd.c_str());
-    rtrim(result);
-    Logger::normal("[Success] result : " + result, getClassName());
+    string result = LinuxProcess::getStdoutFromCmd(cmd);
 
     size_t found = result.find_last_of("/");   /* ... -> ../../sdaX */
     string partNum = result.substr(found + 1); /* sdaX */
@@ -118,21 +121,25 @@ bool SwapManager::setSize(const int size)
 bool SwapManager::createEFS(const enum SwapMode mode, const string partition,
                             const int size)
 {
-    if (mode != SwapMode_MEMORY && mode != SwapMode_FULL) {
+    if (mode == SwapMode_MEMORY) {
+        const char* createArgv[] = {SBIN_EFSCTL.c_str(),
+                                    "create",
+                                    "-p", partition.c_str(),
+                                    "-s", to_string(size).c_str(),
+                                    NULL};
+        if (!LinuxProcess::forkSyncProcess(createArgv, NULL))
+            return false;
+    } else if (mode == SwapMode_FULL) {
+        const char* createArgv[] = {SBIN_EFSCTL.c_str(),
+                                    "create",
+                                    "-p", partition.c_str(),
+                                    "-s", to_string(size).c_str(),
+                                    "-w",
+                                    NULL};
+        if (!LinuxProcess::forkSyncProcess(createArgv, NULL))
+            return false;
+    } else {
         Logger::error("Mode should be MEMORY or FULL!", getClassName());
-        return false;
-    }
-
-    string cmd = EFS_CTL_BIN;
-    cmd += " create -p " + partition;
-    cmd += " -s " + to_string(size);
-    if (mode == SwapMode_FULL)
-        cmd += " -w"; /* Set shrink_enable (i.e. use secondary storage) */
-    int ret = ::system(cmd.c_str());
-    if (ret != 0) {
-        Logger::error("cmd : " + cmd + ", ret : " + to_string(ret) + \
-                      ", WEXITSTATUS(ret) : " + to_string(WEXITSTATUS(ret)), \
-                      getClassName());
         return false;
     }
 
@@ -142,34 +149,19 @@ bool SwapManager::createEFS(const enum SwapMode mode, const string partition,
 bool SwapManager::createSwap(const string device)
 {
     /* Make swapspace */
-    string cmd = "mkswap " + device;
-    int ret = ::system(cmd.c_str());
-    if (ret != 0) {
-        Logger::error("cmd : " + cmd + ", ret : " + to_string(ret) + \
-                      ", WEXITSTATUS(ret) : " + to_string(WEXITSTATUS(ret)), \
-                      getClassName());
+    const char* mkswapArgv[] = {SBIN_MKSWAP.c_str(), device.c_str(), NULL};
+    if (!LinuxProcess::forkSyncProcess(mkswapArgv, NULL))
         return false;
-    }
 
     /* Make sure the format info has been physically written to swap file */
-    cmd = "sync";
-    ret = ::system(cmd.c_str());
-    if (ret != 0) {
-        Logger::error("cmd : " + cmd + ", ret : " + to_string(ret) + \
-                      ", WEXITSTATUS(ret) : " + to_string(WEXITSTATUS(ret)), \
-                      getClassName());
+    const char* syncArgv[] = {BIN_SYNC.c_str(), NULL};
+    if (!LinuxProcess::forkSyncProcess(syncArgv, NULL))
         return false;
-    }
 
     /* Swapon swapspace */
-    cmd = "swapon " + device;
-    ret = ::system(cmd.c_str());
-    if (ret != 0) {
-        Logger::error("cmd : " + cmd + ", ret : " + to_string(ret) + \
-                      ", WEXITSTATUS(ret) : " + to_string(WEXITSTATUS(ret)), \
-                      getClassName());
+    const char* swaponArgv[] = {SBIN_SWAPON.c_str(), device.c_str(), NULL};
+    if (!LinuxProcess::forkSyncProcess(swaponArgv, NULL))
         return false;
-    }
 
     return true;
 }

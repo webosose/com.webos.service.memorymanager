@@ -45,9 +45,12 @@ public:
     bool setSize(const int size);
 
 private:
-    static const string EFS_CTL_BIN;
     static const string EFS_MAPPER_PATH;
     static const string EFS_PARTLABEL;
+    static const string SBIN_EFSCTL;
+    static const string SBIN_MKSWAP;
+    static const string SBIN_SWAPON;
+    static const string BIN_SYNC;
 
     string findPartitionByPartLabel(const string partLabel);
     bool createEFS(const enum SwapMode mode, const string partition, const int size);
