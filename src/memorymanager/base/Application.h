@@ -21,9 +21,9 @@
 #include <algorithm>
 #include <pbnjson.hpp>
 
-#include "Process.h"
 #include "interface/IClassName.h"
 #include "interface/IPrintable.h"
+
 #include "util/Time.h"
 
 using namespace std;
@@ -34,8 +34,10 @@ class Application : public IPrintable,
 public:
     static bool isCloseable(const string& status)
     {
-        if (status == "stop" || status == "close" || status == "splash" || status == "launch")
+        if (status == "stop" || status == "close" ||
+	    status == "splash" || status == "launch")
             return false;
+
         return true;
     }
 
@@ -64,6 +66,7 @@ public:
         else
             return 2;
     }
+
     static bool compare(const Application& a, const Application& b)
     {
         if (a.m_status == b.m_status) {
@@ -80,15 +83,24 @@ public:
     Application(string appId);
     virtual ~Application();
 
-    // setter / getter
-    void setSessionId(const string& sessionId)
+    bool isCloseable()
     {
-        m_sessionId = sessionId;
+        return isCloseable(m_status);
     }
 
-    const string& getSessionId() const
+    // IPrintable
+    virtual void print();
+    virtual void print(JValue& json);
+
+    // setter & getter
+    void setInstanceId(const string& instanceId)
     {
-        return m_sessionId;
+        m_instanceId = instanceId;
+    }
+
+    const string& getInstanceId() const
+    {
+        return m_instanceId;
     }
 
     void setAppId(const string& appId)
@@ -99,16 +111,6 @@ public:
     const string& getAppId() const
     {
         return m_appId;
-    }
-
-    void setInstanceId(const string& instanceId)
-    {
-        m_instanceId = instanceId;
-    }
-
-    const string& getInstanceId() const
-    {
-        return m_instanceId;
     }
 
     void setType(const string& type)
@@ -124,19 +126,15 @@ public:
     void setStatus(const string& status)
     {
         if (status == "foreground") {
-            updateTime();
+            m_time = Time::getSystemTime();
         }
+
         m_status = status;
     }
 
     const string& getStatus()
     {
         return m_status;
-    }
-
-    bool isCloseable()
-    {
-        return isCloseable(m_status);
     }
 
     void setDisplayId(const int displayId)
@@ -159,9 +157,9 @@ public:
         return m_pid;
     }
 
-    void updateTime()
+    void setContext(int context)
     {
-        m_time = Time::getSystemTime();
+        m_context = context;
     }
 
     int getContext()
@@ -169,30 +167,27 @@ public:
         return m_context;
     }
 
-    void setContext(int context)
+    void setSessionId(const string& sessionId)
     {
-        m_context = context;
+        m_sessionId = sessionId;
     }
 
-    // IPrintable
-    virtual void print();
-    virtual void print(JValue& json);
+    const string& getSessionId()
+    {
+        return m_sessionId;
+    }
 
 private:
-    string m_sessionId;
-    string m_appId;
-    string m_instanceId;
-    string m_type;
-    string m_status;
-    int m_displayId;
-    int m_pid;
+    string m_instanceId;    /* unique id of application */
+    string m_appId;         /* name of application */
+    string m_status;        /* status or event of application (FG, BG, ...) */
+    string m_type;          /* type of application (web, native, ...) */
+    int m_pid;              /* pid of non-web type application */
+    int m_time;             /* timestamp for LRU policy among FG applications */
+    int m_displayId;        /* unique display id where application is launched */
 
-    Process m_process;
-
-    // runtime value
-    int m_time;
-    int m_context;
-
+    int m_context;          /* flag to update application list */
+    string m_sessionId;     /* unique id which SessionManger creates */
 };
 
 #endif /* BASE_APPLICATION_H_ */

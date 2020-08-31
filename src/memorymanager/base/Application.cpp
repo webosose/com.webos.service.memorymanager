@@ -19,12 +19,13 @@
 #include "util/Logger.h"
 
 Application::Application()
-    : m_appId("unknown"),
-      m_type("unknown"),
+    : m_instanceId("unknown"),
+      m_appId("unknown"),
       m_status("unknown"),
-      m_displayId(0),
+      m_type("unknown"),
       m_pid(0),
       m_time(0),
+      m_displayId(0),
       m_context(0)
 {
     setClassName("Application");
@@ -42,31 +43,32 @@ Application::~Application()
 
 void Application::print()
 {
-    static char buffer[1024];
+    static char buf[1024];
     int result;
-    if (m_sessionId.empty())
-        result = sprintf(buffer , "%-30s %15s %10s %10d %10d", m_appId.c_str(), m_status.c_str(), m_type.c_str(), m_pid, m_time);
-    else
-        result = sprintf(buffer , "%-40s %-30s %15s %10s %10d %10d", m_sessionId.c_str(), m_appId.c_str(), m_status.c_str(), m_type.c_str(), m_pid, m_time);
-    if (result > 0) {
-        Logger::verbose(buffer, getClassName());
-    } else {
-        Logger::warning("Failed in sprintf", getClassName());
-    }
 
+    result = snprintf(buf, 1024, "%6.6s | %6.6s %-30.30s | %10.10s %10s %5d %5d",
+                      m_sessionId.c_str(),
+                      m_instanceId.c_str(),
+                      m_appId.c_str(),
+                      m_status.c_str(),
+                      m_type.c_str(),
+                      m_pid,
+                      m_time);
+
+    if (result > 0) {
+        Logger::verbose(buf, getClassName());
+    } else {
+        Logger::warning("Unable to print ", getClassName());
+    }
 }
 
 void Application::print(JValue& json)
 {
-    if (!m_sessionId.empty())
-        json.put("sessionId", m_sessionId);
-    if (!m_instanceId.empty())
-        json.put("instanceId", m_instanceId);
-
+    json.put("instanceId", m_instanceId);
     json.put("appId", m_appId);
-    json.put("displayId", m_displayId);
-    json.put("type", m_type);
     json.put("status", m_status);
+    json.put("type", m_type);
     json.put("pid", m_pid);
     json.put("time", m_time);
+    json.put("displayId", m_displayId);
 }
