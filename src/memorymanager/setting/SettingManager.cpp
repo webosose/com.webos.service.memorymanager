@@ -24,161 +24,147 @@
 
 #include "Environment.h"
 
-const string SettingManager::DEFAULT_CONFIG_FILE = string(WEBOS_INSTALL_WEBOS_SYSCONFDIR) + "/memorymanager.json";
+const string SettingManager::m_configFile = string(WEBOS_INSTALL_WEBOS_SYSCONFDIR) + "/memorymanager.json";
+JValue SettingManager::m_config(Object());
+
+bool SettingManager::m_SingleAppPolicy;
+bool SettingManager::m_SessionEnabled;
+
+int SettingManager::m_memoryLevelLowEnter;
+int SettingManager::m_memoryLevelLowExit;
+int SettingManager::m_memoryLevelCriticalEnter;
+int SettingManager::m_memoryLevelCriticalExit;
 
 SettingManager::SettingManager()
-    : m_configuration(Object()),
-      m_isSessionEnabled(false)
 {
-    setClassName("SettingManager");
 
-    if (access(DEFAULT_CONFIG_FILE.c_str(), R_OK) == 0) {
-        loadSetting(DEFAULT_CONFIG_FILE);
-    }
 }
 
 SettingManager::~SettingManager()
 {
+
 }
 
-void SettingManager::initialize(GMainLoop* mainloop)
-{
-    char* ls2EnableSession = getenv("LS2_ENABLE_SESSION");
-    if (ls2EnableSession != NULL && strcmp(ls2EnableSession, "true") == 0) {
-        m_isSessionEnabled = true;
-    }
-}
-
-int SettingManager::getLowEnter()
-{
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
-        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
-        return 250;
-    } else {
-        return 100;
-    }
-}
-
-int SettingManager::getLowExit()
-{
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
-        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
-        return 280;
-    } else {
-        return 120;
-    }
-}
-
-int SettingManager::getCriticalEnter()
-{
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
-        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
-        return 100;
-    } else {
-        return 50;
-    }
-}
-
-int SettingManager::getCriticalExit()
-{
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
-        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
-        return 130;
-    } else {
-        return 70;
-    }
-}
-
-int SettingManager::getDefaultRequiredMemory()
-{
-    return DEFAULT_REQUIRED_MEMORY;
-}
-
-int SettingManager::getRetryCount()
-{
-    return DEFAULT_RETRY_COUNT;
-}
-
-bool SettingManager::isVerbose()
-{
-    return true;
-}
-
-bool SettingManager::isSingleAppPolicy()
-{
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
-        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
-        return false;
-    }
-    return true;
-}
-
-bool SettingManager::setSetting(JValue& source, JValue& local)
+void SettingManager::initConfig(JValue& source, JValue& local)
 {
     auto it = source.children();
+
     for (auto object = it.begin() ; object != it.end() ; ++object) {
         string key = (*object).first.asString();
         JValue value = (*object).second;
+
         if (!local.hasKey(key)) {
             local.put(key, value);
         } else if (!value.isObject()){
             local.put(key, value);
         } else {
             JValue v = local[key];
-            setSetting(value, v);
+            initConfig(value, v);
         }
     }
-    return true;
-}
-
-JValue SettingManager::getSetting(initializer_list<const char*> list)
-{
-    JValue* pos = &m_configuration;
-    JValue result;
-    for (auto iter = list.begin() ; iter != list.end() ; ++iter) {
-        if (!pos->hasKey(*iter)) {
-            return nullptr;
-        } else {
-            result = (*pos)[(*iter)];
-            pos = &result;
-        }
-    }
-    return result;
-}
-
-bool SettingManager::loadSetting(const string filename)
-{
-    JValue value = JDomParser::fromFile(filename.c_str());
-    if (!value.isValid() || value.isNull()) {
-        Logger::error("Fail Invalid Json formmated file " + filename, getClassName());
-        return false;
-    }
-    return setSetting(value, m_configuration);
 }
 
 string SettingManager::getSwapMode()
 {
-    JValue value = m_configuration["swap"]["mode"];
-    if (value.isNull()) {
+    JValue value = m_config["swap"]["mode"];
+    if (value.isNull())
         return "";
-    }
+
     return value.asString();
 }
 
 string SettingManager::getSwapPartition()
 {
-    JValue value = m_configuration["swap"]["partition"];
-    if (value.isNull()) {
+    JValue value = m_config["swap"]["partition"];
+    if (value.isNull())
         return "";
-    }
+
     return value.asString();
 }
 
 int SettingManager::getSwapSize()
 {
-    JValue value = m_configuration["swap"]["size"];
-    if (value.isNull()) {
+    JValue value = m_config["swap"]["size"];
+    if (value.isNull())
         return 0;
-    }
+
     return value.asNumber<int32_t>();
+}
+
+void SettingManager::initEnv()
+{
+    char* ls2EnableSession = getenv("LS2_ENABLE_SESSION");
+
+    if (ls2EnableSession != NULL && strcmp(ls2EnableSession, "true") == 0)
+        m_SessionEnabled = true;
+    else
+        m_SessionEnabled = false;
+
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
+        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
+        m_SingleAppPolicy = false;
+
+        m_memoryLevelLowEnter = 250;
+        m_memoryLevelLowExit = 280;
+        m_memoryLevelCriticalEnter = 100;
+        m_memoryLevelCriticalExit = 130;
+    } else {
+        m_SingleAppPolicy = true;
+
+        m_memoryLevelLowEnter = 100;
+        m_memoryLevelLowExit = 120;
+        m_memoryLevelCriticalEnter = 50;
+        m_memoryLevelCriticalExit = 70;
+    }
+}
+
+int SettingManager::getMemoryLevelLowEnter()
+{
+    return m_memoryLevelLowEnter;
+}
+
+int SettingManager::getMemoryLevelLowExit()
+{
+    return m_memoryLevelLowExit;
+}
+
+int SettingManager::getMemoryLevelCriticalEnter()
+{
+    return m_memoryLevelCriticalEnter;
+}
+
+int SettingManager::getMemoryLevelCriticalExit()
+{
+    return m_memoryLevelCriticalExit;
+}
+
+bool SettingManager::getSingleAppPolicy()
+{
+    return m_SingleAppPolicy;
+}
+
+bool SettingManager::getSessionEnabled()
+{
+    return m_SessionEnabled;
+}
+
+int SettingManager::loadSetting()
+{
+    int ret;
+
+    // From target's memorymanager.json
+    ret = access(m_configFile.c_str(), R_OK);
+    if (ret < 0)
+        return ret;
+
+    JValue config = JDomParser::fromFile(m_configFile.c_str());
+    if (!config.isValid() || config.isNull())
+        return -EINVAL;
+
+    initConfig(config ,m_config);
+
+    // From build environment
+    initEnv();
+
+    return 0;
 }

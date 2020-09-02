@@ -13,6 +13,7 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
+
 #include "SwapManager.h"
 
 #include "setting/SettingManager.h"
@@ -169,7 +170,7 @@ bool SwapManager::createSwap(const string device)
 void SwapManager::initialize(GMainLoop* mainloop)
 {
     /* Set m_mode from conf file */
-    string mode = SettingManager::getInstance().getSwapMode();
+    string mode = SettingManager::getSwapMode();
     if (!setMode(mode)) {
         Logger::error("Invalid Swap Mode : " + mode, getClassName());
         return;
@@ -182,10 +183,10 @@ void SwapManager::initialize(GMainLoop* mainloop)
     }
 
     /* Set m_partition from conf file */
-    setPartition(SettingManager::getInstance().getSwapPartition());
+    setPartition(SettingManager::getSwapPartition());
 
     /* Set m_size from conf file */
-    int size = SettingManager::getInstance().getSwapSize();
+    int size = SettingManager::getSwapSize();
     if (!setSize(size)) {
         Logger::error("Invalid Swap Size : " + to_string(size), getClassName());
         return;

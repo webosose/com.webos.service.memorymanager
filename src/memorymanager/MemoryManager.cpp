@@ -32,10 +32,8 @@ MemoryManager::~MemoryManager()
     g_main_loop_unref(m_mainloop);
 }
 
-void MemoryManager::initialize()
+int MemoryManager::initialize()
 {
-    SettingManager::getInstance().initialize(m_mainloop);
-    Logger::normal("Initialized SettingManager", getClassName());
     LunaManager::getInstance().initialize(m_mainloop);
     Logger::normal("Initialized LunaManager", getClassName());
     MemoryInfoManager::getInstance().initialize(m_mainloop);
@@ -45,6 +43,8 @@ void MemoryManager::initialize()
 
     LunaManager::getInstance().setListener(this);
     MemoryInfoManager::getInstance().setListener(this);
+
+    return 0;
 }
 
 void MemoryManager::run()
@@ -62,12 +62,12 @@ void MemoryManager::onTick()
 
 bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 {
-    if (SettingManager::getInstance().isSingleAppPolicy()) {
+    if (SettingManager::getSingleAppPolicy()) {
         Logger::normal("SingleApp Policy. Skipping memory level check", getClassName());
         return true;
     }
 
-    for (int i = 0; i < SettingManager::getInstance().getRetryCount(); ++i) {
+    for (int i = 0; i < DEFAULT_RETRY_COUNT; ++i) {
         if (MemoryInfoManager::getInstance().getExpectedLevel(requiredMemory) != MemoryLevel_CRITICAL) {
             return true;
         }

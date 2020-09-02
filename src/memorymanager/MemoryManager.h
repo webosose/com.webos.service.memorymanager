@@ -42,7 +42,7 @@ friend class ISingleton<MemoryManager>;
 public:
     virtual ~MemoryManager();
 
-    void initialize();
+    int initialize();
     void run();
 
     // MemoryManager
@@ -59,6 +59,8 @@ public:
     virtual void onCritical();
 
 private:
+    static const int DEFAULT_RETRY_COUNT = 5;
+
     static gboolean tick(gpointer user_data)
     {
         MemoryManager::getInstance().onTick();
@@ -70,7 +72,6 @@ private:
     GMainLoop* m_mainloop;
     guint m_tickSrc;
     bool m_lock;
-
 };
 
 #endif /* CORE_SERVICE_MEMORYMANAGER_H_ */

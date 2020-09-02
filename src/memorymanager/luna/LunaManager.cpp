@@ -73,7 +73,7 @@ void LunaManager::initialize(GMainLoop* mainloop)
     m_managerEventKillingWeb.setServiceHandle(&m_oldHandle);
     m_managerEventKillingNative.setServiceHandle(&m_oldHandle);
 
-    if (!SettingManager::getInstance().isSessionEnabled()) {
+    if (!SettingManager::getSessionEnabled()) {
         SAM::subscribe();
     } else {
         SessionManager::getInstance().initialize(&m_newHandle);
@@ -224,7 +224,7 @@ void LunaManager::requireMemory(Message& request, JValue& requestPayload, JValue
     }
 
     if (requiredMemory <= 0) {
-        requiredMemory = SettingManager::getInstance().getDefaultRequiredMemory();
+        requiredMemory = DEFAULT_REQUIRE_MEMORY;
     }
 
     returnValue = m_listener->onRequireMemory(requiredMemory, errorText);
@@ -238,54 +238,48 @@ Done:
 
 void LunaManager::logRequest(Message& request, JValue& requestPayload, string name)
 {
-    if (SettingManager::getInstance().isVerbose()) {
-        Logger::normal("[Request] API(" + string(request.getMethod()) + ") Client(" + string(request.getSenderServiceName())+ ")\n" +
-                       requestPayload.stringify("    ").c_str(), name);
-    } else {
-        Logger::normal("[Request] API(" + string(request.getMethod()) + ") Client(" + string(request.getSenderServiceName())+ ")");
-    }
+    Logger::verbose("[Request] API(" + string(request.getMethod()) + ") Client(" 
+            + string(request.getSenderServiceName())+ ")\n" +
+            requestPayload.stringify("    ").c_str(), name);
+
+    Logger::verbose("[Request] API(" + string(request.getMethod()) + ") Client(" 
+            + string(request.getSenderServiceName())+ ")");
 }
 
 void LunaManager::logResponse(Message& request, JValue& responsePayload, string name)
 {
-    if (SettingManager::getInstance().isVerbose()) {
-        Logger::normal("[Response] API(" + string(request.getMethod()) + ") Client(" + string(request.getSenderServiceName())+ ")\n" +
-                       responsePayload.stringify("    ").c_str(), name);
-    } else {
-        Logger::normal("[Response] API(" + string(request.getMethod()) + ") Client(" + string(request.getSenderServiceName())+ ")");
-    }
+    Logger::verbose("[Response] API(" + string(request.getMethod()) + ") Client(" 
+            + string(request.getSenderServiceName())+ ")\n" +
+            responsePayload.stringify("    ").c_str(), name);
+
+    Logger::verbose("[Response] API(" + string(request.getMethod()) + ") Client(" 
+            + string(request.getSenderServiceName())+ ")");
 }
 
 void LunaManager::logCall(string& url, JValue& callPayload)
 {
-    if (SettingManager::getInstance().isVerbose()) {
-        Logger::normal("[Call] API(" + url + ")\n"
-		       + callPayload.stringify("    ").c_str(), getClassName());
-    } else {
-        Logger::normal("[Call] API(" + url + ")", getClassName());
-    }
+    Logger::verbose("[Call] API(" + url + ")\n"
+            + callPayload.stringify("    ").c_str(), getClassName());
+
+    Logger::verbose("[Call] API(" + url + ")", getClassName());
 }
 
 void LunaManager::logSubscription(string api, JValue& returnPayload)
 {
-    if (SettingManager::getInstance().isVerbose()) {
-        Logger::normal("[Subscription] API(" + api + ")\n"
-		       + returnPayload.stringify("    ").c_str(), getClassName());
-    } else {
-        Logger::normal("[Subscription] API(" + api + ")", getClassName());
-    }
+    Logger::verbose("[Subscription] API(" + api + ")\n"
+            + returnPayload.stringify("    ").c_str(), getClassName());
+
+    Logger::verbose("[Subscription] API(" + api + ")", getClassName());
 }
 
 void LunaManager::logReturn(Message& response, JValue& returnPayload)
 {
-    if (SettingManager::getInstance().isVerbose()) {
-        Logger::normal("[Return] Service("
-		       + string(response.getSenderServiceName()) + ")\n" 
-		       + returnPayload.stringify("    ").c_str(), getClassName());
-    } else {
-        Logger::normal("[Return] Service("
-		       + string(response.getSenderServiceName()) + ")", getClassName());
-    }
+    Logger::verbose("[Return] Service("
+            + string(response.getSenderServiceName()) + ")\n" 
+            + returnPayload.stringify("    ").c_str(), getClassName());
+
+    Logger::verbose("[Return] Service("
+            + string(response.getSenderServiceName()) + ")", getClassName());
 }
 
 void LunaManager::replyError(JValue& responsePayload, enum ErrorCode code)

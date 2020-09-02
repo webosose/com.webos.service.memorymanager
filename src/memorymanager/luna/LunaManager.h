@@ -98,6 +98,7 @@ public:
     }
 
 private:
+    static const int DEFAULT_REQUIRE_MEMORY = 120;
     static const string toString(enum ErrorCode code);
 
     LunaManager();

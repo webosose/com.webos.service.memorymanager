@@ -20,55 +20,47 @@
 #include <iostream>
 #include <pbnjson.hpp>
 
-#include "interface/IManager.h"
-#include "interface/IClassName.h"
-#include "interface/ISingleton.h"
-
 using namespace std;
 using namespace pbnjson;
 
-class SettingManager : public ISingleton<SettingManager>,
-                       public IClassName {
-friend class ISingleton<SettingManager>;
+class SettingManager {
 public:
-    virtual ~SettingManager();
+    ~SettingManager();
 
-    // IManager
-    void initialize(GMainLoop* mainloop);
+    static int loadSetting();
 
-    bool loadSetting(const string filename);
+    // From target's memorymanager.json
+    static string getSwapMode();
+    static string getSwapPartition();
+    static int getSwapSize();
 
-    int getLowEnter();
-    int getLowExit();
-    int getCriticalEnter();
-    int getCriticalExit();
+    // From build environment
+    static bool getSessionEnabled();
+    static bool getSingleAppPolicy();
 
-    int getDefaultRequiredMemory();
-    int getRetryCount();
-
-    bool isVerbose();
-    bool isSingleAppPolicy();
-    bool isSessionEnabled()
-    {
-        return m_isSessionEnabled;
-    }
-
-    bool setSetting(JValue& value, JValue& local);
-    JValue getSetting(initializer_list<const char*> list);
-    string getSwapMode();
-    string getSwapPartition();
-    int getSwapSize();
+    static int getMemoryLevelLowEnter();
+    static int getMemoryLevelLowExit();
+    static int getMemoryLevelCriticalEnter();
+    static int getMemoryLevelCriticalExit();
 
 private:
-    static const int DEFAULT_RETRY_COUNT = 5;
-    static const int DEFAULT_REQUIRED_MEMORY = 120;
-
     SettingManager();
 
-    static const string DEFAULT_CONFIG_FILE;
+    static void initConfig(JValue& value, JValue& local);
+    static void initEnv();
 
-    JValue m_configuration;
-    bool m_isSessionEnabled;
+    // From target's memorymanager.json
+    static const string m_configFile;
+    static JValue m_config;
+
+    // From build environmena
+    static bool m_SingleAppPolicy;
+    static bool m_SessionEnabled;
+
+    static int m_memoryLevelLowEnter;
+    static int m_memoryLevelLowExit;
+    static int m_memoryLevelCriticalEnter;
+    static int m_memoryLevelCriticalExit;
 };
 
 #endif /* SETTING_SETTINGMANAGER_H_ */

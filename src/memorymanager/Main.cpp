@@ -18,18 +18,27 @@
 #include <glib.h>
 
 #include "MemoryManager.h"
+#include "setting/SettingManager.h"
 #include "util/Logger.h"
 
-#define LOG_NAME "MAIN"
+#define LOG_NAME "MemoryManager_MAIN"
 
 using namespace std;
 
 int main(int argc, char** argv)
 {
-    Logger::verbose("start main program", LOG_NAME);
-    MemoryManager::getInstance().initialize();
+    if (SettingManager::loadSetting() < 0) {
+        Logger::error("Fail to load SettingManager", LOG_NAME);
+        return 0;
+    }
+    Logger::normal("SettingManager Initialized", LOG_NAME);
+
+    if (MemoryManager::getInstance().initialize() < 0) {
+        return 0;
+    }
+
     MemoryManager::getInstance().run();
-    Logger::verbose("end main program", LOG_NAME);
-    return 1;
+    Logger::normal("Exit main of MemoryManager", LOG_NAME);
+    return 0;
 }
 

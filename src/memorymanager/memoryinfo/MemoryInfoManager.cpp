@@ -58,14 +58,14 @@ void MemoryInfoManager::update(bool disableCallback)
 
     // update current level
     enum MemoryLevel prevLevel = m_level;
-    if (m_free < SettingManager::getInstance().getCriticalEnter()) {
+    if (m_free < SettingManager::getMemoryLevelCriticalEnter()) {
         m_level = MemoryLevel_CRITICAL;
-    } else if (m_free < SettingManager::getInstance().getCriticalExit()) {
+    } else if (m_free < SettingManager::getMemoryLevelCriticalExit()) {
         if (prevLevel == MemoryLevel_CRITICAL)  m_level = MemoryLevel_CRITICAL;
         else                                    m_level = MemoryLevel_LOW;
-    } else if (m_free < SettingManager::getInstance().getLowEnter()) {
+    } else if (m_free < SettingManager::getMemoryLevelLowEnter()) {
         m_level = MemoryLevel_LOW;
-    } else if (m_free < SettingManager::getInstance().getLowExit()) {
+    } else if (m_free < SettingManager::getMemoryLevelLowExit()) {
         if (prevLevel == MemoryLevel_LOW)  m_level = MemoryLevel_LOW;
         else                               m_level = MemoryLevel_NORMAL;
     } else {
@@ -124,9 +124,9 @@ enum MemoryLevel MemoryInfoManager::getExpectedLevel(int requiredMemory)
         Logger::warning("Failed in sprintf", getClassName());
     }
 
-    if (expectedAvailable < SettingManager::getInstance().getCriticalEnter()) {
+    if (expectedAvailable < SettingManager::getMemoryLevelCriticalEnter()) {
         return MemoryLevel_CRITICAL;
-    } else if (m_free < SettingManager::getInstance().getLowEnter()) {
+    } else if (m_free < SettingManager::getMemoryLevelLowEnter()) {
         return MemoryLevel_LOW;
     } else {
         return MemoryLevel_NORMAL;
@@ -147,12 +147,12 @@ void MemoryInfoManager::print(JValue& json)
     json.put("system", current);
 
     JValue low = pbnjson::Object();
-    low.put("enter", SettingManager::getInstance().getLowEnter());
-    low.put("exit", SettingManager::getInstance().getLowExit());
+    low.put("enter", SettingManager::getMemoryLevelLowEnter());
+    low.put("exit", SettingManager::getMemoryLevelLowExit());
 
     JValue critical = pbnjson::Object();
-    critical.put("enter", SettingManager::getInstance().getCriticalEnter());
-    critical.put("exit", SettingManager::getInstance().getCriticalExit());
+    critical.put("enter", SettingManager::getMemoryLevelCriticalEnter());
+    critical.put("exit", SettingManager::getMemoryLevelCriticalExit());
 
     JValue threshold = pbnjson::Object();
     threshold.put("low", low);
