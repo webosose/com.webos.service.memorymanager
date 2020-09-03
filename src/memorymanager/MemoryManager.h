@@ -22,31 +22,24 @@
 #include <pbnjson.hpp>
 
 #include "interface/IClassName.h"
-#include "interface/ISingleton_legacy.h"
+#include "interface/ISingleton.h"
 
 #include "luna/LunaManager.h"
-#include "luna/client/SAM.h"
-#include "luna/client/SessionManager.h"
 #include "memoryinfo/MemoryInfoManager.h"
-#include "setting/SettingManager.h"
-#include "swap/SwapManager.h"
 
 using namespace std;
 using namespace pbnjson;
 
-class MemoryManager : public ISingletonLegacy<MemoryManager>,
+class MemoryManager : public ISingleton<MemoryManager>,
+                      public IClassName,
                       public LunaManagerListener,
-                      public MemoryInfoManagerListener,
-                      public IClassName {
-friend class ISingletonLegacy<MemoryManager>;
+                      public MemoryInfoManagerListener {
 public:
+    MemoryManager();
     virtual ~MemoryManager();
 
-    int initialize();
-    void run();
-
     // MemoryManager
-    virtual void onTick();
+    void run();
 
     // LunaManagerListener
     virtual bool onRequireMemory(int requiredMemory, string& errorText);
@@ -59,19 +52,16 @@ public:
     virtual void onCritical();
 
 private:
-    static const int DEFAULT_RETRY_COUNT = 5;
-
     static gboolean tick(gpointer user_data)
     {
-        MemoryManager::getInstance().onTick();
+        MemoryInfoManager::getInstance().update(false);
         return G_SOURCE_CONTINUE;
     }
-
-    MemoryManager();
 
     GMainLoop* m_mainloop;
     guint m_tickSrc;
     bool m_lock;
+    int m_retry_count;
 };
 
 #endif /* CORE_SERVICE_MEMORYMANAGER_H_ */

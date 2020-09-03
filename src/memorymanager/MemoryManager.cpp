@@ -15,25 +15,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "MemoryManager.h"
-
+#include "setting/SettingManager.h"
+#include "swap/SwapManager.h"
 #include "luna/client/SAM.h"
+
 #include "util/Logger.h"
 
 MemoryManager::MemoryManager()
     : m_tickSrc(-1),
-      m_lock(false)
+      m_lock(false),
+      m_retry_count(5)
 {
     setClassName("MemoryManager");
     m_mainloop = g_main_loop_new(NULL, FALSE);
-}
 
-MemoryManager::~MemoryManager()
-{
-    g_main_loop_unref(m_mainloop);
-}
-
-int MemoryManager::initialize()
-{
     LunaManager::getInstance().initialize(m_mainloop);
     Logger::normal("Initialized LunaManager", getClassName());
     MemoryInfoManager::getInstance().initialize(m_mainloop);
@@ -43,21 +38,21 @@ int MemoryManager::initialize()
 
     LunaManager::getInstance().setListener(this);
     MemoryInfoManager::getInstance().setListener(this);
+}
 
-    return 0;
+MemoryManager::~MemoryManager()
+{
+    g_main_loop_unref(m_mainloop);
 }
 
 void MemoryManager::run()
 {
-    MemoryManager::getInstance().onTick();
-    m_tickSrc = g_timeout_add_seconds(1, tick, this);
-    Logger::normal("Start to handle LS2 request", getClassName());
-    g_main_loop_run(m_mainloop);
-}
-
-void MemoryManager::onTick()
-{
     MemoryInfoManager::getInstance().update(false);
+
+    m_tickSrc = g_timeout_add_seconds(1, tick, this);
+
+    Logger::normal("Start mainLoop", getClassName());
+    g_main_loop_run(m_mainloop);
 }
 
 bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
@@ -67,7 +62,7 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
         return true;
     }
 
-    for (int i = 0; i < DEFAULT_RETRY_COUNT; ++i) {
+    for (int i = 0; i < m_retry_count; ++i) {
         if (MemoryInfoManager::getInstance().getExpectedLevel(requiredMemory) != MemoryLevel_CRITICAL) {
             return true;
         }

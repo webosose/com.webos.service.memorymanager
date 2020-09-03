@@ -19,6 +19,7 @@
 
 #include "MemoryManager.h"
 #include "setting/SettingManager.h"
+
 #include "util/Logger.h"
 
 #define LOG_NAME "MemoryManager_MAIN"
@@ -27,18 +28,17 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+    MemoryManager* mm;
+
     if (SettingManager::loadSetting() < 0) {
         Logger::error("Fail to load SettingManager", LOG_NAME);
         return 0;
     }
     Logger::normal("SettingManager Initialized", LOG_NAME);
 
-    if (MemoryManager::getInstance().initialize() < 0) {
-        return 0;
-    }
+    mm = MemoryManager::getInstance();
+    mm->run();
 
-    MemoryManager::getInstance().run();
-    Logger::normal("Exit main of MemoryManager", LOG_NAME);
+    /* In the normal case, MM is not terminated */
     return 0;
 }
-
