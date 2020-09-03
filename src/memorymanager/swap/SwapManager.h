@@ -21,7 +21,7 @@
 
 #include "interface/IManager.h"
 #include "interface/IClassName.h"
-#include "interface/ISingleton.h"
+#include "interface/ISingleton_legacy.h"
 
 using namespace std;
 
@@ -31,9 +31,9 @@ enum SwapMode {
     SwapMode_FULL
 };
 
-class SwapManager : public ISingleton<SwapManager>,
+class SwapManager : public ISingletonLegacy<SwapManager>,
                     public IClassName {
-friend class ISingleton<SwapManager>;
+friend class ISingletonLegacy<SwapManager>;
 public:
     virtual ~SwapManager();
 

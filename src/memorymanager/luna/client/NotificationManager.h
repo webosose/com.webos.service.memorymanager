@@ -22,8 +22,6 @@
 #include <iostream>
 #include <pbnjson.hpp>
 
-#include "interface/ISingleton.h"
-
 using namespace std;
 using namespace pbnjson;
 

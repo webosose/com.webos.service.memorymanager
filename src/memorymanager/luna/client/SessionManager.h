@@ -24,7 +24,7 @@
 #include <luna-service2/lunaservice.hpp>
 
 #include "interface/IListener.h"
-#include "interface/ISingleton.h"
+#include "interface/ISingleton_legacy.h"
 #include "interface/IClassName.h"
 
 using namespace std;
@@ -42,9 +42,9 @@ public:
 
 class SessionManager : public AbsClient,
                        public IListener<SessionManagerListener>,
-                       public ISingleton<SessionManager>,
+                       public ISingletonLegacy<SessionManager>,
                        public IClassName {
-friend class ISingleton<SessionManager>;
+friend class ISingletonLegacy<SessionManager>;
 public:
     SessionManager();
     virtual ~SessionManager();

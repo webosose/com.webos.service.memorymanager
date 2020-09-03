@@ -21,7 +21,7 @@
 #include <fstream>
 
 #include "interface/IManager.h"
-#include "interface/ISingleton.h"
+#include "interface/ISingleton_legacy.h"
 #include "interface/IPrintable.h"
 #include "interface/IClassName.h"
 
@@ -44,10 +44,10 @@ public :
 };
 
 class MemoryInfoManager : public IManager<MemoryInfoManagerListener>,
-                          public ISingleton<MemoryInfoManager>,
+                          public ISingletonLegacy<MemoryInfoManager>,
                           public IClassName,
                           public IPrintable {
-friend class ISingleton<MemoryInfoManager>;
+friend class ISingletonLegacy<MemoryInfoManager>;
 public:
     static string toString(enum MemoryLevel level);
 

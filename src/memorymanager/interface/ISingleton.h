@@ -17,24 +17,40 @@
 #ifndef INTERFACE_ISINGLETON_H_
 #define INTERFACE_ISINGLETON_H_
 
-#include <iostream>
-
-using namespace std;
-
 template <class T>
 class ISingleton {
-public:
-    virtual ~ISingleton() {};
-
-    static T& getInstance()
+protected:
+    ISingleton()
     {
-        static T _instance;
-        return _instance;
+
     }
 
-protected:
-    ISingleton() {};
+    virtual ~ISingleton()
+    {
 
+    };
+
+public:
+    static T* getInstance()
+    {
+        if (m_pInstance == NULL)
+            m_pInstance = new T;
+
+        return m_pInstance;
+    }
+
+    static void destroyInstance()
+    {
+        if (m_pInstance) {
+            delete m_pInstance;
+            m_pInstance = NULL;
+        }
+    }
+
+private:
+    static T* m_pInstance;
 };
+
+template <class T> T* ISingleton<T>::m_pInstance = NULL;
 
 #endif /* INTERFACE_ISINGLETON_H_ */

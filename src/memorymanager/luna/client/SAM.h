@@ -24,7 +24,6 @@
 #include <pbnjson.hpp>
 
 #include "interface/IPrintable.h"
-#include "interface/ISingleton.h"
 #include "interface/IListener.h"
 #include "base/RunningList.h"
 
@@ -33,7 +32,6 @@ using namespace pbnjson;
 using namespace LS;
 
 class SAM {
-friend class ISingleton<SAM>;
 public:
     static void subscribe(const string& sessionId = "");
     static void unsubscribe(const string& sessionId = "");
