@@ -24,14 +24,14 @@
 
 #include "Environment.h"
 
-#define LOG_NAME "SettingManager"
-
 const string SettingManager::DEFAULT_CONFIG_FILE = string(WEBOS_INSTALL_WEBOS_SYSCONFDIR) + "/memorymanager.json";
 
 SettingManager::SettingManager()
     : m_configuration(Object()),
       m_isSessionEnabled(false)
 {
+    setClassName("SettingManager");
+
     if (access(DEFAULT_CONFIG_FILE.c_str(), R_OK) == 0) {
         loadSetting(DEFAULT_CONFIG_FILE);
     }
@@ -150,7 +150,7 @@ bool SettingManager::loadSetting(const string filename)
 {
     JValue value = JDomParser::fromFile(filename.c_str());
     if (!value.isValid() || value.isNull()) {
-        Logger::error("Fail Invalid Json formmated file " + filename, LOG_NAME);
+        Logger::error("Fail Invalid Json formmated file " + filename, getClassName());
         return false;
     }
     return setSetting(value, m_configuration);

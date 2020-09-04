@@ -19,6 +19,10 @@
 
 #include <iostream>
 #include <glib.h>
+#include <pbnjson.hpp>
+
+#include "interface/IClassName.h"
+#include "interface/ISingleton.h"
 
 #include "luna/LunaManager.h"
 #include "luna/client/SAM.h"
@@ -28,10 +32,12 @@
 #include "swap/SwapManager.h"
 
 using namespace std;
+using namespace pbnjson;
 
 class MemoryManager : public ISingleton<MemoryManager>,
                       public LunaManagerListener,
-                      public MemoryInfoManagerListener {
+                      public MemoryInfoManagerListener,
+                      public IClassName {
 friend class ISingleton<MemoryManager>;
 public:
     virtual ~MemoryManager();

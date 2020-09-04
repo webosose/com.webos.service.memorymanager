@@ -20,11 +20,13 @@
 #include <iostream>
 #include <vector>
 
+#include "interface/IClassName.h"
+
 #include "Application.h"
 
 using namespace std;
 
-class RunningList {
+class RunningList : public IClassName {
 public:
     RunningList();
     virtual ~RunningList();

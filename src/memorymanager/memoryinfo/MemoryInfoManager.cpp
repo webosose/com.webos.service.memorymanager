@@ -20,8 +20,6 @@
 #include "util/Logger.h"
 #include "util/Proc.h"
 
-#define LOG_NAME    "ProcMeminfo"
-
 string MemoryInfoManager::toString(enum MemoryLevel level)
 {
     switch (level) {
@@ -43,6 +41,7 @@ MemoryInfoManager::MemoryInfoManager()
     , m_free(0)
     , m_level(MemoryLevel_NORMAL)
 {
+    setClassName("MemoryInfoManager");
 }
 
 MemoryInfoManager::~MemoryInfoManager()
@@ -120,9 +119,9 @@ enum MemoryLevel MemoryInfoManager::getExpectedLevel(int requiredMemory)
     int result;
     result = sprintf(buffer, "Free(%ld) - RequiredMemory(%d) = ExpectedMemory(%ld)", m_free, requiredMemory, expectedAvailable);
     if (result > 0) {
-        Logger::normal(buffer, LOG_NAME);
+        Logger::normal(buffer, getClassName());
     } else {
-        Logger::warning("Failed in sprintf", LOG_NAME);
+        Logger::warning("Failed in sprintf", getClassName());
     }
 
     if (expectedAvailable < SettingManager::getInstance().getCriticalEnter()) {

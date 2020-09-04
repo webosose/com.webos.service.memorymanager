@@ -22,13 +22,15 @@
 #include <pbnjson.hpp>
 
 #include "Process.h"
+#include "interface/IClassName.h"
 #include "interface/IPrintable.h"
 #include "util/Time.h"
 
 using namespace std;
 using namespace pbnjson;
 
-class Application : public IPrintable {
+class Application : public IPrintable,
+                    public IClassName {
 public:
     static bool isCloseable(const string& status)
     {

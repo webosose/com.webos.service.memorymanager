@@ -25,6 +25,7 @@
 
 #include "interface/IListener.h"
 #include "interface/ISingleton.h"
+#include "interface/IClassName.h"
 
 using namespace std;
 using namespace pbnjson;
@@ -41,7 +42,8 @@ public:
 
 class SessionManager : public AbsClient,
                        public IListener<SessionManagerListener>,
-                       public ISingleton<SessionManager> {
+                       public ISingleton<SessionManager>,
+                       public IClassName {
 friend class ISingleton<SessionManager>;
 public:
     SessionManager();

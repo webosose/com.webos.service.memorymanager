@@ -25,6 +25,8 @@
 #include "base/Application.h"
 #include "interface/IManager.h"
 #include "interface/ISingleton.h"
+#include "interface/IClassName.h"
+
 #include "luna/client/NotificationManager.h"
 #include "luna/client/SAM.h"
 #include "luna/client/SessionManager.h"
@@ -58,7 +60,8 @@ public:
 
 class LunaManager : public IManager<LunaManagerListener>,
                     public ISingleton<LunaManager>,
-                    public SessionManagerListener {
+                    public SessionManagerListener,
+                    public IClassName {
 friend class ISingleton<LunaManager>;
 public:
     virtual ~LunaManager();

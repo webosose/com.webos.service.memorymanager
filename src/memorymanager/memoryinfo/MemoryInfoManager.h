@@ -23,6 +23,7 @@
 #include "interface/IManager.h"
 #include "interface/ISingleton.h"
 #include "interface/IPrintable.h"
+#include "interface/IClassName.h"
 
 using namespace std;
 
@@ -44,6 +45,7 @@ public :
 
 class MemoryInfoManager : public IManager<MemoryInfoManagerListener>,
                           public ISingleton<MemoryInfoManager>,
+                          public IClassName,
                           public IPrintable {
 friend class ISingleton<MemoryInfoManager>;
 public:

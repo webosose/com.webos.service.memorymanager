@@ -29,6 +29,7 @@ bool SessionManager::onGetSessionList(LSHandle *sh, LSMessage *reply, void *ctx)
 SessionManager::SessionManager()
     : AbsClient("com.webos.service.sessionmanager")
 {
+    setClassName("SessionManager");
 }
 
 SessionManager::~SessionManager()

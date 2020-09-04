@@ -22,7 +22,7 @@
 
 RunningList::RunningList()
 {
-
+    setClassName("RunningList");
 }
 
 RunningList::~RunningList()
@@ -156,11 +156,11 @@ bool RunningList::isExist(string appId)
 void RunningList::print()
 {
     if (m_applications.size() == 0) {
-        Logger::verbose("Application List : Empty", "SAM");
+        Logger::verbose("Application List : Empty", getClassName());
         return;
     }
     if (SettingManager::getInstance().isVerbose()) {
-        Logger::verbose("Application List", "SAM");
+        Logger::verbose("Application List", getClassName());
         for (auto it = m_applications.begin(); it != m_applications.end(); ++it) {
             it->print();
         }

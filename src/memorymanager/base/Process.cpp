@@ -17,8 +17,6 @@
 #include "Process.h"
 #include "util/Logger.h"
 
-#define LOG_NAME    "Process"
-
 Process::Process()
     : m_ppid(-1),
       m_tid(-1),
@@ -29,6 +27,7 @@ Process::Process()
       m_text(-1),
       m_data(-1)
 {
+    setClassName("Process");
 }
 
 Process::~Process()
@@ -38,7 +37,7 @@ Process::~Process()
 void Process::fromProc(proc_t& processInfo)
 {
     if (m_ppid != -1 && m_ppid != processInfo.ppid) {
-        Logger::error("Invalid request", LOG_NAME);
+        Logger::error("Invalid request", getClassName());
         return;
     }
     m_ppid = processInfo.ppid;
@@ -139,14 +138,14 @@ int Process::getData()
 
 void Process::print()
 {
-    Logger::verbose("PPID - " + to_string(m_ppid), LOG_NAME);
-    Logger::verbose("TID - " + to_string(m_tid), LOG_NAME);
-    Logger::verbose("CMD - " + m_cmd, LOG_NAME);
-    Logger::verbose("SIZE - " + to_string(m_size), LOG_NAME);
-    Logger::verbose("RSS - " + to_string(m_rss), LOG_NAME);
-    Logger::verbose("SHARED - " + to_string(m_shared), LOG_NAME);
-    Logger::verbose("TEXT - " + to_string(m_text), LOG_NAME);
-    Logger::verbose("DATA - " + to_string(m_data), LOG_NAME);
+    Logger::verbose("PPID - " + to_string(m_ppid), getClassName());
+    Logger::verbose("TID - " + to_string(m_tid), getClassName());
+    Logger::verbose("CMD - " + m_cmd, getClassName());
+    Logger::verbose("SIZE - " + to_string(m_size), getClassName());
+    Logger::verbose("RSS - " + to_string(m_rss), getClassName());
+    Logger::verbose("SHARED - " + to_string(m_shared), getClassName());
+    Logger::verbose("TEXT - " + to_string(m_text), getClassName());
+    Logger::verbose("DATA - " + to_string(m_data), getClassName());
 }
 
 void Process::print(JValue& json)

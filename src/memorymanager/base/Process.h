@@ -24,10 +24,12 @@
 #include <string.h>
 
 #include "interface/IPrintable.h"
+#include "interface/IClassName.h"
 
 using namespace std;
 
-class Process : public IPrintable {
+class Process : public IPrintable,
+                public IClassName {
 public:
     static bool compareTid(const Process& a, const Process& b)
     {

@@ -27,6 +27,7 @@ Application::Application()
       m_time(0),
       m_context(0)
 {
+    setClassName("Application");
 }
 
 Application::Application(string appId)
@@ -48,9 +49,9 @@ void Application::print()
     else
         result = sprintf(buffer , "%-40s %-30s %15s %10s %10d %10d", m_sessionId.c_str(), m_appId.c_str(), m_status.c_str(), m_type.c_str(), m_pid, m_time);
     if (result > 0) {
-        Logger::verbose(buffer, "Application");
+        Logger::verbose(buffer, getClassName());
     } else {
-        Logger::warning("Failed in sprintf", "Application");
+        Logger::warning("Failed in sprintf", getClassName());
     }
 
 }

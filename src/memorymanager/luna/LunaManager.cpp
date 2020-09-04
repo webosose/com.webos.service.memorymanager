@@ -22,8 +22,6 @@
 #include "util/JValueUtil.h"
 #include "util/Logger.h"
 
-#define NAME    "LunaManager"
-
 const string LunaManager::toString(enum ErrorCode code)
 {
     switch(code) {
@@ -56,6 +54,7 @@ const string LunaManager::toString(enum ErrorCode code)
 
 LunaManager::LunaManager()
 {
+    setClassName("LunaManager");
 }
 
 LunaManager::~LunaManager()
@@ -260,29 +259,32 @@ void LunaManager::logResponse(Message& request, JValue& responsePayload, string 
 void LunaManager::logCall(string& url, JValue& callPayload)
 {
     if (SettingManager::getInstance().isVerbose()) {
-        Logger::normal("[Call] API(" + url + ")\n" + callPayload.stringify("    ").c_str(), NAME);
+        Logger::normal("[Call] API(" + url + ")\n"
+		       + callPayload.stringify("    ").c_str(), getClassName());
     } else {
-        Logger::normal("[Call] API(" + url + ")", NAME);
+        Logger::normal("[Call] API(" + url + ")", getClassName());
     }
 }
 
 void LunaManager::logSubscription(string api, JValue& returnPayload)
 {
     if (SettingManager::getInstance().isVerbose()) {
-        Logger::normal("[Subscription] API(" + api + ")\n" +
-                       returnPayload.stringify("    ").c_str(), NAME);
+        Logger::normal("[Subscription] API(" + api + ")\n"
+		       + returnPayload.stringify("    ").c_str(), getClassName());
     } else {
-        Logger::normal("[Subscription] API(" + api + ")", NAME);
+        Logger::normal("[Subscription] API(" + api + ")", getClassName());
     }
 }
 
 void LunaManager::logReturn(Message& response, JValue& returnPayload)
 {
     if (SettingManager::getInstance().isVerbose()) {
-        Logger::normal("[Return] Service(" + string(response.getSenderServiceName()) + ")\n" +
-                       returnPayload.stringify("    ").c_str(), NAME);
+        Logger::normal("[Return] Service("
+		       + string(response.getSenderServiceName()) + ")\n" 
+		       + returnPayload.stringify("    ").c_str(), getClassName());
     } else {
-        Logger::normal("[Return] Service(" + string(response.getSenderServiceName()) + ")", NAME);
+        Logger::normal("[Return] Service("
+		       + string(response.getSenderServiceName()) + ")", getClassName());
     }
 }
 
