@@ -23,45 +23,81 @@
 
 #include "interface/IClassName.h"
 #include "interface/ISingleton.h"
+#include "interface/IPrintable.h"
 
+#include "memorymonitor/MemoryMonitor.h"
 #include "luna/LunaManager.h"
-#include "memoryinfo/MemoryInfoManager.h"
 
 using namespace std;
 using namespace pbnjson;
 
+class MemoryLevel : public IClassName {
+public:
+    MemoryLevel() {}
+    virtual ~MemoryLevel() {}
+
+    virtual string toString() = 0;
+    virtual void action() = 0;
+    virtual bool keepLevel(long memAvail) = 0;
+};
+
+class MemoryLevelNormal : public MemoryLevel { 
+public:
+    MemoryLevelNormal();
+    virtual ~MemoryLevelNormal() {}
+
+    virtual string toString();
+    virtual void action();
+    virtual bool keepLevel(long memAvail);
+};
+
+class MemoryLevelLow : public MemoryLevel { 
+public:
+    MemoryLevelLow();
+    virtual ~MemoryLevelLow() {}
+
+    virtual string toString();
+    virtual void action();
+    virtual bool keepLevel(long memAvail);
+};
+
+class MemoryLevelCritical : public MemoryLevel {
+public:
+    MemoryLevelCritical();
+    virtual ~MemoryLevelCritical() {}
+
+    virtual string toString();
+    virtual void action();
+    virtual bool keepLevel(long memAvail);
+};
+
 class MemoryManager : public ISingleton<MemoryManager>,
                       public IClassName,
-                      public LunaManagerListener,
-                      public MemoryInfoManagerListener {
+                      public IPrintable,
+                      public LunaManagerListener {
 public:
     MemoryManager();
     virtual ~MemoryManager();
 
-    // MemoryManager
     void run();
+    void handleMemoryMonitorEvent(MonitorEvent& event);
+    GMainLoop* getMainLoop();
+
+    // IPrintable
+    virtual void print() {};
+    virtual void print(JValue& json);
 
     // LunaManagerListener
     virtual bool onRequireMemory(int requiredMemory, string& errorText);
     virtual bool onManagerStatus(JValue& responsePayload);
     virtual void onMemoryStatus(JValue& responsePayload);
 
-    // MemoryInfoManagerListener
-    virtual void onEnter(enum MemoryLevel prev, enum MemoryLevel cur);
-    virtual void onLow();
-    virtual void onCritical();
-
 private:
-    static gboolean tick(gpointer user_data)
-    {
-        MemoryInfoManager::getInstance().update(false);
-        return G_SOURCE_CONTINUE;
-    }
+    static const int m_retryCount = 5;
+    GMainLoop* m_mainLoop;
 
-    GMainLoop* m_mainloop;
-    guint m_tickSrc;
-    bool m_lock;
-    int m_retry_count;
+    MemoryMonitor* m_memoryMonitor;
+    MemoryLevel* m_memoryLevel;
 };
 
 #endif /* CORE_SERVICE_MEMORYMANAGER_H_ */

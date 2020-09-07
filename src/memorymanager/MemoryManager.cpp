@@ -15,121 +15,243 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "MemoryManager.h"
+
+#include "memorymonitor/MemoryMonitor.h"
 #include "setting/SettingManager.h"
 #include "swap/SwapManager.h"
 #include "luna/client/SAM.h"
 
 #include "util/Logger.h"
+#include "util/Proc.h"
+
+MemoryLevelNormal::MemoryLevelNormal()
+{
+    setClassName("MemoryLevelNormal");
+}
+
+string MemoryLevelNormal::toString()
+{
+        return "normal";
+}
+
+bool MemoryLevelNormal::keepLevel(long memAvail)
+{
+    if (memAvail > SettingManager::getMemoryLevelLowEnter())
+        return true;
+    else
+        return false;
+}
+
+void MemoryLevelNormal::action()
+{
+
+}
+
+MemoryLevelLow::MemoryLevelLow()
+{
+    setClassName("MemoryLevelLow");
+}
+
+string MemoryLevelLow::toString()
+{
+        return "low";
+}
+
+bool MemoryLevelLow::keepLevel(long memAvail)
+{
+    if (memAvail < SettingManager::getMemoryLevelLowExit() &&
+        memAvail > SettingManager::getMemoryLevelCriticalEnter())
+        return true;
+    else
+        return false;
+}
+
+void MemoryLevelLow::action()
+{
+    bool closed;
+    string errorText = "";
+
+    closed = SAM::close(false, errorText);
+
+    if (!closed)
+        Logger::error(errorText, getClassName());
+}
+
+MemoryLevelCritical::MemoryLevelCritical()
+{
+    setClassName("MemoryLevelCritical");
+}
+
+string MemoryLevelCritical::toString()
+{
+        return "critical";
+}
+
+bool MemoryLevelCritical::keepLevel(long memAvail)
+{
+    if (memAvail < SettingManager::getMemoryLevelCriticalExit())
+        return true;
+    else 
+        return false;
+}
+
+void MemoryLevelCritical::action()
+{
+    bool closed;
+    string errorText = "";
+
+    closed = SAM::close(true, errorText);
+
+    if (!closed)
+        Logger::error(errorText, getClassName());
+}
 
 MemoryManager::MemoryManager()
-    : m_tickSrc(-1),
-      m_lock(false),
-      m_retry_count(5)
 {
-    setClassName("MemoryManager");
-    m_mainloop = g_main_loop_new(NULL, FALSE);
+    GMainContext* gCtxt;
 
-    LunaManager::getInstance().initialize(m_mainloop);
+    setClassName("MemoryManager");
+
+    gCtxt = g_main_context_new();
+    m_mainLoop = g_main_loop_new(gCtxt, FALSE);
+
+    m_memoryLevel = new MemoryLevelNormal;
+
+    m_memoryMonitor = new MemoryMonitor(*this);
+    Logger::normal("MemoryMonitor Initialized", getClassName());
+
+    ///////////////////////////////////////////////////////////////////////
+    LunaManager::getInstance().initialize(m_mainLoop);
     Logger::normal("Initialized LunaManager", getClassName());
-    MemoryInfoManager::getInstance().initialize(m_mainloop);
-    Logger::normal("Initialized MemoryInfoManager", getClassName());
-    SwapManager::getInstance().initialize(m_mainloop);
+
+    SwapManager::getInstance().initialize(m_mainLoop);
     Logger::normal("Initialized SwapManager", getClassName());
 
     LunaManager::getInstance().setListener(this);
-    MemoryInfoManager::getInstance().setListener(this);
 }
 
 MemoryManager::~MemoryManager()
 {
-    g_main_loop_unref(m_mainloop);
+    g_main_loop_unref(m_mainLoop);
+
+    delete m_memoryMonitor;
+}
+
+GMainLoop* MemoryManager::getMainLoop()
+{
+    return m_mainLoop;
 }
 
 void MemoryManager::run()
 {
-    MemoryInfoManager::getInstance().update(false);
-
-    m_tickSrc = g_timeout_add_seconds(1, tick, this);
-
     Logger::normal("Start mainLoop", getClassName());
-    g_main_loop_run(m_mainloop);
+    g_main_loop_run(m_mainLoop);
+}
+
+void MemoryManager::handleMemoryMonitorEvent(MonitorEvent& event)
+{
+    MemoryLevel *level, *tmp;
+    long memAvail;
+
+    // Currently we use AvailMemMonitor only
+    if (typeid(event) != typeid(AvailMemMonitor))
+        return;
+
+    AvailMemMonitor& m = static_cast<AvailMemMonitor&>(event);
+    memAvail = m.getAvailable();
+
+    /* MemoryLevel changed */
+    if (!m_memoryLevel->keepLevel(memAvail)) {
+        if (memAvail < SettingManager::getMemoryLevelCriticalEnter())
+            level = new MemoryLevelCritical;
+        else if (memAvail < SettingManager::getMemoryLevelLowEnter())
+            level = new MemoryLevelLow;
+        else
+            level = new MemoryLevelNormal;
+
+        tmp = m_memoryLevel;
+        m_memoryLevel = level;
+        level = tmp;
+
+        Logger::normal("MemoryLevel changed to " + m_memoryLevel->toString(),
+                getClassName());
+
+        LunaManager::getInstance().postMemoryStatus();
+        LunaManager::getInstance().signalLevelChanged(level->toString(),
+                m_memoryLevel->toString());
+
+        delete level;
+    }
+
+    m_memoryLevel->action();
+}
+
+void MemoryManager::print(JValue& json)
+{
+    long total, available;
+
+    Proc::getMemoryInfo(total, available);
+
+    JValue current = pbnjson::Object();
+    current.put("level", m_memoryLevel->toString());
+    current.put("total", (int)total);
+    current.put("available", (int)available);
+    json.put("system", current);
+
+    JValue low = pbnjson::Object();
+    low.put("enter", SettingManager::getMemoryLevelLowEnter());
+    low.put("exit", SettingManager::getMemoryLevelLowExit());
+
+    JValue critical = pbnjson::Object();
+    critical.put("enter", SettingManager::getMemoryLevelCriticalEnter());
+    critical.put("exit", SettingManager::getMemoryLevelCriticalExit());
+
+    JValue threshold = pbnjson::Object();
+    threshold.put("low", low);
+    threshold.put("critical", critical);
+    json.put("threshold", threshold);
 }
 
 bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 {
+    MemoryLevel *level = NULL;
+    long total, available;
+    int i = 0;
+
     if (SettingManager::getSingleAppPolicy()) {
-        Logger::normal("SingleApp Policy. Skipping memory level check", getClassName());
+        Logger::normal("SingleAppPolicy, Skip memory level check", getClassName());
         return true;
     }
 
-    for (int i = 0; i < m_retry_count; ++i) {
-        if (MemoryInfoManager::getInstance().getExpectedLevel(requiredMemory) != MemoryLevel_CRITICAL) {
+    while (i < m_retryCount) {
+        Proc::getMemoryInfo(total, available);
+
+        if (available - requiredMemory > SettingManager::getMemoryLevelCriticalEnter()) {
+            if (level)
+                delete level;
             return true;
         }
 
-        if (!SAM::close(true, errorText)) {
-            return false;
-        }
+        if (!level)
+            level = new MemoryLevelCritical;
 
-        // TODO Need to find better way to check memory level again.
-        // because it takes time to free allocated memory after closing application
-        MemoryInfoManager::getInstance().update();
+        level->action();
+        i++;
     }
+
+    delete level;
+
     errorText = "Failed to reclaim required memory. Timeout.";
     return false;
 }
 
 void MemoryManager::onMemoryStatus(JValue& responsePayload)
 {
-    MemoryInfoManager::getInstance().print(responsePayload);
+    print(responsePayload);
     SAM::toJson(responsePayload);
 }
 
 bool MemoryManager::onManagerStatus(JValue& responsePayload)
 {
     return true;
-}
-
-void MemoryManager::onEnter(enum MemoryLevel prev, enum MemoryLevel cur)
-{
-    LunaManager::getInstance().postMemoryStatus();
-    LunaManager::getInstance().signalLevelChanged(MemoryInfoManager::toString(prev), MemoryInfoManager::toString(cur));
-
-    switch (cur) {
-    case MemoryLevel_NORMAL:
-        Logger::normal("MemoryLevel - NORMAL", getClassName());
-        break;
-
-    case MemoryLevel_LOW:
-        Logger::normal("MemoryLevel - LOW", getClassName());
-        break;
-
-    case MemoryLevel_CRITICAL:
-        Logger::normal("MemoryLevel - CRITICAL", getClassName());
-        break;
-    }
-}
-
-void MemoryManager::onLow()
-{
-    if (m_lock)
-        return;
-    m_lock = true;
-    string errorText = "";
-    if (!SAM::close(false, errorText)) {
-        Logger::error(errorText, getClassName());
-    }
-    m_lock = false;
-}
-
-void MemoryManager::onCritical()
-{
-    if (m_lock)
-        return;
-    m_lock = true;
-    string errorText = "";
-    if (!SAM::close(true, errorText)) {
-        Logger::error(errorText, getClassName());
-    }
-    m_lock = false;
 }
