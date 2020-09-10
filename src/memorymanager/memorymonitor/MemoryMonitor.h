@@ -71,20 +71,15 @@ private:
     MemoryMonitor& m_memoryMonitor;
 };
 
-class MemoryManager;
-
 class MemoryMonitor : public IClassName {
 public:
     MemoryMonitor();
     virtual ~MemoryMonitor();
 
-    MemoryMonitor(MemoryManager& mm);
-
     void raiseEvent(MonitorEvent& event);
 
 private:
     list<MonitorEvent> m_eventList;
-    MemoryManager& m_memoryManager;
 };
 
 #endif /* MEMORYMONITOR_MEMORYMONITOR_H_ */

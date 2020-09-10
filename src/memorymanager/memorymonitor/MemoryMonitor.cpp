@@ -60,17 +60,19 @@ AvailMemMonitor::~AvailMemMonitor()
 
 void MemoryMonitor::raiseEvent(MonitorEvent& e)
 {
-    m_memoryManager.handleMemoryMonitorEvent(e);
+    MemoryManager *mm = MemoryManager::getInstance();
+
+    mm->handleMemoryMonitorEvent(e);
 }
 
-MemoryMonitor::MemoryMonitor(MemoryManager &manager)
-    : m_memoryManager(manager)
+MemoryMonitor::MemoryMonitor()
 {
     setClassName("MemoryMonitor");
+    MemoryManager *mm = MemoryManager::getInstance();
     MonitorEvent *e;
 
     /* Create list of monitor event */
-    e = new AvailMemMonitor(*this, m_memoryManager.getMainLoop());
+    e = new AvailMemMonitor(*this, mm->getMainLoop());
     m_eventList.push_front(*e);
 }
 

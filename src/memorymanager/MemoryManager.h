@@ -24,12 +24,16 @@
 #include "interface/IClassName.h"
 #include "interface/ISingleton.h"
 #include "interface/IPrintable.h"
-
-#include "memorymonitor/MemoryMonitor.h"
-#include "luna/LunaManager.h"
+#include "base/Application.h"
 
 using namespace std;
 using namespace pbnjson;
+
+class MemroyManager;
+class MemoryMonitor;
+class MonitorEvent;
+class LunaServiceProvider;
+class SessionMonitor;
 
 class MemoryLevel : public IClassName {
 public:
@@ -37,27 +41,29 @@ public:
     virtual ~MemoryLevel() {}
 
     virtual string toString() = 0;
-    virtual void action() = 0;
+    virtual void action(string& errorText) = 0;
     virtual bool keepLevel(long memAvail) = 0;
+
+private:
 };
 
-class MemoryLevelNormal : public MemoryLevel { 
+class MemoryLevelNormal : public MemoryLevel {
 public:
     MemoryLevelNormal();
     virtual ~MemoryLevelNormal() {}
 
     virtual string toString();
-    virtual void action();
+    virtual void action(string& errorText);
     virtual bool keepLevel(long memAvail);
 };
 
-class MemoryLevelLow : public MemoryLevel { 
+class MemoryLevelLow : public MemoryLevel {
 public:
     MemoryLevelLow();
     virtual ~MemoryLevelLow() {}
 
     virtual string toString();
-    virtual void action();
+    virtual void action(string& errorText);
     virtual bool keepLevel(long memAvail);
 };
 
@@ -67,37 +73,45 @@ public:
     virtual ~MemoryLevelCritical() {}
 
     virtual string toString();
-    virtual void action();
+    virtual void action(string& errorText);
     virtual bool keepLevel(long memAvail);
 };
 
 class MemoryManager : public ISingleton<MemoryManager>,
                       public IClassName,
-                      public IPrintable,
-                      public LunaManagerListener {
+                      public IPrintable {
 public:
     MemoryManager();
     virtual ~MemoryManager();
 
     void run();
     void handleMemoryMonitorEvent(MonitorEvent& event);
-    GMainLoop* getMainLoop();
+    void killApplication(Application& app);
+    void renewMemoryStatus();
+
+    const string& getServiceName() const { return m_serviceName; }
+    GMainLoop* getMainLoop() const { return m_mainLoop; }
+    SessionMonitor& getSessionMonitor() const { return *m_sessionMonitor; }
+    LunaServiceProvider& getLunaServiceProvider() const { return *m_lunaServiceProvider; }
+
+    // for exposed APIs used by LunaServiceProvider
+    bool onRequireMemory(int requiredMemory, string& errorText);
 
     // IPrintable
     virtual void print() {};
     virtual void print(JValue& json);
 
-    // LunaManagerListener
-    virtual bool onRequireMemory(int requiredMemory, string& errorText);
-    virtual bool onManagerStatus(JValue& responsePayload);
-    virtual void onMemoryStatus(JValue& responsePayload);
-
 private:
+    static const int m_defaultRequiredMemory = 120;
     static const int m_retryCount = 5;
+    static const string m_serviceName;
+
     GMainLoop* m_mainLoop;
+    MemoryLevel* m_memoryLevel;
 
     MemoryMonitor* m_memoryMonitor;
-    MemoryLevel* m_memoryLevel;
+    LunaServiceProvider* m_lunaServiceProvider;
+    SessionMonitor* m_sessionMonitor;
 };
 
 #endif /* CORE_SERVICE_MEMORYMANAGER_H_ */

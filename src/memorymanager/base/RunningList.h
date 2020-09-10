@@ -37,9 +37,6 @@ public:
 
     void sort();
     vector<Application>::iterator find(const string& instanceId, const string& appId);
-    void setContext(int context, const string& sessionId);
-    void removeByContext(int context);
-    void removeBySessionId(const string& sessionId);
 
     vector<Application>& getRunningList();
     int getCount();
@@ -56,7 +53,6 @@ private:
     vector<Application>::iterator findByInstanceId(const string& instanceId);
 
     vector<Application> m_applications;
-
 };
 
 #endif /* BASE_RUNNINGLIST_H_ */

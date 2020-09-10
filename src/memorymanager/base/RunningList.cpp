@@ -16,7 +16,6 @@
 
 #include "RunningList.h"
 
-#include "luna/LunaManager.h"
 #include "setting/SettingManager.h"
 #include "util/Logger.h"
 
@@ -27,38 +26,7 @@ RunningList::RunningList()
 
 RunningList::~RunningList()
 {
-}
 
-void RunningList::setContext(int context, const string& sessionId)
-{
-    for (auto it = m_applications.begin(); it != m_applications.end(); ++it) {
-        if(it->getSessionId() == sessionId)
-            it->setContext(context);
-    }
-}
-
-void RunningList::removeByContext(int context)
-{
-    auto it = m_applications.begin();
-    while (it != m_applications.end()) {
-        if (it->getContext() == context) {
-            it = m_applications.erase(it);
-        }
-        else
-            ++it;
-    }
-}
-
-void RunningList::removeBySessionId(const string& sessionId)
-{
-    auto it = m_applications.begin();
-    while (it != m_applications.end()) {
-        if (it->getSessionId() == sessionId) {
-            it = m_applications.erase(it);
-        }
-        else
-            ++it;
-    }
 }
 
 vector<Application>& RunningList::getRunningList()
@@ -78,6 +46,7 @@ string RunningList::getForegroundAppId()
 
     if (m_applications.front().getStatus() == "foreground")
         return m_applications.front().getAppId();
+
     return "";
 }
 
@@ -123,7 +92,6 @@ void RunningList::sort()
 {
     std::sort(m_applications.begin(), m_applications.end(), Application::compare);
     print();
-    LunaManager::getInstance().postMemoryStatus();
 }
 
 bool RunningList::isEmpty()

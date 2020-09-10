@@ -18,6 +18,7 @@
 #include <glib.h>
 
 #include "MemoryManager.h"
+#include "luna2/LunaConnector.h"
 #include "setting/SettingManager.h"
 
 #include "util/Logger.h"
@@ -29,6 +30,7 @@ using namespace std;
 int main(int argc, char** argv)
 {
     MemoryManager* mm;
+    LunaConnector* lc;
 
     if (SettingManager::loadSetting() < 0) {
         Logger::error("Fail to load SettingManager", LOG_NAME);
@@ -36,9 +38,16 @@ int main(int argc, char** argv)
     }
     Logger::normal("SettingManager Initialized", LOG_NAME);
 
+    /* Init singleton instance */
     mm = MemoryManager::getInstance();
-    mm->run();
+    lc = LunaConnector::getInstance();
 
+    if (!lc->connect(mm->getServiceName(), mm->getMainLoop())) {
+        Logger::error("Fail to connect Luna-BUS", LOG_NAME);
+        return 0;
+    }
+
+    mm->run();
     /* In the normal case, MM is not terminated */
     return 0;
 }

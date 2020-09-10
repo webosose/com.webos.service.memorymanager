@@ -32,162 +32,42 @@ using namespace pbnjson;
 class Application : public IPrintable,
                     public IClassName {
 public:
-    static bool isCloseable(const string& status)
-    {
-        if (status == "stop" || status == "close" ||
-	    status == "splash" || status == "launch")
-            return false;
-
-        return true;
-    }
-
-    static int getStatusPriority(const string& status)
-    {
-        if (!isCloseable(status))
-            return 0;
-        else if (status == "pause")
-            return 1;
-        else if (status == "foreground")
-            return 2;
-        else if (status == "background")
-            return 3;
-        else if (status == "preload")
-            return 4;
-        else
-            return 5;
-    }
-
-    static int getTypePriority(const string& type)
-    {
-        if (type == "web")
-            return 0;
-        else if (type.find("native") != std::string::npos)
-            return 1;
-        else
-            return 2;
-    }
-
-    static bool compare(const Application& a, const Application& b)
-    {
-        if (a.m_status == b.m_status) {
-            if (a.m_type == b.m_type)
-                return a.m_time > b.m_time;
-            else
-                return getTypePriority(a.m_type) < getTypePriority(b.m_type);
-        } else {
-            return getStatusPriority(a.m_status) < getStatusPriority(b.m_status);
-        }
-    }
-
     Application();
-    Application(string appId);
     virtual ~Application();
 
-    bool isCloseable()
-    {
-        return isCloseable(m_status);
-    }
+    static bool isCloseable(const string& status);
+    static int getStatusPriority(const string& status);
+    static int getTypePriority(const string& type);
+    static bool compare(const Application& a, const Application& b);
+
+    bool isCloseable();
+
+    void setProperty(string instanceId, string appId, string type, int pid, int displayId);
+    void setStatus(const string& status);
+
+    const string& getInstanceId() const { return m_instanceId; }
+    const string& getAppId() const { return m_appId; }
+    const string& getType() const { return m_type; }
+    int getDisplayId() const { return m_displayId; }
+    int getPid() const { return m_pid; }
+    const string& getStatus() const { return m_status; }
 
     // IPrintable
     virtual void print();
     virtual void print(JValue& json);
 
-    // setter & getter
-    void setInstanceId(const string& instanceId)
-    {
-        m_instanceId = instanceId;
-    }
-
-    const string& getInstanceId() const
-    {
-        return m_instanceId;
-    }
-
-    void setAppId(const string& appId)
-    {
-        m_appId = appId;
-    }
-
-    const string& getAppId() const
-    {
-        return m_appId;
-    }
-
-    void setType(const string& type)
-    {
-        m_type = type;
-    }
-
-    const string& getType()
-    {
-        return m_type;
-    }
-
-    void setStatus(const string& status)
-    {
-        if (status == "foreground") {
-            m_time = Time::getSystemTime();
-        }
-
-        m_status = status;
-    }
-
-    const string& getStatus()
-    {
-        return m_status;
-    }
-
-    void setDisplayId(const int displayId)
-    {
-        m_displayId = displayId;
-    }
-
-    int getDisplayId() const
-    {
-        return m_displayId;
-    }
-
-    void setPid(int pid)
-    {
-        m_pid = pid;
-    }
-
-    int getPid() const
-    {
-        return m_pid;
-    }
-
-    void setContext(int context)
-    {
-        m_context = context;
-    }
-
-    int getContext()
-    {
-        return m_context;
-    }
-
-    void setSessionId(const string& sessionId)
-    {
-        m_sessionId = sessionId;
-    }
-
-    const string& getSessionId()
-    {
-        return m_sessionId;
-    }
 
 private:
+    /* Managed by SAM::onRunning */
     string m_instanceId;    /* unique id of application */
     string m_appId;         /* name of application */
-    string m_status;        /* status or event of application (FG, BG, ...) */
     string m_type;          /* type of application (web, native, ...) */
+    int m_displayId;           /* unique display id where application is launched */
     int m_pid;              /* pid of non-web type application */
-    int m_time;             /* timestamp for LRU policy among FG applications */
-    int m_displayId;        /* unique display id where application is launched */
 
-    int m_context;          /* flag to update application list */
-    string m_sessionId;     /* unique id which SessionManger creates */
+    /* Managed by SAM::onGetAppLifeEvents */
+    string m_status;        /* status or event of application (FG, BG, ...) */
+    int m_time;             /* timestamp for LRU policy among FG applications */
 };
 
 #endif /* BASE_APPLICATION_H_ */
