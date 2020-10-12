@@ -70,7 +70,7 @@ static string execCmd(const char* cmd)
     unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
 
     if (!pipe || !pipe.get()) {
-        throw runtime_error("Error: popen() failed!");
+        return "";
     }
 
     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
