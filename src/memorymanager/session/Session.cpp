@@ -17,6 +17,7 @@
 #include "MemoryManager.h"
 #include "session/Session.h"
 #include "sam/SAM.h"
+#include "base/Runtime.h"
 
 #include "util/Logger.h"
 #include "util/LinuxProcess.h"
@@ -25,21 +26,6 @@
 #include <map>
 
 const string SessionMonitor::m_externalServiceName = "com.webos.service.sessionmanager";
-
-int Session::getSessionAppCount()
-{
-    return m_sam->getAppCount();
-}
-
-void Session::printApplications(JValue& json)
-{
-    return m_sam->print(json);
-}
-
-bool Session::reclaimMemory(bool includeForeground)
-{
-    return m_sam->close(includeForeground);
-}
 
 Session::Session(string sessionId, string userId, string uid)
     : m_sessionId(sessionId),
@@ -50,12 +36,16 @@ Session::Session(string sessionId, string userId, string uid)
     setClassName("Session");
 
     m_sam = new SAM(*this);
+    m_runtime = new Runtime(*this);
 }
 
 Session::~Session()
 {
     if (m_sam)
         delete m_sam;
+
+    if (m_runtime)
+        delete m_runtime;
 }
 
 bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
@@ -89,15 +79,15 @@ bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
             localMap.insert(make_pair(sessionId, s));
         } else {
             /* Move to localMap for later swap */
-            localMap.insert(make_pair(it->first, it->second));
             p->m_sessions.erase(it->first);
+            localMap.insert(make_pair(it->first, it->second));
         }
     }
 
     /* Remove unused session */
     for (auto it = p->m_sessions.begin(); it != p->m_sessions.end(); it++) {
-            delete it->second;
             p->m_sessions.erase(it->first);
+            delete it->second;
     }
 
     /* Update session map */

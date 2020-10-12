@@ -61,8 +61,14 @@ gboolean MemStay::_tick(gpointer data)
 {
     long totalMemory;
     long freeMemory;
+    map<string, string> mInfo;
 
-    Proc::getMemoryInfo(totalMemory, freeMemory);
+    Proc::getMemInfo(mInfo);
+
+    auto it = mInfo.find("MemTotal");
+    totalMemory = stol(it->second) / 1024;
+    it = mInfo.find("MemAvailable");
+    freeMemory = stol(it->second) / 1024;
 
     int size = MemStay::getInstance().m_unit * 1024 * 1024;
     void* buffer = NULL;

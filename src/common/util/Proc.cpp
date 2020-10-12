@@ -20,49 +20,63 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 
-const string Proc::PATH_READLINK_CMD = "/usr/bin/readlink";
+#define LOG_NAME "PROC"
 
-void Proc::getMemoryInfo(long& total, long& available)
+void Proc::getMemInfo(map<string, string>& mInfo)
 {
-    string type;
-    long value;
+    string key;
+    string value;
     string kb;
 
-    ifstream meminfo("/proc/meminfo");
-    while (true) {
-        meminfo >> type >> value >> kb;
+    ifstream f("/proc/meminfo");
 
-        if (type == "MemTotal:") {
-            total = value / 1024;
-        }
-        if (type == "MemAvailable:") {
-            available = value / 1024;
-            break;
-        }
+    if (f.fail()) {
+        Logger::warning("Fail to open /proc/meminfo", LOG_NAME);
+        f.close();
+        return;
     }
-    meminfo.close();
+
+    while (true) {
+        f >> key >> value >> kb;
+
+        if (f.fail())
+            break;
+
+        key = key.substr(0, key.find(":"));
+        mInfo.insert(make_pair(key, value));
+    }
+
+    f.close();
 }
 
-string Proc::findPidNS(int pid)
+void Proc::getSmapsRollup(const int pid, map<string, string>& smaps_rollup)
 {
-    /*
-     * cmd             : readlink /proc/[pid]/ns/pid
-     * expected result : pid:[4026531836]
-     */
-    string cmd = Proc::PATH_READLINK_CMD + " /proc/" + to_string(pid) + "/ns/pid";
-    string result = LinuxProcess::getStdoutFromCmd(cmd);
+    string key;
+    string value;
+    string kb;
 
-    /*
-     * expected regex_match from "pid:[40266318836]"
-     * what[0] : pid:[4026531836]
-     * what[1] : 4026531836
-     */
-    boost::regex expr("pid:\\[([0-9]+)\\]");
-    boost::smatch what;
-    bool isMatchFound = boost::regex_match(result, what, expr);
-    if (isMatchFound) {
-        return what[1];
+    ifstream f("/proc/" + to_string(pid) + "/smaps_rollup");
+
+    if (f.fail()) {
+        Logger::warning("Fail to open /proc/" + to_string(pid) + "/smaps_rollup", LOG_NAME);
+        f.close();
+        return;
     }
 
-    return "";
+    /* In case of smaps_rollup, pass first line */
+    f >> key >> value >> kb;
+
+    while (true) {
+        f >> key >> value >> kb;
+
+        if (f.fail())
+            break;
+
+        key = key.substr(0, key.find(":"));
+        smaps_rollup.insert(make_pair(key, value));
+    }
+
+    f.close();
+
+    return;
 }

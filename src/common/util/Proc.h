@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <map>
 
 using namespace std;
 
@@ -27,11 +28,8 @@ public:
     Proc() {}
     virtual ~Proc() {}
 
-    static void getMemoryInfo(long& total, long& available);
-    static string findPidNS(int pid);
-
-private:
-    static const string PATH_READLINK_CMD;
+    static void getMemInfo(map<string, string>& mInfo);
+    static void getSmapsRollup(const int pid, map<string, string>& smaps_rollup);
 };
 
 #endif /* UTIL_PROC_H_ */

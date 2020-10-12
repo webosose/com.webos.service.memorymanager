@@ -31,7 +31,15 @@ int main(int argc, char** argv)
 
     if (argc == 1) {
         long total, available;
-        Proc::getMemoryInfo(total, available);
+        map<string, string> mInfo;
+
+        Proc::getMemInfo(mInfo);
+
+        auto it = mInfo.find("MemTotal");
+        total = stol(it->second) / 1024;
+        it = mInfo.find("MemAvailable");
+        available = stol(it->second) / 1024;
+
         cerr << "[memstay] Three parameters are needed (optional)" << endl;
         cerr << "[memstay] #1 : Allocation Target (mb) - Default 200mb"  << endl;
         cerr << "[memstay] #2 : Allocation Interval (ms) - Default 1ms"  << endl;

@@ -24,7 +24,7 @@ void AvailMemMonitor::initSource(GMainLoop* loop)
 {
     GMainContext* gCtxt = g_main_loop_get_context(loop);
 
-    m_source = g_timeout_source_new_seconds(m_updatePeriod); 
+    m_source = g_timeout_source_new_seconds(m_updatePeriod);
     g_source_set_callback(m_source, MonitorEvent::onSourceCallback, this, NULL);
     m_sourceId = g_source_attach(m_source, gCtxt);
 }
@@ -37,7 +37,14 @@ void AvailMemMonitor::deinitSource()
 
 void AvailMemMonitor::update(void)
 {
-    Proc::getMemoryInfo(m_total, m_available);
+    map<string, string> mInfo;
+
+    Proc::getMemInfo(mInfo);
+
+    auto it = mInfo.find("MemTotal");
+    m_total = stoul(it->second) / 1024;
+    it = mInfo.find("MemAvailable");
+    m_available = stoul(it->second) / 1024;
 
     this->m_memoryMonitor.raiseEvent((MonitorEvent&)*this);
 }

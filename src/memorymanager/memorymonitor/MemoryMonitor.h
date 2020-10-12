@@ -66,8 +66,8 @@ public:
 private:
     static const int m_updatePeriod = 1;
 
-    long m_total;
-    long m_available;
+    unsigned long m_total;
+    unsigned long m_available;
     MemoryMonitor& m_memoryMonitor;
 };
 

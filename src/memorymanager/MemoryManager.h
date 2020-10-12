@@ -21,19 +21,19 @@
 #include <glib.h>
 #include <pbnjson.hpp>
 
+#include "memorymonitor/MemoryMonitor.h"
+#include "luna2/LunaConnector.h"
+#include "base/Runtime.h"
+#include "session/Session.h"
+
 #include "interface/IClassName.h"
 #include "interface/ISingleton.h"
 #include "interface/IPrintable.h"
-#include "base/Application.h"
 
 using namespace std;
 using namespace pbnjson;
 
 class MemroyManager;
-class MemoryMonitor;
-class MonitorEvent;
-class LunaServiceProvider;
-class SessionMonitor;
 
 class MemoryLevel : public IClassName {
 public:
@@ -85,21 +85,21 @@ public:
     virtual ~MemoryManager();
 
     void run();
-    void handleMemoryMonitorEvent(MonitorEvent& event);
-    void killApplication(Application& app);
-    void renewMemoryStatus();
-
     const string& getServiceName() const { return m_serviceName; }
     GMainLoop* getMainLoop() const { return m_mainLoop; }
     SessionMonitor& getSessionMonitor() const { return *m_sessionMonitor; }
-    LunaServiceProvider& getLunaServiceProvider() const { return *m_lunaServiceProvider; }
 
-    // for exposed APIs used by LunaServiceProvider
+    /* Handle insternal events */
+    void handleMemoryMonitorEvent(MonitorEvent& event);
+    void handleRuntimeChange(const string& appId, const string& instanceId,
+                             const enum RuntimeChange change);
+
+    /* for exposed APIs used by LunaServiceProvider */
     bool onRequireMemory(int requiredMemory, string& errorText);
 
     // IPrintable
     virtual void print() {};
-    virtual void print(JValue& json);
+    virtual void print(JValue& printOut);
 
 private:
     static const int m_defaultRequiredMemory = 120;
@@ -110,8 +110,8 @@ private:
     MemoryLevel* m_memoryLevel;
 
     MemoryMonitor* m_memoryMonitor;
-    LunaServiceProvider* m_lunaServiceProvider;
     SessionMonitor* m_sessionMonitor;
+    LunaServiceProvider* m_lunaServiceProvider;
 };
 
 #endif /* CORE_SERVICE_MEMORYMANAGER_H_ */

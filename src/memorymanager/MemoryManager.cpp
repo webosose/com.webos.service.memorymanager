@@ -16,9 +16,6 @@
 
 #include "MemoryManager.h"
 
-#include "memorymonitor/MemoryMonitor.h"
-#include "luna2/LunaConnector.h"
-#include "session/Session.h"
 #include "setting/SettingManager.h"
 #include "swap/SwapManager.h"
 
@@ -34,7 +31,7 @@ MemoryLevelNormal::MemoryLevelNormal()
 
 string MemoryLevelNormal::toString()
 {
-        return "normal";
+    return "normal";
 }
 
 bool MemoryLevelNormal::keepLevel(long memAvail)
@@ -57,13 +54,13 @@ MemoryLevelLow::MemoryLevelLow()
 
 string MemoryLevelLow::toString()
 {
-        return "low";
+    return "low";
 }
 
 bool MemoryLevelLow::keepLevel(long memAvail)
 {
     if (memAvail < SettingManager::getMemoryLevelLowExit() &&
-        memAvail > SettingManager::getMemoryLevelCriticalEnter())
+            memAvail > SettingManager::getMemoryLevelCriticalEnter())
         return true;
     else
         return false;
@@ -76,25 +73,13 @@ void MemoryLevelLow::action(string& errorText)
     int allAppCount = 0;
 
     for (auto it = sessions.begin(); it != sessions.end(); it++) {
-        it->second->reclaimMemory(false);
-        allAppCount += it->second->getSessionAppCount();
+        it->second->m_runtime->reclaimMemory(false);
+        allAppCount += it->second->m_runtime->countApp();
     }
 
     if (allAppCount == 0) {
         errorText = "Failed to reclaim required memory. All apps were closed";
     }
-
-    #if 0
-    bool reclaimed;
-    string errorText = "";
-
-    LunaManager::getInstance().postManagerKillingEvent(application);
-
-    if (!closed) {
-        errorText = "Failed to reclaim required memory. All apps were closed";
-        Logger::error(errorText, getClassName());
-    }
-    #endif
 }
 
 MemoryLevelCritical::MemoryLevelCritical()
@@ -104,7 +89,7 @@ MemoryLevelCritical::MemoryLevelCritical()
 
 string MemoryLevelCritical::toString()
 {
-        return "critical";
+    return "critical";
 }
 
 bool MemoryLevelCritical::keepLevel(long memAvail)
@@ -122,26 +107,13 @@ void MemoryLevelCritical::action(string& errorText)
     int allAppCount = 0;
 
     for (auto it = sessions.begin(); it != sessions.end(); it++) {
-        it->second->reclaimMemory(true);
-        allAppCount += it->second->getSessionAppCount();
+        it->second->m_runtime->reclaimMemory(true);
+        allAppCount += it->second->m_runtime->countApp();
     }
 
     if (allAppCount == 0) {
         errorText = "Failed to reclaim required memory. All apps were closed";
     }
-
-#if 0
-    bool closed;
-    string errorText = "";
-
-    closed = SAM::close(true);
-    // LunaManager::getInstance().postManagerKillingEvent(application);
-
-    if (!closed) {
-        errorText = "Failed to reclaim required memory. All apps were closed";
-        Logger::error(errorText, getClassName());
-    }
-#endif
 }
 
 const string MemoryManager::m_serviceName = "com.webos.service.memorymanager";
@@ -191,7 +163,7 @@ void MemoryManager::handleMemoryMonitorEvent(MonitorEvent& event)
             m_memoryLevel = new MemoryLevelNormal;
 
         Logger::normal("MemoryLevel changed from " + prev->toString() +
-                       "to " + m_memoryLevel->toString(), getClassName());
+                "to " + m_memoryLevel->toString(), getClassName());
 
         m_lunaServiceProvider->postMemoryStatus();
         m_lunaServiceProvider->raiseSignalLevelChanged(prev->toString(), m_memoryLevel->toString());
@@ -202,17 +174,28 @@ void MemoryManager::handleMemoryMonitorEvent(MonitorEvent& event)
     m_memoryLevel->action(errorText);
 }
 
-void MemoryManager::print(JValue& json)
+void MemoryManager::print(JValue& printOut)
 {
-    long total, available;
+    int total, available;
 
-    Proc::getMemoryInfo(total, available);
+    /* Get Meminfo */
+    map<string, string> mInfo;
+    Proc::getMemInfo(mInfo);
 
+    auto it = mInfo.find("MemTotal");
+    total = stoi(it->second) / 1024;
+    it = mInfo.find("MemAvailable");
+    available = stoi(it->second) / 1024;
+
+    /* Organize "system" */
     JValue current = pbnjson::Object();
     current.put("level", m_memoryLevel->toString());
-    current.put("total", (int)total);
-    current.put("available", (int)available);
-    json.put("system", current);
+    current.put("total", total);
+    current.put("available", available);
+    printOut.put("system", current);
+
+    /* Organize "threshold" */
+    JValue threshold = pbnjson::Object();
 
     JValue low = pbnjson::Object();
     low.put("enter", SettingManager::getMemoryLevelLowEnter());
@@ -222,25 +205,36 @@ void MemoryManager::print(JValue& json)
     critical.put("enter", SettingManager::getMemoryLevelCriticalEnter());
     critical.put("exit", SettingManager::getMemoryLevelCriticalExit());
 
-    JValue threshold = pbnjson::Object();
     threshold.put("low", low);
     threshold.put("critical", critical);
-    json.put("threshold", threshold);
+    printOut.put("threshold", threshold);
 
+    /* Organize "applications" */
     JValue apps = pbnjson::Array();
 
     auto sessions = m_sessionMonitor->getSessions();
+    for (auto it = sessions.begin(); it != sessions.end(); it++) {
+        if (it->second->m_runtime->countApp() <= 0)
+            continue;
 
-    for (auto it = sessions.begin(); it != sessions.end(); it++)
-        it->second->printApplications(apps);
+        it->second->m_runtime->printApp(apps);
+    }
+    printOut.put("applications", apps);
+}
 
-    json.put("applications", apps);
+void MemoryManager::handleRuntimeChange(const string& appId, const string& instanceId,
+                                        const enum RuntimeChange change)
+{
+    if (change == RUNTIME_CHANGE_APP_CLOSE)
+        m_lunaServiceProvider->postManagerEventKilling(appId, instanceId);
+    else
+        m_lunaServiceProvider->postMemoryStatus();
 }
 
 bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
 {
     MemoryLevel *level = NULL;
-    long total, available;
+    map<string, string> mInfo;
     int i, requested;
     bool ret = false;
 
@@ -254,7 +248,10 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
     else
         requested = requiredMemory;
 
-    Proc::getMemoryInfo(total, available);
+    /* Get Meminfo */
+    Proc::getMemInfo(mInfo);
+    auto it = mInfo.find("MemAvailable");
+    long available = stol(it->second) / 1024;
 
     if (available - requested > SettingManager::getMemoryLevelCriticalEnter())
         return true;
@@ -264,7 +261,11 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
         level->action(errorText);
         /* TODO : wait progess... */
 
-        Proc::getMemoryInfo(total, available);
+        /* Get Meminfo */
+        Proc::getMemInfo(mInfo);
+        it = mInfo.find("MemAvailable");
+        available = stol(it->second) / 1024;
+
         if (available - requested > SettingManager::getMemoryLevelCriticalEnter()) {
             ret = true;
             break;
@@ -272,16 +273,6 @@ bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
     }
     delete level;
     return ret;
-}
-
-void MemoryManager::killApplication(Application& app)
-{
-    m_lunaServiceProvider->postManagerKillingEvent(app);
-}
-
-void MemoryManager::renewMemoryStatus()
-{
-    m_lunaServiceProvider->postMemoryStatus();
 }
 
 MemoryManager::MemoryManager()

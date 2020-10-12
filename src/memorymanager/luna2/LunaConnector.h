@@ -19,7 +19,6 @@
 
 #include "interface/IClassName.h"
 #include "interface/ISingleton.h"
-#include "base/Application.h"
 
 #include <luna-service2/lunaservice.hpp>
 #include <pbnjson.hpp>
@@ -56,25 +55,18 @@ public:
 
     void raiseSignalLevelChanged(string prev, string cur);
     void postMemoryStatus();
-    void postManagerKillingEvent(Application& application);
+    void postManagerEventKilling(string appId, string instanceId);
 
 private:
     static LSMethod methods[];
-    static LSMethod oldMethods[];
     static LSSignal signals[];
 
     static bool requireMemory(LSHandle* sh, LSMessage* msg, void* ctxt);
     static bool getMemoryStatus(LSHandle* sh, LSMessage* msg, void* ctxt);
     static bool getManagerEvent(LSHandle* sh, LSMessage* msg, void* ctxt);
-    static bool getCloseAppId(LSHandle* sh, LSMessage* msg, void* ctxt);
-    static bool handleKillingEvents(Message& request, JValue& requestPayload,
-                                    JValue& respponsePayload, void* ctxt);
 
     LS::SubscriptionPoint m_memoryStatus;
     LS::SubscriptionPoint m_managerEventKilling;
-    LS::SubscriptionPoint m_managerEventKillingAll;
-    LS::SubscriptionPoint m_managerEventKillingWeb;
-    LS::SubscriptionPoint m_managerEventKillingNative;
 };
 
 class LunaConnector : public ISingleton<LunaConnector>,
@@ -88,11 +80,9 @@ public:
 
     bool connect(string serviceName, GMainLoop* loop);
     LS::Handle* getHandle();
-    LS::Handle* getOldHandle();
 
 private:
     LS::Handle* m_handle;
-    LS::Handle* m_oldHandle;
 };
 
 #endif /* LUNA_LUNACONNECTOR_H_ */
