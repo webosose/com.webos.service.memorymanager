@@ -31,9 +31,10 @@ public:
     LunaSubscriber() {}
     virtual ~LunaSubscriber();
 
-    LunaSubscriber(string serviceName, string sessionId);
+    LunaSubscriber(const string& serviceName, const string& sessionId);
 
-    bool startSubscribe(string uri, LSFilterFunc callback, void *ctxt, string sessionId);
+    bool startSubscribe(const string& uri, LSFilterFunc callback,
+                        void *ctxt, const string& sessionId);
     string getSubscribeServiceName();
 
     virtual void onDisconnected() = 0;
@@ -53,9 +54,9 @@ public:
     LunaServiceProvider();
     virtual ~LunaServiceProvider();
 
-    void raiseSignalLevelChanged(string prev, string cur);
+    void raiseSignalLevelChanged(const string& prev, const string& cur);
     void postMemoryStatus();
-    void postManagerEventKilling(string appId, string instanceId);
+    void postManagerEventKilling(const string& appId, const string& instanceId);
 
 private:
     static LSMethod methods[];
@@ -78,7 +79,7 @@ public:
     }
     virtual ~LunaConnector();
 
-    bool connect(string serviceName, GMainLoop* loop);
+    bool connect(const string& serviceName, GMainLoop* loop);
     LS::Handle* getHandle();
 
 private:

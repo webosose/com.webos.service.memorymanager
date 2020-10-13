@@ -30,9 +30,9 @@ public:
     static int loadSetting();
 
     // From target's memorymanager.json
-    static string getSwapMode();
-    static string getSwapPartition();
-    static int getSwapSize();
+    static const string getSwapMode();
+    static const string getSwapPartition();
+    static const int getSwapSize();
 
     // From build environment
     static bool getSessionEnabled();

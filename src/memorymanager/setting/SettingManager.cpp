@@ -64,7 +64,7 @@ void SettingManager::initConfig(JValue& source, JValue& local)
     }
 }
 
-string SettingManager::getSwapMode()
+const string SettingManager::getSwapMode()
 {
     JValue value = m_config["swap"]["mode"];
     if (value.isNull())
@@ -73,7 +73,7 @@ string SettingManager::getSwapMode()
     return value.asString();
 }
 
-string SettingManager::getSwapPartition()
+const string SettingManager::getSwapPartition()
 {
     JValue value = m_config["swap"]["partition"];
     if (value.isNull())
@@ -82,7 +82,7 @@ string SettingManager::getSwapPartition()
     return value.asString();
 }
 
-int SettingManager::getSwapSize()
+const int SettingManager::getSwapSize()
 {
     JValue value = m_config["swap"]["size"];
     if (value.isNull())

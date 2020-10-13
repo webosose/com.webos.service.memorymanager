@@ -44,7 +44,7 @@ SwapManager::~SwapManager()
 {
 }
 
-bool SwapManager::setMode(const string mode)
+bool SwapManager::setMode(const string& mode)
 {
     const string no = "NO";
     const string memory = "MEMORY";
@@ -62,31 +62,7 @@ bool SwapManager::setMode(const string mode)
     return true;
 }
 
-static inline void rtrim(string &s)
-{
-    s.erase(find_if(s.rbegin(), s.rend(), [](int ch) {
-        return !isspace(ch);
-    }).base(), s.end());
-}
-
-static string execCmd(const char* cmd)
-{
-    array<char, 4096> buffer;
-    string result;
-    unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-
-    if (!pipe || !pipe.get()) {
-        return "";
-    }
-
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-
-    return result;
-}
-
-string SwapManager::findPartitionByPartLabel(const string partLabel)
+const string SwapManager::findPartitionByPartLabel(const string& partLabel)
 {
     string cmd = "ls -l /dev/disk/by-partlabel/";
     cmd += partLabel;
@@ -99,7 +75,7 @@ string SwapManager::findPartitionByPartLabel(const string partLabel)
     return partition;
 }
 
-void SwapManager::setPartition(const string partition)
+void SwapManager::setPartition(const string& partition)
 {
     if (!partition.empty()) {
         m_partition = partition;
@@ -119,7 +95,7 @@ bool SwapManager::setSize(const int size)
     return true;
 }
 
-bool SwapManager::createEFS(const enum SwapMode mode, const string partition,
+bool SwapManager::createEFS(const enum SwapMode mode, const string& partition,
                             const int size)
 {
     if (mode == SwapMode_MEMORY) {
@@ -147,7 +123,7 @@ bool SwapManager::createEFS(const enum SwapMode mode, const string partition,
     return true;
 }
 
-bool SwapManager::createSwap(const string device)
+bool SwapManager::createSwap(const string& device)
 {
     /* Make swapspace */
     const char* mkswapArgv[] = {SBIN_MKSWAP.c_str(), device.c_str(), NULL};
@@ -170,7 +146,7 @@ bool SwapManager::createSwap(const string device)
 void SwapManager::initialize(GMainLoop* mainloop)
 {
     /* Set m_mode from conf file */
-    string mode = SettingManager::getSwapMode();
+    const string mode = SettingManager::getSwapMode();
     if (!setMode(mode)) {
         Logger::error("Invalid Swap Mode : " + mode, getClassName());
         return;
@@ -186,7 +162,7 @@ void SwapManager::initialize(GMainLoop* mainloop)
     setPartition(SettingManager::getSwapPartition());
 
     /* Set m_size from conf file */
-    int size = SettingManager::getSwapSize();
+    const int size = SettingManager::getSwapSize();
     if (!setSize(size)) {
         Logger::error("Invalid Swap Size : " + to_string(size), getClassName());
         return;

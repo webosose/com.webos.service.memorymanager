@@ -14,44 +14,64 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
+
 #include "MemoryManager.h"
 #include "base/Runtime.h"
 #include "sam/SAM.h"
 
 #include "util/Proc.h"
 #include "util/Logger.h"
+#include "util/Cgroup.h"
 
 void BaseProcess::setPid(const int pid)
 {
-    m_pid = pid;
+    m_pids.clear();
+    m_pids.push_back(pid);
+    m_pids.sort();
+}
+
+const string BaseProcess::toString(const list<int>& pids)
+{
+    string ret;
+    for (int pid: pids)
+        ret += to_string(pid) + " ";
+    boost::trim(ret);
+    return ret;
 }
 
 void BaseProcess::updateMemStat()
 {
     map<string, string> smaps;
+    m_pssKb = 0;
 
-    Proc::getSmapsRollup(m_pid, smaps);
+    for (auto& pid : m_pids) {
+        Proc::getSmapsRollup(pid, smaps);
 
-    auto it_pss = smaps.find("Pss");
-    if (it_pss == smaps.end())
-        m_pssKb = 0;
-    else
-        m_pssKb = stoul(it_pss->second);
+        auto it_pss = smaps.find("Pss");
+        if (it_pss == smaps.end())
+            m_pssKb += 0;
+        else
+            m_pssKb += stoul(it_pss->second);
+    }
 }
 
-BaseProcess::BaseProcess(int pid)
-    :m_pid(pid)
+BaseProcess::BaseProcess(const list<int>& pids)
+    :m_pids(pids),
+     m_pssKb(0)
 {
-
+    m_pids.sort();
 }
 
 void Application::print()
 {
     char buf[1024];
-    snprintf(buf, 1024, "%6.6s %-30.30s %10.10s %10s %5d",
-            m_instanceId.c_str(), m_appId.c_str(),
-            m_status.c_str(), m_type.c_str(),
-            m_pid);
+    snprintf(buf, 1024, "%6.6s %-30.30s: %10lu kb: %s %10.10s %10s",
+             m_instanceId.c_str(), m_appId.c_str(),
+             m_pssKb,
+             BaseProcess::toString(m_pids).c_str(),
+             m_status.c_str(), m_type.c_str());
 
     Logger::verbose(buf, getClassName());
 }
@@ -62,7 +82,7 @@ void Application::print(JValue& json)
     json.put("appId", m_appId);
     json.put("status", m_status);
     json.put("type", m_type);
-    json.put("pid", m_pid);
+    json.put("pid", BaseProcess::toString(m_pids).c_str());
 }
 
 void Application::setStatus(const string& status)
@@ -77,14 +97,16 @@ void Application::setType(const string& type)
 
 bool Application::operator==(const Application& compare)
 {
-    if (m_appId == compare.getAppId() && m_pid == compare.m_pid)
+    if (m_appId == compare.getAppId() && m_pids == compare.m_pids)
         return true;
     else
         return false;
 }
 
-Application::Application(string instanceId, string appId, string type, string status, int pid)
-    :BaseProcess(pid),
+Application::Application(const string& instanceId, const string& appId,
+                         const string& type, const string& status,
+                         const int pid)
+    :BaseProcess({pid}),
      m_instanceId(instanceId),
      m_appId(appId),
      m_type(type),
@@ -93,21 +115,13 @@ Application::Application(string instanceId, string appId, string type, string st
     setClassName("Application");
 }
 
-Application::Application(string instanceId, string appId, string status)
-    :BaseProcess(0),
-     m_instanceId(instanceId),
-     m_appId(appId),
-     m_status(status)
-{
-    setClassName("Application");
-}
-
 void Service::print()
 {
     char buf[1024];
-    snprintf(buf, 1024, "%30.30s %5d",
-            m_serviceId.c_str(),
-            m_pid);
+    snprintf(buf, 1024, "%41.41s: %10lu kb: %s",
+             m_serviceId.c_str(),
+             m_pssKb,
+             BaseProcess::toString(m_pids).c_str());
 
     Logger::verbose(buf, getClassName());
 }
@@ -115,7 +129,7 @@ void Service::print()
 void Service::print(JValue& json)
 {
     json.put("serviceId", m_serviceId);
-    json.put("pid", m_pid);
+    json.put("pid", BaseProcess::toString(m_pids).c_str());
 }
 
 const string& Service::getServiceId()
@@ -123,8 +137,8 @@ const string& Service::getServiceId()
     return m_serviceId;
 }
 
-Service::Service(string serviceId, int pid)
-    :BaseProcess(pid),
+Service::Service(const string& serviceId, const list<int>& pids)
+    :BaseProcess(pids),
      m_serviceId(serviceId)
 {
     setClassName("Service");
@@ -133,7 +147,7 @@ Service::Service(string serviceId, int pid)
 void Runtime::updateMemStat()
 {
     for (auto it = m_services.begin(); it != m_services.end(); it++)
-        it->updateMemStat();
+        (*it)->updateMemStat();
 
     for (auto it = m_applications.begin(); it != m_applications.end(); it++)
         it->updateMemStat();
@@ -159,7 +173,7 @@ bool Runtime::reclaimMemory(bool critical)
     return false;
 }
 
-void Runtime::addService(Service& service)
+void Runtime::addService(Service* service)
 {
     m_services.push_back(service);
 }
@@ -171,13 +185,12 @@ int Runtime::countService()
 
 void Runtime::printService(JValue& json)
 {
-    /* TODO */
 }
 
 void Runtime::printService()
 {
     for (auto it = m_services.begin(); it != m_services.end(); it++)
-        it->print();
+        (*it)->print();
 }
 
 void Runtime::addApp(Application& app)
@@ -271,4 +284,27 @@ void Runtime::printApp()
 Runtime::Runtime(Session &session):m_session(session)
 {
     setClassName("Runtime");
+
+    /* Create service list when session runtime is created once */
+    const string p = session.getPath();
+
+    /* TODO busy wating */
+    while (!boost::filesystem::exists(p))
+        Logger::normal(p + " not exist, busy wating...", getClassName());
+
+    map<string, list<int>> comm_pids;
+    Cgroup::iterateDir(comm_pids, p);
+
+    for (auto& [comm, pids] : comm_pids) {
+        Service* svc = new Service(comm, pids);
+        addService(svc);
+    }
+    updateMemStat(); //TODO: move to sysInfo
+}
+
+Runtime::~Runtime()
+{
+    for (auto &svc:m_services)
+        delete svc;
+    m_services.clear();
 }

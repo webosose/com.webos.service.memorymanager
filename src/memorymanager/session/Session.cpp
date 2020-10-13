@@ -22,18 +22,26 @@
 #include "util/Logger.h"
 #include "util/LinuxProcess.h"
 #include "util/JValueUtil.h"
+#include "util/Cgroup.h"
 
-#include <map>
-
+const string SessionMonitor::HOST_SESSION_ID = "host";
+const string SessionMonitor::HOST_USER_ID = "root";
+const string SessionMonitor::HOST_UID = "0";
 const string SessionMonitor::m_externalServiceName = "com.webos.service.sessionmanager";
 
-Session::Session(string sessionId, string userId, string uid)
+Session::Session(const string& sessionId,
+                 const string& userId,
+                 const string& uid)
     : m_sessionId(sessionId),
       m_userId(userId),
       m_uid(uid),
-      m_sam(nullptr)
+      m_sam(nullptr),
+      m_runtime(nullptr)
 {
     setClassName("Session");
+
+    m_path = Cgroup::generatePath(sessionId == SessionMonitor::HOST_SESSION_ID,
+                                  uid);
 
     m_sam = new SAM(*this);
     m_runtime = new Runtime(*this);
@@ -48,6 +56,27 @@ Session::~Session()
         delete m_runtime;
 }
 
+void Session::print()
+{
+    char buf[1024];
+
+    snprintf(buf, 1024, "%8.8s %8.8s %5.5s %s",
+             m_sessionId.c_str(),
+             m_userId.c_str(),
+             m_uid.c_str(),
+             m_path.c_str());
+
+    Logger::verbose(buf, getClassName());
+}
+
+void Session::print(JValue& json)
+{
+    json.put("sessionId", m_sessionId);
+    json.put("userId", m_userId);
+    json.put("uid", m_uid);
+    json.put("path", m_path);
+}
+
 bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
 {
     SessionMonitor *p = static_cast<SessionMonitor*>(ctxt);
@@ -59,8 +88,12 @@ bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
     JValueUtil::getValue(payload, "sessionList", sessionList);
 
     map<string, Session*> localMap;
-    Session *s;
 
+    /* Move default session (host) to localMap */
+    localMap.insert(make_pair(HOST_SESSION_ID, p->m_sessions[HOST_SESSION_ID]));
+    p->m_sessions.erase(HOST_SESSION_ID);
+
+    /* Sync new sessions to previous sessions */
     for (JValue session : sessionList.items()) {
         string sessionId = "", userId = "", uid = "";
 
@@ -75,7 +108,7 @@ bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
         auto it = p->m_sessions.find(sessionId);
         if (it == p->m_sessions.end()) {
             /* Create new session */
-            s = new Session(sessionId, userId, uid);
+            Session *s = new Session(sessionId, userId, uid);
             localMap.insert(make_pair(sessionId, s));
         } else {
             /* Move to localMap for later swap */
@@ -85,9 +118,10 @@ bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
     }
 
     /* Remove unused session */
-    for (auto it = p->m_sessions.begin(); it != p->m_sessions.end(); it++) {
-            p->m_sessions.erase(it->first);
-            delete it->second;
+    auto it = p->m_sessions.begin();
+    while (it != p->m_sessions.end()) {
+        delete it->second;
+        it = p->m_sessions.erase(it);
     }
 
     /* Update session map */
@@ -97,7 +131,7 @@ bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
 
 void SessionMonitor::onConnected()
 {
-    string uri = "luna://" + m_externalServiceName + "/getSessionList";
+    const string uri = "luna://" + m_externalServiceName + "/getSessionList";
     startSubscribe(uri, onGetSessionList, this, "");
 
     Logger::normal(getSubscribeServiceName() + " is up", getClassName());
@@ -112,9 +146,13 @@ SessionMonitor::SessionMonitor()
     : LunaSubscriber(SessionMonitor::m_externalServiceName, "")
 {
     setClassName("SessionMonitor");
+
+    Session *s = new Session(HOST_SESSION_ID, HOST_USER_ID, HOST_UID);
+    m_sessions.insert(make_pair(HOST_SESSION_ID, s));
 }
 
 SessionMonitor::~SessionMonitor()
 {
-
+    m_sessions.erase(HOST_SESSION_ID);
+    delete m_sessions[HOST_SESSION_ID];
 }

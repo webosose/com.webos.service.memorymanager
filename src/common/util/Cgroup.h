@@ -14,25 +14,28 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef UTIL_DOCKER_H_
-#define UTIL_DOCKER_H_
+#ifndef UTIL_CGROUP_H_
+#define UTIL_CGROUP_H_
 
 #include <iostream>
+#include <map>
+#include <list>
+
+#include "util/Logger.h"
 
 using namespace std;
 
-class Docker {
+class Cgroup {
 public:
-    Docker() {}
-    virtual ~Docker() {}
+    Cgroup() {}
+    virtual ~Cgroup() {}
 
-    static string inspect(const string& sessionId, const string& item);
-
-    static const string INSPECT_PID;
-    static const string INSPECT_CONTAINER_ID;
+    static string generatePath(const bool isHost, const string& uid);
+    static void iterateDir(map<string, list<int>>& p_comm_pids, string path);
 
 private:
-    static const string PATH_DOCKER_CMD;
+    static const string CGROUP_ROOT;
+    static const string CGROUP_PROCS;
 };
 
-#endif /* UTIL_DOCKER_H_ */
+#endif /* UTIL_CGROUP_H_ */

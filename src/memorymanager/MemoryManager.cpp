@@ -211,15 +211,23 @@ void MemoryManager::print(JValue& printOut)
 
     /* Organize "applications" */
     JValue apps = pbnjson::Array();
-
+    printOut.put("applications", apps);
     auto sessions = m_sessionMonitor->getSessions();
     for (auto it = sessions.begin(); it != sessions.end(); it++) {
-        if (it->second->m_runtime->countApp() <= 0)
-            continue;
-
-        it->second->m_runtime->printApp(apps);
+        if (it->second->m_runtime->countApp() > 0)
+            it->second->m_runtime->printApp(apps);
     }
-    printOut.put("applications", apps);
+
+    /* For debugging, print session, service list, and app list */
+    for (auto it = sessions.begin(); it != sessions.end(); it++) {
+        it->second->print();
+
+        if (it->second->m_runtime->countService() > 0)
+            it->second->m_runtime->printService();
+
+        if (it->second->m_runtime->countApp() > 0)
+            it->second->m_runtime->printApp();
+    }
 }
 
 void MemoryManager::handleRuntimeChange(const string& appId, const string& instanceId,
@@ -231,7 +239,7 @@ void MemoryManager::handleRuntimeChange(const string& appId, const string& insta
         m_lunaServiceProvider->postMemoryStatus();
 }
 
-bool MemoryManager::onRequireMemory(int requiredMemory, string& errorText)
+bool MemoryManager::onRequireMemory(const int requiredMemory, string& errorText)
 {
     MemoryLevel *level = NULL;
     map<string, string> mInfo;

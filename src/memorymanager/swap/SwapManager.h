@@ -40,8 +40,8 @@ public:
     // IManager
     void initialize(GMainLoop* mainloop);
 
-    bool setMode(const string mode);
-    void setPartition(const string partition);
+    bool setMode(const string& mode);
+    void setPartition(const string& partition);
     bool setSize(const int size);
 
 private:
@@ -52,9 +52,10 @@ private:
     static const string SBIN_SWAPON;
     static const string BIN_SYNC;
 
-    string findPartitionByPartLabel(const string partLabel);
-    bool createEFS(const enum SwapMode mode, const string partition, const int size);
-    bool createSwap(const string device);
+    const string findPartitionByPartLabel(const string& partLabel);
+    bool createEFS(const enum SwapMode mode, const string& partition,
+                   const int size);
+    bool createSwap(const string& device);
     SwapManager();
 
     enum SwapMode m_mode;

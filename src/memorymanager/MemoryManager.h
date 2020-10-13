@@ -95,7 +95,7 @@ public:
                              const enum RuntimeChange change);
 
     /* for exposed APIs used by LunaServiceProvider */
-    bool onRequireMemory(int requiredMemory, string& errorText);
+    bool onRequireMemory(const int requiredMemory, string& errorText);
 
     // IPrintable
     virtual void print() {};

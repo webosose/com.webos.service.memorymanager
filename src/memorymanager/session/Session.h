@@ -19,32 +19,42 @@
 
 #include "luna2/LunaConnector.h"
 
+#include "interface/IPrintable.h"
 #include "interface/IClassName.h"
 
 #include <map>
+#include <list>
 
 using namespace std;
 
 class SAM;
 class Runtime;
 
-class Session : public IClassName {
+class Session : public IPrintable,
+                public IClassName {
 public:
     Session();
     virtual ~Session();
 
-    Session(string sessionId, string userId, string uid);
+    Session(const string& sessionId, const string& userId, const string& uid);
 
     const string& getSessionId() const { return m_sessionId; }
     const string& getUserId() const { return m_userId; }
     const string& getUid() const { return m_uid; }
+    const string& getPath() const { return m_path; }
+
+    // IPrintable
+    virtual void print();
+    virtual void print(JValue& json);
 
     Runtime* m_runtime;
     SAM* m_sam;
+
 private:
     const string m_sessionId; /* unique id which external SessionManager creates for each session */
     const string m_userId;    /* user id which external SessionManager creates for each session */
     const string m_uid;       /* Linux uid asssined to each user on the system */
+    string m_path;            /* cgroup leaf path */
 };
 
 class SessionMonitor : public IClassName,
@@ -58,6 +68,10 @@ public:
     // LunaSuscriber
     virtual void onDisconnected();
     virtual void onConnected();
+
+    static const string HOST_SESSION_ID;
+    static const string HOST_USER_ID;
+    static const string HOST_UID;
 
 private:
     static const string m_externalServiceName;

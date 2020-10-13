@@ -98,7 +98,7 @@ bool SAM::onGetAppLifeEvents(LSHandle *sh, LSMessage *msg, void *ctxt)
     }
 
     if (it == p->m_appsWaitToRun.end()) {
-        Application* app = new Application(instanceId, appId, event);
+        Application* app = new Application(instanceId, appId, "", event, -1);
         p->m_appsWaitToRun.push_back(*app);
     } else {
         it->setStatus(event);
@@ -143,6 +143,7 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *msg, void *ctxt)
         it->setPid(stoi(pid));
         it->setType(appType);
         p->m_session.m_runtime->addApp(*it);
+        p->m_session.m_runtime->updateMemStat(); //TODO: move to sysInfo
         p->m_appsWaitToRun.erase(it);
     }
 

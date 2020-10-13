@@ -27,8 +27,8 @@ string LunaSubscriber::getSubscribeServiceName()
     return m_subscribeServiceName;
 }
 
-bool LunaSubscriber::startSubscribe(string uri, LSFilterFunc callback, void *ctxt,
-                                    string sessionId)
+bool LunaSubscriber::startSubscribe(const string& uri, LSFilterFunc callback,
+                                    void *ctxt, const string& sessionId)
 {
     if (m_portIndex >= PORTMAX) {
         Logger::error("Too many methods are subscribed. MAX=" + to_string(PORTMAX), "LunaSubscriber");
@@ -53,7 +53,8 @@ bool LunaSubscriber::startSubscribe(string uri, LSFilterFunc callback, void *ctx
     return true;
 }
 
-LunaSubscriber::LunaSubscriber(string serviceName, string sessionId)
+LunaSubscriber::LunaSubscriber(const string& serviceName,
+                               const string& sessionId)
 {
     LunaConnector* connector = LunaConnector::getInstance();
     LS::Handle *handle = connector->getHandle();
@@ -210,7 +211,8 @@ out:
     return true;
 }
 
-void LunaServiceProvider::raiseSignalLevelChanged(string prev, string cur)
+void LunaServiceProvider::raiseSignalLevelChanged(const string& prev,
+                                                  const string& cur)
 {
     LunaConnector* connector = LunaConnector::getInstance();
     LS::Handle *handle = connector->getHandle();
@@ -235,7 +237,8 @@ void LunaServiceProvider::postMemoryStatus()
     m_memoryStatus.post(payload.stringify().c_str());
 }
 
-void LunaServiceProvider::postManagerEventKilling(string appId, string instanceId)
+void LunaServiceProvider::postManagerEventKilling(const string& appId,
+                                                  const string& instanceId)
 {
     JValue subscriptionResponse = pbnjson::Object();
     subscriptionResponse.put("id", appId);
@@ -252,7 +255,7 @@ LS::Handle* LunaConnector::getHandle()
     return m_handle;
 }
 
-bool LunaConnector::connect(string serviceName, GMainLoop* loop)
+bool LunaConnector::connect(const string& serviceName, GMainLoop* loop)
 {
     try {
         m_handle = new LS::Handle(serviceName.c_str());
@@ -293,4 +296,3 @@ LunaServiceProvider::~LunaServiceProvider()
 {
 
 }
-

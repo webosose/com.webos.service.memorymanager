@@ -29,29 +29,28 @@ using namespace std;
 
 class BaseProcess {
 public:
-    BaseProcess();
+    BaseProcess(const list<int>& pids);
     virtual ~BaseProcess() { }
 
-    BaseProcess(int pid);
-
     void setPid(const int pid);
+    const string toString(const list<int>& pids);
     void updateMemStat();
 
-    int m_pid;              // Linux PID
-    unsigned long m_pssKb;  // PSS in KB size
+    list<int> m_pids;       // Linux PID, Service class may have multiple PIDs,
+                            // while Application has only one PID.
+    unsigned long m_pssKb;  // Sum of PSS in KB size
 };
 
 class Application : public BaseProcess,
                     public IPrintable,
                     public IClassName {
 public:
-    Application();
+    Application(const string& instanceId, const string& appId,
+                const string& type, const string& status, const int pid);
     virtual ~Application() { }
 
     bool isCloseable();
 
-    Application(string instanceId, string appId, string status);
-    Application(string instanceId, string appId, string type, string status, int pid);
     void setStatus(const string& status);
     void setType(const string& type);
 
@@ -66,10 +65,10 @@ public:
     virtual void print(JValue& json);
 
 private:
-    string m_instanceId;    // unique id of application
-    string m_appId;         // name of application
-    string m_type;          // type of application (web, native, ...)
-    string m_status;        // status or event of application (FG, BG, ...)
+    const string m_instanceId;  // unique id of application
+    const string m_appId;       // name of application
+    string m_type;              // type of application (web, native, ...)
+    string m_status;            // status or event of application (FG, BG, ...)
 };
 
 class Service : public BaseProcess,
@@ -79,7 +78,7 @@ public:
     Service();
     virtual ~Service() { }
 
-    Service(string serviceId, int pid);
+    Service(const string& serviceId, const list<int>& pid);
 
     const string& getServiceId();
 
@@ -88,7 +87,7 @@ public:
     virtual void print(JValue& json);
 
 private:
-    string m_serviceId;     // name of service
+    const string m_serviceId;     // name of service
 };
 
 enum RuntimeChange {
@@ -101,7 +100,7 @@ enum RuntimeChange {
 class Runtime : public IClassName {
 public:
     Runtime();
-    virtual ~Runtime() { }
+    virtual ~Runtime();
 
     Runtime(Session& session);
 
@@ -109,7 +108,7 @@ public:
     bool reclaimMemory(bool critical);
 
     /* Service List Management */
-    void addService(Service& service);
+    void addService(Service* service);
     int countService();
     void printService();
     void printService(JValue& json);
@@ -125,7 +124,7 @@ public:
 private:
     Session& m_session;
 
-    list<Service> m_services;
+    list<Service*> m_services;
     list<Application> m_applications;
 };
 
