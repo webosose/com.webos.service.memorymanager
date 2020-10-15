@@ -41,6 +41,7 @@ bool LunaSubscriber::startSubscribe(const string& uri, LSFilterFunc callback,
     JValue req = pbnjson::Object();
 
     req.put("subscribe", true);
+#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
     if (sessionId.empty()) {
         m_subscribePorts[m_portIndex] = handle->callMultiReply(uri.c_str(), req.stringify().c_str(),
                                                  callback, ctxt, nullptr, nullptr);
@@ -48,6 +49,10 @@ bool LunaSubscriber::startSubscribe(const string& uri, LSFilterFunc callback,
         m_subscribePorts[m_portIndex] = handle->callMultiReply(uri.c_str(), req.stringify().c_str(),
                                                  callback, ctxt, nullptr, sessionId.c_str());
     }
+#else
+    m_subscribePorts[m_portIndex] = handle->callMultiReply(uri.c_str(), req.stringify().c_str(),
+                                             callback, ctxt, nullptr);
+#endif
 
     m_portIndex++;
 
@@ -76,8 +81,13 @@ LunaSubscriber::LunaSubscriber(const string& serviceName,
     if (!sessionId.empty())
         req.put("sessionId", sessionId);
 
+#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
     m_subscribePorts[m_portIndex] = handle->callMultiReply(uri.c_str(), req.stringify().c_str(),
                                             onStatusChange, this, nullptr, nullptr);
+#else
+    m_subscribePorts[m_portIndex] = handle->callMultiReply(uri.c_str(), req.stringify().c_str(),
+                                            onStatusChange, this, nullptr);
+#endif
     m_portIndex++;
 }
 

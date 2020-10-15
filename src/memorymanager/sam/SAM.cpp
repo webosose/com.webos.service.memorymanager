@@ -36,6 +36,7 @@ bool SAM::close(string appId, string instanceId)
     const string uri = "luna://com.webos.service.applicationmanager/close";
 
     Call call;
+#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
     if (m_session.getSessionId().empty()) {
         call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
                 (const char *)nullptr, (const char *)nullptr);
@@ -43,6 +44,10 @@ bool SAM::close(string appId, string instanceId)
         call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
                 (const char *)nullptr, m_session.getSessionId().c_str());
     }
+#else
+    call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+            (const char *)nullptr);
+#endif
 
     Message response = call.get(m_closeTimeOutMs);
     if (!response) {
@@ -158,6 +163,7 @@ bool SAM::initAppWaitToRun()
     const string uri = "luna://" + m_externalServiceName + "/running";
 
     Call call;
+#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
     if (m_session.getSessionId().empty()) {
         call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
                 (const char *)nullptr, (const char *)nullptr);
@@ -165,6 +171,10 @@ bool SAM::initAppWaitToRun()
         call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
                 (const char *)nullptr, m_session.getSessionId().c_str());
     }
+#else
+    call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+            (const char *)nullptr);
+#endif
 
     Message response = call.get(m_closeTimeOutMs);
     if (!response) {
