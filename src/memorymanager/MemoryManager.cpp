@@ -217,17 +217,6 @@ void MemoryManager::print(JValue& printOut)
         if (it->second->m_runtime->countApp() > 0)
             it->second->m_runtime->printApp(apps);
     }
-
-    /* For debugging, print session, service list, and app list */
-    for (auto it = sessions.begin(); it != sessions.end(); it++) {
-        it->second->print();
-
-        if (it->second->m_runtime->countService() > 0)
-            it->second->m_runtime->printService();
-
-        if (it->second->m_runtime->countApp() > 0)
-            it->second->m_runtime->printApp();
-    }
 }
 
 void MemoryManager::handleRuntimeChange(const string& appId, const string& instanceId,
@@ -281,6 +270,40 @@ bool MemoryManager::onRequireMemory(const int requiredMemory, string& errorText)
     }
     delete level;
     return ret;
+}
+
+void MemoryManager::onSysInfo(JValue& json)
+{
+    auto sessions = getSessionMonitor().getSessions();
+    JValue sessionList = pbnjson::Array();
+
+    for (auto it = sessions.begin(); it != sessions.end(); it++) {
+        JValue session = pbnjson::Object();
+        JValue appList = pbnjson::Array();
+        JValue serviceList = pbnjson::Array();
+
+        it->second->m_runtime->updateMemStat();
+        it->second->m_runtime->printApp(appList);
+        it->second->m_runtime->printService(serviceList);
+
+        session.put("sessionId", it->second->getSessionId());
+        session.put("apps", appList);
+        session.put("services", serviceList);
+        sessionList.append(session);
+    }
+
+    json.put("sessions", sessionList);
+
+    /* For debugging, print session, service list, and app list */
+    for (auto it = sessions.begin(); it != sessions.end(); it++) {
+        it->second->print();
+
+        if (it->second->m_runtime->countService() > 0)
+            it->second->m_runtime->printService();
+
+        if (it->second->m_runtime->countApp() > 0)
+            it->second->m_runtime->printApp();
+    }
 }
 
 MemoryManager::MemoryManager()

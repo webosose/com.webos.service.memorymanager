@@ -19,6 +19,7 @@
 
 #include "util/Logger.h"
 #include "util/JValueUtil.h"
+#include "sysinfo/SysInfo.h"
 
 #include <glib.h>
 
@@ -112,6 +113,7 @@ LSMethod LunaServiceProvider::methods[] = {
     {"requireMemory", LunaServiceProvider::requireMemory, LUNA_METHOD_FLAGS_NONE},
     {"getMemoryStatus", LunaServiceProvider::getMemoryStatus, LUNA_METHOD_FLAGS_NONE},
     {"getManagerEvent", LunaServiceProvider::getManagerEvent, LUNA_METHOD_FLAGS_NONE},
+    {"sysInfo", LunaServiceProvider::sysInfo, LUNA_METHOD_FLAGS_NONE},
     {nullptr, nullptr}
 };
 
@@ -209,6 +211,24 @@ out:
     responsePayload.put("returnValue", returnValue);
     request.respond(responsePayload.stringify().c_str());
     return true;
+}
+
+bool LunaServiceProvider::sysInfo(LSHandle* sh, LSMessage* msg, void* ctxt)
+{
+    Message request(msg);
+    JValue requestPayload = JDomParser::fromString(request.getPayload());
+    JValue responsePayload = pbnjson::Array();
+    bool ret = true;
+
+    JValue allList = pbnjson::Object();
+    MemoryManager::getInstance()->onSysInfo(allList);
+
+    SysInfo::print(allList, responsePayload);
+
+    responsePayload.put("returnValue", ret);
+    request.respond(responsePayload.stringify().c_str());
+
+    return ret;
 }
 
 void LunaServiceProvider::raiseSignalLevelChanged(const string& prev,

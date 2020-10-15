@@ -25,52 +25,34 @@
 #include "util/Logger.h"
 #include "util/Cgroup.h"
 
-void BaseProcess::setPid(const int pid)
-{
-    m_pids.clear();
-    m_pids.push_back(pid);
-    m_pids.sort();
-}
-
-const string BaseProcess::toString(const list<int>& pids)
-{
-    string ret;
-    for (int pid: pids)
-        ret += to_string(pid) + " ";
-    boost::trim(ret);
-    return ret;
-}
-
-void BaseProcess::updateMemStat()
+unsigned long BaseProcess::getPssValue(const int pid)
 {
     map<string, string> smaps;
-    m_pssKb = 0;
 
-    for (auto& pid : m_pids) {
-        Proc::getSmapsRollup(pid, smaps);
+    Proc::getSmapsRollup(pid, smaps);
 
-        auto it_pss = smaps.find("Pss");
-        if (it_pss == smaps.end())
-            m_pssKb += 0;
-        else
-            m_pssKb += stoul(it_pss->second);
-    }
+    auto it_pss = smaps.find("Pss");
+    if (it_pss == smaps.end())
+        return 0;
+    else
+        return stoul(it_pss->second);
 }
 
-BaseProcess::BaseProcess(const list<int>& pids)
-    :m_pids(pids),
-     m_pssKb(0)
+BaseProcess::BaseProcess()
 {
-    m_pids.sort();
+}
+
+void Application::updateMemStat()
+{
+    m_pssKb = getPssValue(m_pid);
 }
 
 void Application::print()
 {
     char buf[1024];
-    snprintf(buf, 1024, "%6.6s %-30.30s: %10lu kb: %s %10.10s %10s",
+    snprintf(buf, 1024, "%6.6s %-30.30s: %10lu kb: %5d %10.10s %10s",
              m_instanceId.c_str(), m_appId.c_str(),
-             m_pssKb,
-             BaseProcess::toString(m_pids).c_str(),
+             m_pssKb, m_pid,
              m_status.c_str(), m_type.c_str());
 
     Logger::verbose(buf, getClassName());
@@ -82,7 +64,13 @@ void Application::print(JValue& json)
     json.put("appId", m_appId);
     json.put("status", m_status);
     json.put("type", m_type);
-    json.put("pid", BaseProcess::toString(m_pids).c_str());
+    json.put("pid", m_pid);
+    json.put("pss", to_string(m_pssKb));
+}
+
+void Application::setPid(const int pid)
+{
+    m_pid = pid;
 }
 
 void Application::setStatus(const string& status)
@@ -97,7 +85,7 @@ void Application::setType(const string& type)
 
 bool Application::operator==(const Application& compare)
 {
-    if (m_appId == compare.getAppId() && m_pids == compare.m_pids)
+    if (m_appId == compare.getAppId() && m_pid == compare.m_pid)
         return true;
     else
         return false;
@@ -106,30 +94,69 @@ bool Application::operator==(const Application& compare)
 Application::Application(const string& instanceId, const string& appId,
                          const string& type, const string& status,
                          const int pid)
-    :BaseProcess({pid}),
-     m_instanceId(instanceId),
+    :m_instanceId(instanceId),
      m_appId(appId),
      m_type(type),
-     m_status(status)
+     m_status(status),
+     m_pid(pid)
 {
     setClassName("Application");
+    m_pssKb = 0;
+}
+
+template<typename T, typename U>
+void Service::toString(map<T, U>& pMap, string& str1, string& str2)
+{
+    string ret1 = "", ret2 = "";
+
+    auto it = pMap.begin();
+    for (; it != pMap.end(); ++it) {
+        ret1 += to_string(it->first) + " ";
+        ret2 += to_string(it->second) + " ";
+    }
+
+    boost::trim(ret1);
+    boost::trim(ret2);
+
+    str1 = ret1;
+    str2 = ret2;
+}
+
+void Service::updateMemStat()
+{
+    map<int, unsigned long>::iterator it = m_pidPss.begin();
+    for (; it != m_pidPss.end(); ++it) {
+        int localPss = getPssValue(it->first);
+
+        if (it->second != localPss)
+            it->second = localPss;
+    }
 }
 
 void Service::print()
 {
     char buf[1024];
+    unsigned long pssSum = 0;
+    string pss = "", pid = "";
+
+    for (auto it = m_pidPss.cbegin(); it != m_pidPss.cend(); ++it)
+        pssSum += it->second;
+
+    toString(m_pidPss, pid, pss);
     snprintf(buf, 1024, "%41.41s: %10lu kb: %s",
-             m_serviceId.c_str(),
-             m_pssKb,
-             BaseProcess::toString(m_pids).c_str());
+             m_serviceId.c_str(), pssSum, pid.c_str());
 
     Logger::verbose(buf, getClassName());
 }
 
 void Service::print(JValue& json)
 {
+    string pss = "", pid = "";
+    toString(m_pidPss, pid, pss);
+
     json.put("serviceId", m_serviceId);
-    json.put("pid", BaseProcess::toString(m_pids).c_str());
+    json.put("pid", pid.c_str());
+    json.put("pss", pss.c_str());
 }
 
 const string& Service::getServiceId()
@@ -138,10 +165,12 @@ const string& Service::getServiceId()
 }
 
 Service::Service(const string& serviceId, const list<int>& pids)
-    :BaseProcess(pids),
-     m_serviceId(serviceId)
+    : m_serviceId(serviceId)
 {
     setClassName("Service");
+
+    for (int pid : pids)
+        m_pidPss.insert(make_pair(pid, getPssValue(pid)));
 }
 
 void Runtime::updateMemStat()
@@ -185,6 +214,11 @@ int Runtime::countService()
 
 void Runtime::printService(JValue& json)
 {
+    for (auto it = m_services.begin(); it != m_services.end(); it++) {
+        JValue obj = pbnjson::Object();
+        (*it)->print(obj);
+        json.append(obj);
+    }
 }
 
 void Runtime::printService()
@@ -299,7 +333,6 @@ Runtime::Runtime(Session &session):m_session(session)
         Service* svc = new Service(comm, pids);
         addService(svc);
     }
-    updateMemStat(); //TODO: move to sysInfo
 }
 
 Runtime::~Runtime()

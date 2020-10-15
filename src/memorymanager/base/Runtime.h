@@ -29,16 +29,12 @@ using namespace std;
 
 class BaseProcess {
 public:
-    BaseProcess(const list<int>& pids);
+    BaseProcess();
     virtual ~BaseProcess() { }
 
-    void setPid(const int pid);
-    const string toString(const list<int>& pids);
-    void updateMemStat();
+    unsigned long getPssValue(const int pid);
 
-    list<int> m_pids;       // Linux PID, Service class may have multiple PIDs,
-                            // while Application has only one PID.
-    unsigned long m_pssKb;  // Sum of PSS in KB size
+    virtual void updateMemStat() = 0;
 };
 
 class Application : public BaseProcess,
@@ -53,12 +49,15 @@ public:
 
     void setStatus(const string& status);
     void setType(const string& type);
+    void setPid(const int pid);
 
     const string& getInstanceId() const { return m_instanceId; }
     const string& getAppId() const { return m_appId; }
     const string& getStatus() const { return m_status; }
 
     bool operator==(const Application& compare);
+
+    virtual void updateMemStat();
 
     // IPrintable
     virtual void print();
@@ -69,6 +68,8 @@ private:
     const string m_appId;       // name of application
     string m_type;              // type of application (web, native, ...)
     string m_status;            // status or event of application (FG, BG, ...)
+    int m_pid;                  // Linux PID
+    unsigned long m_pssKb;      // PSS in KB size
 };
 
 class Service : public BaseProcess,
@@ -81,13 +82,20 @@ public:
     Service(const string& serviceId, const list<int>& pid);
 
     const string& getServiceId();
+    template<typename T, typename U>
+    void toString(map<T, U>& pMap, string& str1, string& str2);
+
+    virtual void updateMemStat();
 
     // IPrintable
     virtual void print();
     virtual void print(JValue& json);
 
 private:
-    const string m_serviceId;     // name of service
+    const string m_serviceId;           // name of service
+    map<int, unsigned long> m_pidPss;   // Linux PID and PSS in KB size,
+                                        // Service Class may have multiple PIDs and PSS,
+                                        // While Application has only one PID and PSS.
 };
 
 enum RuntimeChange {

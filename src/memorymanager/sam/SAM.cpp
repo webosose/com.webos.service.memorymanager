@@ -143,7 +143,6 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *msg, void *ctxt)
         it->setPid(stoi(pid));
         it->setType(appType);
         p->m_session.m_runtime->addApp(*it);
-        p->m_session.m_runtime->updateMemStat(); //TODO: move to sysInfo
         p->m_appsWaitToRun.erase(it);
     }
 
