@@ -33,10 +33,9 @@ class Runtime;
 class Session : public IPrintable,
                 public IClassName {
 public:
-    Session();
+    explicit Session(const string& sessionId, const string& userId,
+                     const string& uid);
     virtual ~Session();
-
-    Session(const string& sessionId, const string& userId, const string& uid);
 
     const string& getSessionId() const { return m_sessionId; }
     const string& getUserId() const { return m_userId; }
@@ -44,8 +43,8 @@ public:
     const string& getPath() const { return m_path; }
 
     // IPrintable
-    virtual void print();
-    virtual void print(JValue& json);
+    virtual void print() override final;
+    virtual void print(JValue& json) override final;
 
     Runtime* m_runtime;
     SAM* m_sam;
@@ -60,14 +59,14 @@ private:
 class SessionMonitor : public IClassName,
                        public LunaSubscriber {
 public:
-    SessionMonitor();
+    explicit SessionMonitor();
     virtual ~SessionMonitor();
 
     std::map<string, Session*> getSessions() { return m_sessions; }
 
     // LunaSuscriber
-    virtual void onDisconnected();
-    virtual void onConnected();
+    virtual void onDisconnected() override final;
+    virtual void onConnected() override final;
 
     static const string HOST_SESSION_ID;
     static const string HOST_USER_ID;

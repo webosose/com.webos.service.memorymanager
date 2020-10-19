@@ -46,10 +46,6 @@ unsigned long BaseProcess::getPssValue(const int pid)
         return stoul(it_pss->second);
 }
 
-BaseProcess::BaseProcess()
-{
-}
-
 void Application::updateMemStat()
 {
     m_pssKb = getPssValue(m_pid);
@@ -117,8 +113,8 @@ void Service::toString(map<T, U>& pMap, string& str1, string& str2)
 {
     string ret1 = "", ret2 = "";
 
-    auto it = pMap.begin();
-    for (; it != pMap.end(); ++it) {
+    auto it = pMap.cbegin();
+    for (; it != pMap.cend(); ++it) {
         ret1 += to_string(it->first) + " ";
         ret2 += to_string(it->second) + " ";
     }
@@ -234,7 +230,7 @@ void Runtime::updateMemStat()
     }
 
     /* Update Application Memory Stat */
-    for (auto it = m_applications.begin(); it != m_applications.end(); it++)
+    for (auto it = m_applications.begin(); it != m_applications.end(); ++it)
         it->updateMemStat();
 }
 
@@ -251,7 +247,7 @@ bool Runtime::reclaimMemory(bool critical)
     if (m_session.m_sam->close(it.getAppId(), it.getInstanceId())) {
         MemoryManager* mm = MemoryManager::getInstance();
         mm->handleRuntimeChange(it.getAppId(), it.getInstanceId(),
-                                RUNTIME_CHANGE_APP_CLOSE);
+                                RuntimeChange::APP_CLOSE);
         return true;
     }
 
@@ -292,7 +288,7 @@ int Runtime::countService()
 
 void Runtime::printService(JValue& json)
 {
-    for (auto it = m_services.begin(); it != m_services.end(); it++) {
+    for (auto it = m_services.cbegin(); it != m_services.cend(); ++it) {
         JValue obj = pbnjson::Object();
         (*it)->print(obj);
         json.append(obj);
@@ -301,7 +297,7 @@ void Runtime::printService(JValue& json)
 
 void Runtime::printService()
 {
-    for (auto it = m_services.begin(); it != m_services.end(); it++)
+    for (auto it = m_services.cbegin(); it != m_services.cend(); ++it)
         (*it)->print();
 }
 
@@ -325,7 +321,7 @@ void Runtime::addApp(Application& app)
 
     MemoryManager* mm = MemoryManager::getInstance();
     mm->handleRuntimeChange(app.getAppId(), app.getInstanceId(),
-                            RUNTIME_CHANGE_APP_ADD);
+                            RuntimeChange::APP_ADD);
 }
 
 bool Runtime::updateApp(const string& appId, const string& instanceId,
@@ -344,7 +340,7 @@ bool Runtime::updateApp(const string& appId, const string& instanceId,
 
     if (event == "stop") {
         m_applications.remove(*it);
-        change = RUNTIME_CHANGE_APP_REMOVE;
+        change = RuntimeChange::APP_REMOVE;
     } else {
         if (event == "foreground") {
             m_applications.splice(m_applications.end(), m_applications, it);
@@ -354,7 +350,7 @@ bool Runtime::updateApp(const string& appId, const string& instanceId,
         }
 
         it->setStatus(event);
-        change = RUNTIME_CHANGE_APP_UPDATE;
+        change = RuntimeChange::APP_UPDATE;
     }
 
     MemoryManager* mm = MemoryManager::getInstance();
@@ -381,7 +377,7 @@ int Runtime::countApp()
 
 void Runtime::printApp(JValue& json)
 {
-    for (auto it = m_applications.begin(); it != m_applications.end(); it++) {
+    for (auto it = m_applications.begin(); it != m_applications.end(); ++it) {
         JValue obj = pbnjson::Object();
         it->print(obj);
         json.append(obj);
@@ -390,7 +386,7 @@ void Runtime::printApp(JValue& json)
 
 void Runtime::printApp()
 {
-    for (auto it = m_applications.begin(); it != m_applications.end(); it++)
+    for (auto it = m_applications.begin(); it != m_applications.end(); ++it)
         it->print();
 }
 

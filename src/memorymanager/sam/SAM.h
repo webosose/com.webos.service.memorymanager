@@ -28,15 +28,14 @@
 class SAM : public IClassName,
             public LunaSubscriber {
 public:
-    SAM();
+    explicit SAM(Session &session);
     virtual ~SAM();
 
-    SAM(Session &session);
     bool close(string appId, string instanceId);
 
     // LunaSuscriber
-    virtual void onDisconnected();
-    virtual void onConnected();
+    virtual void onDisconnected() override final;
+    virtual void onConnected() override final;
 
 private:
     static bool onGetAppLifeEvents(LSHandle *sh, LSMessage *msg, void *ctxt);

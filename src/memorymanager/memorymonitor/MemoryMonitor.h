@@ -30,12 +30,12 @@ class MemoryMonitor;
 
 class MonitorEvent {
 public:
-    MonitorEvent() {}
+    explicit MonitorEvent() = default;
     virtual ~MonitorEvent() {}
 
-    virtual void initSource(GMainLoop* loop) {}
-    virtual void deinitSource() {}
-    virtual void update() {}
+    virtual void initSource(GMainLoop* loop) {};
+    virtual void deinitSource() {};
+    virtual void update() {};
 
     static gboolean onSourceCallback(gpointer eventInstance)
     {
@@ -51,17 +51,15 @@ protected:
 
 class AvailMemMonitor : public MonitorEvent {
 public:
-    AvailMemMonitor();
+    explicit AvailMemMonitor(MemoryMonitor& monitor, GMainLoop* loop);
     virtual ~AvailMemMonitor();
- 
-    AvailMemMonitor(MemoryMonitor& monitor, GMainLoop* loop);
 
     long getAvailable(void);
 
     // MonitorEvent
-    virtual void initSource(GMainLoop* loop);
-    virtual void deinitSource();
-    virtual void update(void);
+    virtual void initSource(GMainLoop* loop) override final;
+    virtual void deinitSource() override final;
+    virtual void update() override final;
 
 private:
     static const int m_updatePeriod = 1;
@@ -73,7 +71,7 @@ private:
 
 class MemoryMonitor : public IClassName {
 public:
-    MemoryMonitor();
+    explicit MemoryMonitor();
     virtual ~MemoryMonitor();
 
     void raiseEvent(MonitorEvent& event);

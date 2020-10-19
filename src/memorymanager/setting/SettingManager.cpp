@@ -35,16 +35,6 @@ int SettingManager::m_memoryLevelLowExit;
 int SettingManager::m_memoryLevelCriticalEnter;
 int SettingManager::m_memoryLevelCriticalExit;
 
-SettingManager::SettingManager()
-{
-
-}
-
-SettingManager::~SettingManager()
-{
-
-}
-
 void SettingManager::initConfig(JValue& source, JValue& local)
 {
     auto it = source.children();
@@ -150,11 +140,8 @@ bool SettingManager::getSessionEnabled()
 
 int SettingManager::loadSetting()
 {
-    int ret;
-
     // From target's memorymanager.json
-    ret = access(m_configFile.c_str(), R_OK);
-    if (ret < 0)
+    if (int ret = access(m_configFile.c_str(), R_OK); ret < 0)
         return ret;
 
     JValue config = JDomParser::fromFile(m_configFile.c_str());

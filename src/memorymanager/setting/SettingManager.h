@@ -25,8 +25,6 @@ using namespace pbnjson;
 
 class SettingManager {
 public:
-    ~SettingManager();
-
     static int loadSetting();
 
     // From target's memorymanager.json
@@ -44,7 +42,8 @@ public:
     static int getMemoryLevelCriticalExit();
 
 private:
-    SettingManager();
+    SettingManager() = delete;
+    virtual ~SettingManager();
 
     static void initConfig(JValue& value, JValue& local);
     static void initEnv();

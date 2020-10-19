@@ -20,9 +20,6 @@
 #include "util/Logger.h"
 #include "util/LinuxProcess.h"
 
-#include <regex>
-
-
 #include "Environment.h"
 
 const string SwapManager::EFS_MAPPER_PATH = "/dev/mapper/eswap";
@@ -31,9 +28,12 @@ const string SwapManager::SBIN_EFSCTL = "/sbin/efsctl";
 const string SwapManager::SBIN_MKSWAP = "/sbin/mkswap";
 const string SwapManager::SBIN_SWAPON = "/sbin/swapon";
 const string SwapManager::BIN_SYNC = "/bin/sync";
+const string SwapManager::SWAP_MODES[static_cast<int>(SwapMode::NR)] = {"NO",
+                                                                        "MEMORY",
+                                                                        "FULL"};
 
 SwapManager::SwapManager()
-    : m_mode(SwapMode_NO),
+    : m_mode(SwapMode::NO),
       m_partition(""),
       m_size(0)
 {
@@ -46,16 +46,12 @@ SwapManager::~SwapManager()
 
 bool SwapManager::setMode(const string& mode)
 {
-    const string no = "NO";
-    const string memory = "MEMORY";
-    const string full = "FULL";
-
-    if (mode == no)
-        m_mode = SwapMode_NO;
-    else if (mode == memory)
-        m_mode = SwapMode_MEMORY;
-    else if (mode == full)
-        m_mode = SwapMode_FULL;
+    if (mode == SWAP_MODES[static_cast<int>(SwapMode::NO)])
+        m_mode = SwapMode::NO;
+    else if (mode == SWAP_MODES[static_cast<int>(SwapMode::MEMORY)])
+        m_mode = SwapMode::MEMORY;
+    else if (mode == SWAP_MODES[static_cast<int>(SwapMode::FULL)])
+        m_mode = SwapMode::FULL;
     else
         return false;
 
@@ -95,10 +91,10 @@ bool SwapManager::setSize(const int size)
     return true;
 }
 
-bool SwapManager::createEFS(const enum SwapMode mode, const string& partition,
+bool SwapManager::createEFS(const enum SwapMode& mode, const string& partition,
                             const int size)
 {
-    if (mode == SwapMode_MEMORY) {
+    if (mode == SwapMode::MEMORY) {
         const char* createArgv[] = {SBIN_EFSCTL.c_str(),
                                     "create",
                                     "-p", partition.c_str(),
@@ -106,7 +102,7 @@ bool SwapManager::createEFS(const enum SwapMode mode, const string& partition,
                                     NULL};
         if (!LinuxProcess::forkSyncProcess(createArgv, NULL))
             return false;
-    } else if (mode == SwapMode_FULL) {
+    } else if (mode == SwapMode::FULL) {
         const char* createArgv[] = {SBIN_EFSCTL.c_str(),
                                     "create",
                                     "-p", partition.c_str(),
@@ -152,10 +148,10 @@ void SwapManager::initialize(GMainLoop* mainloop)
         return;
     }
 
-    if (m_mode == SwapMode_NO) {
-        Logger::normal("[Success] Mode : " + to_string(m_mode) + \
-                       " (0: No, 1: Memory, 2: Full)", getClassName());
-        return; /* SwapMode_NO successfully initialized */
+    if (m_mode == SwapMode::NO) {
+        Logger::normal("[Success] Mode : " + \
+                       SWAP_MODES[static_cast<int>(m_mode)], getClassName());
+        return; /* SwapMode::NO successfully initialized */
     }
 
     /* Set m_partition from conf file */
@@ -178,9 +174,9 @@ void SwapManager::initialize(GMainLoop* mainloop)
         return;
     }
 
-    /* SwapMode_MEMORY or SwapMode_FULL successfully initialized */
-    Logger::normal("[Success] Mode : " + to_string(m_mode) + \
-                   " (0: No, 1: Memory, 2: Full)" + \
+    /* SwapMode::MEMORY or SwapMode::FULL successfully initialized */
+    Logger::normal("[Success] Mode : " + \
+                   SWAP_MODES[static_cast<int>(m_mode)] + \
                    ", Partition : " + m_partition + \
                    ", Size : " + to_string(m_size) + " MB", getClassName());
 }

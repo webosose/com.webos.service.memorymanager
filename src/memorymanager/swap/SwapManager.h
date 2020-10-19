@@ -25,10 +25,11 @@
 
 using namespace std;
 
-enum SwapMode {
-    SwapMode_NO = 0,
-    SwapMode_MEMORY,
-    SwapMode_FULL
+enum class SwapMode : int {
+    NO = 0,
+    MEMORY,
+    FULL,
+    NR      /* A valid nunmber of modes which enum class SwapMode provides */
 };
 
 class SwapManager : public ISingletonLegacy<SwapManager>,
@@ -51,12 +52,13 @@ private:
     static const string SBIN_MKSWAP;
     static const string SBIN_SWAPON;
     static const string BIN_SYNC;
+    static const string SWAP_MODES[static_cast<int>(SwapMode::NR)];
 
     const string findPartitionByPartLabel(const string& partLabel);
-    bool createEFS(const enum SwapMode mode, const string& partition,
+    bool createEFS(const enum SwapMode& mode, const string& partition,
                    const int size);
     bool createSwap(const string& device);
-    SwapManager();
+    explicit SwapManager();
 
     enum SwapMode m_mode;
     string m_partition;

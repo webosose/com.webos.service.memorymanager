@@ -29,12 +29,11 @@ using namespace std;
 
 class SysInfo {
 public:
-    ~SysInfo();
-
     static bool print(JValue& allList, JValue& message);
 
 private:
-    SysInfo();
+    SysInfo() = delete;
+    virtual ~SysInfo();
 
     static bool comparePss(const pair<string, unsigned long>& a, const pair<string, unsigned long>& b);
     static unsigned long parseSizeToKb(string size);

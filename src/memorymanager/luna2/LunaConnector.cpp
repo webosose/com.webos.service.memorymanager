@@ -69,7 +69,7 @@ LunaSubscriber::LunaSubscriber(const string& serviceName,
     const string uri = "luna://com.webos.service.bus/signal/registerServerStatus";
 
     int i = 0;
-    for (; i < PORTMAX; i++) {
+    for (; i < PORTMAX; ++i) {
         m_subscribePorts[i].cancel();
     }
     m_portIndex = 0;
@@ -114,7 +114,7 @@ bool LunaSubscriber::onStatusChange(LSHandle* sh, LSMessage* msg, void* ctxt)
 LunaSubscriber::~LunaSubscriber()
 {
     int i = 0;
-    for (; i < PORTMAX; i++) {
+    for (; i < PORTMAX; ++i) {
         m_subscribePorts[i].cancel();
     }
 }

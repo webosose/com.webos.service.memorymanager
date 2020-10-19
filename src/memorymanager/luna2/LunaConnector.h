@@ -28,7 +28,7 @@ using namespace pbnjson;
 
 class LunaSubscriber {
 public:
-    LunaSubscriber() {}
+    explicit LunaSubscriber() = default;
     virtual ~LunaSubscriber();
 
     LunaSubscriber(const string& serviceName, const string& sessionId);
@@ -51,7 +51,7 @@ private:
 
 class LunaServiceProvider : public IClassName {
 public:
-    LunaServiceProvider();
+    explicit LunaServiceProvider();
     virtual ~LunaServiceProvider();
 
     void raiseSignalLevelChanged(const string& prev, const string& cur);
@@ -74,7 +74,7 @@ private:
 class LunaConnector : public ISingleton<LunaConnector>,
                       public IClassName {
 public:
-    LunaConnector() : m_handle(nullptr)
+    explicit LunaConnector() : m_handle(nullptr)
     {
         setClassName("LunaConnector");
     }

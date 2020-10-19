@@ -72,7 +72,7 @@ void MemoryLevelLow::action(string& errorText)
     auto sessions = mm->getSessionMonitor().getSessions();
     int allAppCount = 0;
 
-    for (auto it = sessions.begin(); it != sessions.end(); it++) {
+    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
         it->second->m_runtime->reclaimMemory(false);
         allAppCount += it->second->m_runtime->countApp();
     }
@@ -106,7 +106,7 @@ void MemoryLevelCritical::action(string& errorText)
     auto sessions = mm->getSessionMonitor().getSessions();
     int allAppCount = 0;
 
-    for (auto it = sessions.begin(); it != sessions.end(); it++) {
+    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
         it->second->m_runtime->reclaimMemory(true);
         allAppCount += it->second->m_runtime->countApp();
     }
@@ -213,16 +213,16 @@ void MemoryManager::print(JValue& printOut)
     JValue apps = pbnjson::Array();
     printOut.put("applications", apps);
     auto sessions = m_sessionMonitor->getSessions();
-    for (auto it = sessions.begin(); it != sessions.end(); it++) {
+    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
         if (it->second->m_runtime->countApp() > 0)
             it->second->m_runtime->printApp(apps);
     }
 }
 
 void MemoryManager::handleRuntimeChange(const string& appId, const string& instanceId,
-                                        const enum RuntimeChange change)
+                                        const enum RuntimeChange& change)
 {
-    if (change == RUNTIME_CHANGE_APP_CLOSE)
+    if (change == RuntimeChange::APP_CLOSE)
         m_lunaServiceProvider->postManagerEventKilling(appId, instanceId);
     else
         m_lunaServiceProvider->postMemoryStatus();
@@ -254,7 +254,7 @@ bool MemoryManager::onRequireMemory(const int requiredMemory, string& errorText)
         return true;
 
     level = new MemoryLevelCritical;
-    for (i = 0; i < m_retryCount; i++) {
+    for (i = 0; i < m_retryCount; ++i) {
         level->action(errorText);
         /* TODO : wait progess... */
 
@@ -277,7 +277,7 @@ void MemoryManager::onSysInfo(JValue& json)
     auto sessions = getSessionMonitor().getSessions();
     JValue sessionList = pbnjson::Array();
 
-    for (auto it = sessions.begin(); it != sessions.end(); it++) {
+    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
         JValue session = pbnjson::Object();
         JValue appList = pbnjson::Array();
         JValue serviceList = pbnjson::Array();
@@ -295,7 +295,7 @@ void MemoryManager::onSysInfo(JValue& json)
     json.put("sessions", sessionList);
 
     /* For debugging, print session, service list, and app list */
-    for (auto it = sessions.begin(); it != sessions.end(); it++) {
+    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
         it->second->print();
 
         if (it->second->m_runtime->countService() > 0)

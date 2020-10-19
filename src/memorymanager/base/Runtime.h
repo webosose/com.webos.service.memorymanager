@@ -29,7 +29,7 @@ using namespace std;
 
 class BaseProcess {
 public:
-    BaseProcess();
+    explicit BaseProcess() = default;
     virtual ~BaseProcess() { }
 
     unsigned long getPssValue(const int pid);
@@ -41,8 +41,9 @@ class Application : public BaseProcess,
                     public IPrintable,
                     public IClassName {
 public:
-    Application(const string& instanceId, const string& appId,
-                const string& type, const string& status, const int pid);
+    explicit Application(const string& instanceId, const string& appId,
+                         const string& type, const string& status,
+                         const int pid);
     virtual ~Application() { }
 
     bool isCloseable();
@@ -57,11 +58,11 @@ public:
 
     bool operator==(const Application& compare);
 
-    virtual void updateMemStat();
+    virtual void updateMemStat() override final;
 
     // IPrintable
-    virtual void print();
-    virtual void print(JValue& json);
+    virtual void print() override final;
+    virtual void print(JValue& json) override final;
 
 private:
     const string m_instanceId;  // unique id of application
@@ -76,10 +77,8 @@ class Service : public BaseProcess,
                 public IPrintable,
                 public IClassName {
 public:
-    Service();
+    explicit Service(const string& serviceId, const list<int>& pid);
     virtual ~Service() { }
-
-    Service(const string& serviceId, const list<int>& pid);
 
     const string& getServiceId() const { return m_serviceId; }
     map<int, unsigned long>& getPidPss() { return m_pidPss; }
@@ -87,11 +86,11 @@ public:
     template<typename T, typename U>
     void toString(map<T, U>& pMap, string& str1, string& str2);
 
-    virtual void updateMemStat();
+    virtual void updateMemStat() override final;
 
     // IPrintable
-    virtual void print();
-    virtual void print(JValue& json);
+    virtual void print() override final;
+    virtual void print(JValue& json) override final;
 
 private:
     const string m_serviceId;           // name of service
@@ -100,19 +99,17 @@ private:
                                         // While Application has only one PID and PSS.
 };
 
-enum RuntimeChange {
-    RUNTIME_CHANGE_APP_UPDATE = 0,
-    RUNTIME_CHANGE_APP_ADD,
-    RUNTIME_CHANGE_APP_REMOVE,
-    RUNTIME_CHANGE_APP_CLOSE,
+enum class RuntimeChange : char {
+    APP_UPDATE = 0,
+    APP_ADD,
+    APP_REMOVE,
+    APP_CLOSE,
 };
 
 class Runtime : public IClassName {
 public:
-    Runtime();
+    explicit Runtime(Session& session);
     virtual ~Runtime();
-
-    Runtime(Session& session);
 
     void waitForSystemdJobDone(const int sec, const string& sessionId);
     void updateMemStat();

@@ -37,7 +37,7 @@ class MemroyManager;
 
 class MemoryLevel : public IClassName {
 public:
-    MemoryLevel() {}
+    explicit MemoryLevel() = default;
     virtual ~MemoryLevel() {}
 
     virtual string toString() = 0;
@@ -49,39 +49,39 @@ private:
 
 class MemoryLevelNormal : public MemoryLevel {
 public:
-    MemoryLevelNormal();
+    explicit MemoryLevelNormal();
     virtual ~MemoryLevelNormal() {}
 
-    virtual string toString();
-    virtual void action(string& errorText);
-    virtual bool keepLevel(long memAvail);
+    virtual string toString() override final;
+    virtual void action(string& errorText) override final;
+    virtual bool keepLevel(long memAvail) override final;
 };
 
 class MemoryLevelLow : public MemoryLevel {
 public:
-    MemoryLevelLow();
+    explicit MemoryLevelLow();
     virtual ~MemoryLevelLow() {}
 
-    virtual string toString();
-    virtual void action(string& errorText);
-    virtual bool keepLevel(long memAvail);
+    virtual string toString() override final;
+    virtual void action(string& errorText) override final;
+    virtual bool keepLevel(long memAvail) override final;
 };
 
 class MemoryLevelCritical : public MemoryLevel {
 public:
-    MemoryLevelCritical();
+    explicit MemoryLevelCritical();
     virtual ~MemoryLevelCritical() {}
 
-    virtual string toString();
-    virtual void action(string& errorText);
-    virtual bool keepLevel(long memAvail);
+    virtual string toString() override final;
+    virtual void action(string& errorText) override final;
+    virtual bool keepLevel(long memAvail) override final;
 };
 
 class MemoryManager : public ISingleton<MemoryManager>,
                       public IClassName,
                       public IPrintable {
 public:
-    MemoryManager();
+    explicit MemoryManager();
     virtual ~MemoryManager();
 
     void run();
@@ -92,15 +92,15 @@ public:
     /* Handle insternal events */
     void handleMemoryMonitorEvent(MonitorEvent& event);
     void handleRuntimeChange(const string& appId, const string& instanceId,
-                             const enum RuntimeChange change);
+                             const enum RuntimeChange& change);
 
     /* for exposed APIs used by LunaServiceProvider */
     bool onRequireMemory(const int requiredMemory, string& errorText);
     void onSysInfo(JValue& json);
 
     // IPrintable
-    virtual void print() {};
-    virtual void print(JValue& printOut);
+    virtual void print() override final {};
+    virtual void print(JValue& printOut) override final;
 
 private:
     static const int m_defaultRequiredMemory = 120;

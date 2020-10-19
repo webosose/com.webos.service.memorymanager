@@ -25,16 +25,6 @@ map<string, string> SysInfo::memInfo;
 map<string, unsigned long> SysInfo::sysView;
 map<string, unsigned long> SysInfo::ctgView;
 
-SysInfo::SysInfo()
-{
-
-}
-
-SysInfo::~SysInfo()
-{
-
-}
-
 bool SysInfo::comparePss(const pair<string, unsigned long>& a, const pair<string, unsigned long>& b)
 {
     return a.second > b.second;
@@ -243,7 +233,7 @@ void SysInfo::makePss(JValue& allList, JValue& objPssView)
             boost::split(pidList, sPid, boost::is_any_of(" "));
             boost::split(pssList, sPss, boost::is_any_of(" "));
 
-            for (i = 0; i < pidList.size(); i++) {
+            for (i = 0; i < pidList.size(); ++i) {
                 pss = stoul(pssList[i]);
 
                 pssSystem += pss;
