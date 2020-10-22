@@ -29,7 +29,7 @@ public:
     virtual ~Proc() {}
 
     static void getMemInfo(map<string, string>& mInfo);
-    static void getSmapsRollup(const int pid, map<string, string>& smaps_rollup);
+    static bool getSmapsRollup(const int pid, map<string, string>& smaps_rollup);
 };
 
 #endif /* UTIL_PROC_H_ */

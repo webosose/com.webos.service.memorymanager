@@ -45,7 +45,7 @@ private:
     static const string m_externalServiceName;
     static const int m_closeTimeOutMs;
 
-    bool initAppWaitToRun();
+    void initAppWaitToRun();
 
     list<Application> m_appsWaitToRun;
     Session& m_session;

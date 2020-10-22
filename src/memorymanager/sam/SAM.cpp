@@ -35,42 +35,50 @@ bool SAM::close(string appId, string instanceId)
     LS::Handle *handle = LunaConnector::getInstance()->getHandle();
     const string uri = "luna://com.webos.service.applicationmanager/close";
 
-    Call call;
+    try {
+        Call call;
 #if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
-    if (m_session.getSessionId().empty()) {
-        call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                (const char *)nullptr, (const char *)nullptr);
-    } else {
-        call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                (const char *)nullptr, m_session.getSessionId().c_str());
-    }
+        if (m_session.getSessionId().empty()) {
+            call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                        (const char *)nullptr, (const char *)nullptr);
+        } else {
+            call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                        (const char *)nullptr, m_session.getSessionId().c_str());
+        }
 #else
-    call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-            (const char *)nullptr);
+        call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                    (const char *)nullptr);
 #endif
 
-    Message response = call.get(m_closeTimeOutMs);
-    if (!response) {
-        Logger::error("Error: No response from SAM in 5s", "SAM");
+        Message response = call.get(m_closeTimeOutMs);
+        if (!response) {
+            Logger::error("Error: No response from SAM in 5s", getClassName());
+            return false;
+        }
+
+        if (response.isHubError()) {
+            Logger::error("Error: " + string(response.getPayload()), getClassName());
+            return false;
+        }
+
+        JValue responsePayload = JDomParser::fromString(response.getPayload());
+        bool returnValue = false;
+
+        JValueUtil::getValue(responsePayload, "returnValue", returnValue);
+        if (returnValue != true) {
+            Logger::error("Error: " + string(response.getPayload()), getClassName());
+            return false;
+        }
+
+        /* Successful response from SAM */
+        return true;
+    } catch(const LS::Error& lse) {
+        Logger::error("Exception: " + string(lse.what()), getClassName());
+        return false;
+    } catch(const std::exception& e) {
+        Logger::error("Exception: " + string(e.what()), getClassName());
         return false;
     }
-
-    if (response.isHubError()) {
-        Logger::error("Error: " + string(response.getPayload()), "SAM");
-        return false;
-    }
-
-    JValue responsePayload = JDomParser::fromString(response.getPayload());
-    bool returnValue = false;
-
-    JValueUtil::getValue(responsePayload, "returnValue", returnValue);
-    if (returnValue != true) {
-        Logger::error("Error: " + string(response.getPayload()), "SAM");
-        return false;
-    }
-
-    /* Successful response from SAM */
-    return true;
 }
 
 bool SAM::onGetAppLifeEvents(LSHandle *sh, LSMessage *msg, void *ctxt)
@@ -92,13 +100,13 @@ bool SAM::onGetAppLifeEvents(LSHandle *sh, LSMessage *msg, void *ctxt)
         return true;
 
     /* Find App in Runtime */
-    if (p->m_session.m_runtime->updateApp(appId, event))
+    if (p->m_session.m_runtime->updateApp(appId, instanceId, event))
             return true;
 
     /* If the app is not in runtime, search apps in list which wait to run */
     auto it = p->m_appsWaitToRun.begin();
     for (; it != p->m_appsWaitToRun.end(); ++it) {
-        if (it->getAppId() == appId)
+        if (it->getAppId() == appId && it->getInstanceId() == instanceId)
             break;
     }
 
@@ -125,9 +133,10 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *msg, void *ctxt)
 
     /* Make application vector with up-to-date runningList */
     for (JValue item : payload["running"].items()) {
-        string appId = "", pid = "", webPid = "", appType = "";
+        string appId = "", instanceId = "", pid = "", webPid = "", appType = "";
 
         JValueUtil::getValue(item, "id", appId);
+        JValueUtil::getValue(item, "instanceId", instanceId);
         JValueUtil::getValue(item, "processid", pid);
         JValueUtil::getValue(item, "webprocessid", webPid);
         JValueUtil::getValue(item, "appType", appType);
@@ -135,10 +144,20 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *msg, void *ctxt)
         if (!webPid.empty())
             pid = webPid;
 
+        /* If pid not found, keep it in wait list (m_appsWaitToRun) */
+        if (pid.empty() || stoi(pid) < 0)
+            continue;
+
+        /*
+         * Forked proecss from WAM or SAM may exist in both Service and
+         * Application object. Remove duplicated pid from Service object.
+         */
+        p->m_session.m_runtime->updateService(appType, stoi(pid));
+
         /* Move complete app instance to Runtime */
         auto it = p->m_appsWaitToRun.begin();
         for (; it != p->m_appsWaitToRun.end(); ++it) {
-            if (it->getAppId() == appId)
+            if (it->getAppId() == appId && it->getInstanceId() == instanceId)
                 break;
         }
 
@@ -148,13 +167,14 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *msg, void *ctxt)
         it->setPid(stoi(pid));
         it->setType(appType);
         p->m_session.m_runtime->addApp(*it);
+        p->m_session.m_runtime->printApp();
         p->m_appsWaitToRun.erase(it);
     }
 
     return true;
 }
 
-bool SAM::initAppWaitToRun()
+void SAM::initAppWaitToRun()
 {
     JValue payload = pbnjson::Object();
     payload.put("subscribe", true);
@@ -162,50 +182,63 @@ bool SAM::initAppWaitToRun()
     LS::Handle *handle = LunaConnector::getInstance()->getHandle();
     const string uri = "luna://" + m_externalServiceName + "/running";
 
-    Call call;
+    try {
+        Call call;
 #if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
-    if (m_session.getSessionId().empty()) {
-        call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                (const char *)nullptr, (const char *)nullptr);
-    } else {
-        call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                (const char *)nullptr, m_session.getSessionId().c_str());
-    }
+        if (m_session.getSessionId().empty()) {
+            call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                        (const char *)nullptr, (const char *)nullptr);
+        } else {
+            call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                        (const char *)nullptr, m_session.getSessionId().c_str());
+        }
 #else
-    call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-            (const char *)nullptr);
+        call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                    (const char *)nullptr);
 #endif
 
-    Message response = call.get(m_closeTimeOutMs);
-    if (!response) {
-        Logger::error("Error: No response from SAM in 5s", "SAM");
-        return false;
+        Message response = call.get(m_closeTimeOutMs);
+        if (!response) {
+            Logger::error("Error: No response from SAM in 5s", getClassName());
+            return;
+        }
+
+        if (response.isHubError()) {
+            Logger::error("Error: " + string(response.getPayload()), getClassName());
+            return;
+        }
+
+        JValue responsePayload = JDomParser::fromString(response.getPayload());
+
+        for (JValue item : responsePayload["running"].items()) {
+            string instanceId = "", appType = "", appId = "", pid = "", webPid = "";
+
+            JValueUtil::getValue(item, "instanceId", instanceId);
+            JValueUtil::getValue(item, "id", appId);
+            JValueUtil::getValue(item, "appType", appType);
+            JValueUtil::getValue(item, "processid", pid);
+            JValueUtil::getValue(item, "webprocessid", webPid);
+
+            if (!webPid.empty())
+                pid = webPid;
+
+            /*
+             * Forked proecss from WAM or SAM may exist in both Service and
+             * Application object. Remove duplicated pid from Service object.
+             */
+            m_session.m_runtime->updateService(appType, stoi(pid));
+
+            Application *app = new Application(instanceId, appId, appType, "", stoi(pid));
+            m_appsWaitToRun.push_back(*app);
+        }
+        return;
+    } catch(const LS::Error& lse) {
+        Logger::error("Exception: " + string(lse.what()), getClassName());
+        return;
+    } catch(const std::exception& e) {
+        Logger::error("Exception: " + string(e.what()), getClassName());
+        return;
     }
-
-    if (response.isHubError()) {
-        Logger::error("Error: " + string(response.getPayload()), "SAM");
-        return false;
-    }
-
-    JValue responsePayload = JDomParser::fromString(response.getPayload());
-
-    for (JValue item : responsePayload["running"].items()) {
-        string instanceId = "", appType = "", appId = "", pid = "", webPid = "";
-
-        JValueUtil::getValue(item, "instanceId", instanceId);
-        JValueUtil::getValue(item, "id", appId);
-        JValueUtil::getValue(item, "appType", appType);
-        JValueUtil::getValue(item, "processid", pid);
-        JValueUtil::getValue(item, "webprocessid", webPid);
-
-        if (!webPid.empty())
-            pid = webPid;
-
-        Application *app = new Application(instanceId, appId, appType, "", stoi(pid));
-        m_appsWaitToRun.push_back(*app);
-    }
-
-    return true;
 }
 
 void SAM::onConnected()

@@ -14,8 +14,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <boost/tokenizer.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <chrono>
+#include <thread>
 
 #include "MemoryManager.h"
 #include "base/Runtime.h"
@@ -24,12 +27,17 @@
 #include "util/Proc.h"
 #include "util/Logger.h"
 #include "util/Cgroup.h"
+#include "util/LinuxProcess.h"
+
+const string Runtime::WAM_SERVICE_ID = "webapp-mgr.service";
+const string Runtime::SAM_SERVICE_ID = "sam.service";
 
 unsigned long BaseProcess::getPssValue(const int pid)
 {
     map<string, string> smaps;
 
-    Proc::getSmapsRollup(pid, smaps);
+    if (!Proc::getSmapsRollup(pid, smaps))
+        return -1;
 
     auto it_pss = smaps.find("Pss");
     if (it_pss == smaps.end())
@@ -85,7 +93,7 @@ void Application::setType(const string& type)
 
 bool Application::operator==(const Application& compare)
 {
-    if (m_appId == compare.getAppId() && m_pid == compare.m_pid)
+    if (m_appId == compare.getAppId() && m_instanceId == compare.getInstanceId())
         return true;
     else
         return false;
@@ -124,12 +132,17 @@ void Service::toString(map<T, U>& pMap, string& str1, string& str2)
 
 void Service::updateMemStat()
 {
-    map<int, unsigned long>::iterator it = m_pidPss.begin();
-    for (; it != m_pidPss.end(); ++it) {
+    auto it = m_pidPss.begin();
+    while (it != m_pidPss.end()) {
         int localPss = getPssValue(it->first);
 
-        if (it->second != localPss)
+        if (localPss < 0) {
+            it = m_pidPss.erase(it);
+            continue;
+        } else {
             it->second = localPss;
+            ++it;
+        }
     }
 }
 
@@ -159,25 +172,68 @@ void Service::print(JValue& json)
     json.put("pss", pss.c_str());
 }
 
-const string& Service::getServiceId()
-{
-    return m_serviceId;
-}
-
 Service::Service(const string& serviceId, const list<int>& pids)
     : m_serviceId(serviceId)
 {
     setClassName("Service");
 
     for (int pid : pids)
-        m_pidPss.insert(make_pair(pid, getPssValue(pid)));
+        m_pidPss.insert(make_pair(pid, 0));
+}
+
+void Runtime::waitForSystemdJobDone(const int sec, const string& sessionId)
+{
+    typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
+    const int msec = 100; /* 100 ms */
+
+    for (int i = 0; i < 1000 * sec / msec; ++i) {
+        string cmd = "";
+        if (sessionId == SessionMonitor::HOST_SESSION_ID) {
+            cmd += "systemctl --type=service | tee";
+        } else {
+            cmd += "su -c 'systemctl --type=service --user | tee' ";
+            cmd += sessionId;
+        }
+
+        /*
+         * The JOB column will be removed when no jobs running.
+         * [Before] UNIT LOAD ACTIVE SUB JOB DESCRIPTION
+         * [After]  UNIT LOAD ACTIVE SUB DESCRIPTION
+         * We capture when 5th column has changed from JOB to DESCRIPTION.
+         */
+        string result = LinuxProcess::getStdoutFromCmd(cmd);
+        tokenizer tok{result};
+        int column = 0;
+        auto it = tok.begin();
+        for (;it != tok.end(); ++it) {
+            if (++column == 5)
+                break;
+        }
+
+        if (*it != "JOB")
+            break;
+
+        this_thread::sleep_for(chrono::milliseconds(msec));
+    }
 }
 
 void Runtime::updateMemStat()
 {
-    for (auto it = m_services.begin(); it != m_services.end(); it++)
+    /* Update Service Memory Stat */
+    auto it = m_services.begin();
+    while (it != m_services.end()) {
         (*it)->updateMemStat();
 
+        /* If pid is fully empty, remove Service object */
+        if ((*it)->getPidPss().empty()) {
+            delete (*it);
+            it = m_services.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    /* Update Application Memory Stat */
     for (auto it = m_applications.begin(); it != m_applications.end(); it++)
         it->updateMemStat();
 }
@@ -200,6 +256,28 @@ bool Runtime::reclaimMemory(bool critical)
     }
 
     return false;
+}
+
+bool Runtime::updateService(const string& appType, const int pid)
+{
+    string serviceId = "";
+    if (appType == "web")
+        serviceId = WAM_SERVICE_ID;
+    else
+        serviceId = SAM_SERVICE_ID;
+
+    auto it = m_services.begin();
+    for (; it != m_services.end(); ++it) {
+        if ((*it)->getServiceId() == serviceId)
+            break;
+    }
+
+    if (it == m_services.end())
+        return false;
+
+    /* Erase matching pid from map (m_pidPss) */
+    ((*it)->getPidPss()).erase(pid);
+    return true;
 }
 
 void Runtime::addService(Service* service)
@@ -250,11 +328,12 @@ void Runtime::addApp(Application& app)
                             RUNTIME_CHANGE_APP_ADD);
 }
 
-bool Runtime::updateApp(const string& appId, const string& event)
+bool Runtime::updateApp(const string& appId, const string& instanceId,
+                        const string& event)
 {
     auto it = m_applications.begin();
     for (; it != m_applications.end(); ++it) {
-        if (it->getAppId() == appId)
+        if (it->getAppId() == appId && it->getInstanceId() == instanceId)
             break;
     }
 
@@ -319,15 +398,21 @@ Runtime::Runtime(Session &session):m_session(session)
 {
     setClassName("Runtime");
 
+    /*
+     * MM should wait until all services are loaded to create service list.
+     * By using "systemctl", we check if all the jobs of services are done.
+     * We also use timeout protection code to avoid potential busy waiting.
+     */
+    waitForSystemdJobDone(10, session.getSessionId());
+
     /* Create service list when session runtime is created once */
     const string p = session.getPath();
-
-    /* TODO busy wating */
-    while (!boost::filesystem::exists(p))
-        Logger::normal(p + " not exist, busy wating...", getClassName());
-
     map<string, list<int>> comm_pids;
-    Cgroup::iterateDir(comm_pids, p);
+    try {
+        Cgroup::iterateDir(comm_pids, p);
+    } catch (...) {
+        Logger::error("Error occurs while iterating directory: " + p, getClassName());
+    }
 
     for (auto& [comm, pids] : comm_pids) {
         Service* svc = new Service(comm, pids);

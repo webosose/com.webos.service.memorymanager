@@ -81,7 +81,9 @@ public:
 
     Service(const string& serviceId, const list<int>& pid);
 
-    const string& getServiceId();
+    const string& getServiceId() const { return m_serviceId; }
+    map<int, unsigned long>& getPidPss() { return m_pidPss; }
+
     template<typename T, typename U>
     void toString(map<T, U>& pMap, string& str1, string& str2);
 
@@ -112,17 +114,20 @@ public:
 
     Runtime(Session& session);
 
+    void waitForSystemdJobDone(const int sec, const string& sessionId);
     void updateMemStat();
     bool reclaimMemory(bool critical);
 
     /* Service List Management */
+    bool updateService(const string& appType, const int pid);
     void addService(Service* service);
     int countService();
     void printService();
     void printService(JValue& json);
 
     /* Application List Management */
-    bool updateApp(const string& appId, const string& event);
+    bool updateApp(const string& appId, const string& instanceId,
+                   const string& event);
     void addApp(Application& app);
     int countApp();
     list<Application>::reverse_iterator findFirstForeground();
@@ -130,6 +135,9 @@ public:
     void printApp(JValue& json);
 
 private:
+    static const string WAM_SERVICE_ID;
+    static const string SAM_SERVICE_ID;
+
     Session& m_session;
 
     list<Service*> m_services;

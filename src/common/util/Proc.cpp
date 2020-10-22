@@ -49,7 +49,7 @@ void Proc::getMemInfo(map<string, string>& mInfo)
     f.close();
 }
 
-void Proc::getSmapsRollup(const int pid, map<string, string>& smaps_rollup)
+bool Proc::getSmapsRollup(const int pid, map<string, string>& smaps_rollup)
 {
     string key;
     string value;
@@ -60,7 +60,7 @@ void Proc::getSmapsRollup(const int pid, map<string, string>& smaps_rollup)
     if (f.fail()) {
         Logger::warning("Fail to open /proc/" + to_string(pid) + "/smaps_rollup", LOG_NAME);
         f.close();
-        return;
+        return false;
     }
 
     /* In case of smaps_rollup, pass first line */
@@ -78,5 +78,5 @@ void Proc::getSmapsRollup(const int pid, map<string, string>& smaps_rollup)
 
     f.close();
 
-    return;
+    return true;
 }
