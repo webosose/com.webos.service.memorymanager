@@ -17,7 +17,6 @@
 #include "MemoryManager.h"
 
 #include "setting/SettingManager.h"
-#include "swap/SwapManager.h"
 
 #include "util/Logger.h"
 #include "util/Proc.h"
@@ -135,9 +134,6 @@ void MemoryManager::run()
 
     m_sessionMonitor = new SessionMonitor();
     Logger::normal("SessionMonitor Initialized", getClassName());
-
-    SwapManager::getInstance().initialize(m_mainLoop);
-    Logger::normal("SwapManager Initialized ", getClassName());
 
     Logger::normal("Start mainLoop", getClassName());
     g_main_loop_run(m_mainLoop);

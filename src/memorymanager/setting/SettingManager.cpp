@@ -24,9 +24,6 @@
 
 #include "Environment.h"
 
-const string SettingManager::m_configFile = string(WEBOS_INSTALL_WEBOS_SYSCONFDIR) + "/memorymanager.json";
-JValue SettingManager::m_config(Object());
-
 bool SettingManager::m_SingleAppPolicy;
 bool SettingManager::m_SessionEnabled;
 
@@ -34,52 +31,6 @@ int SettingManager::m_memoryLevelLowEnter;
 int SettingManager::m_memoryLevelLowExit;
 int SettingManager::m_memoryLevelCriticalEnter;
 int SettingManager::m_memoryLevelCriticalExit;
-
-void SettingManager::initConfig(JValue& source, JValue& local)
-{
-    auto it = source.children();
-
-    for (auto object = it.begin() ; object != it.end() ; ++object) {
-        string key = (*object).first.asString();
-        JValue value = (*object).second;
-
-        if (!local.hasKey(key)) {
-            local.put(key, value);
-        } else if (!value.isObject()){
-            local.put(key, value);
-        } else {
-            JValue v = local[key];
-            initConfig(value, v);
-        }
-    }
-}
-
-const string SettingManager::getSwapMode()
-{
-    JValue value = m_config["swap"]["mode"];
-    if (value.isNull())
-        return "";
-
-    return value.asString();
-}
-
-const string SettingManager::getSwapPartition()
-{
-    JValue value = m_config["swap"]["partition"];
-    if (value.isNull())
-        return "";
-
-    return value.asString();
-}
-
-int SettingManager::getSwapSize()
-{
-    JValue value = m_config["swap"]["size"];
-    if (value.isNull())
-        return 0;
-
-    return value.asNumber<int32_t>();
-}
 
 void SettingManager::initEnv()
 {
@@ -140,16 +91,6 @@ bool SettingManager::getSessionEnabled()
 
 int SettingManager::loadSetting()
 {
-    // From target's memorymanager.json
-    if (int ret = access(m_configFile.c_str(), R_OK); ret < 0)
-        return ret;
-
-    JValue config = JDomParser::fromFile(m_configFile.c_str());
-    if (!config.isValid() || config.isNull())
-        return -EINVAL;
-
-    initConfig(config ,m_config);
-
     // From build environment
     initEnv();
 

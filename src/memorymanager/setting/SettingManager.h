@@ -27,11 +27,6 @@ class SettingManager {
 public:
     static int loadSetting();
 
-    // From target's memorymanager.json
-    static const string getSwapMode();
-    static const string getSwapPartition();
-    static int getSwapSize();
-
     // From build environment
     static bool getSessionEnabled();
     static bool getSingleAppPolicy();
@@ -45,12 +40,7 @@ private:
     SettingManager() = delete;
     virtual ~SettingManager();
 
-    static void initConfig(JValue& value, JValue& local);
     static void initEnv();
-
-    // From target's memorymanager.json
-    static const string m_configFile;
-    static JValue m_config;
 
     // From build environmena
     static bool m_SingleAppPolicy;
