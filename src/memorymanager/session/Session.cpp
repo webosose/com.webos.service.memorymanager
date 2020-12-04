@@ -80,11 +80,16 @@ void Session::print(JValue& json)
 bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
 {
     SessionMonitor *p = static_cast<SessionMonitor*>(ctxt);
+    Message response(msg);
+    JValue payload;
 
-    LS::Message response(msg);
-    JValue payload = JDomParser::fromString(response.getPayload());
+    if (response.isHubError())
+        return true;
+
+    payload = JDomParser::fromString(response.getPayload());
+    LunaLogger::logSubscription("getSessionList", payload, "SessionMonitor");
+
     JValue sessionList = pbnjson::Array();
-
     JValueUtil::getValue(payload, "sessionList", sessionList);
 
     map<string, Session*> localMap;

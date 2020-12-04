@@ -64,10 +64,6 @@ unsigned long SysInfo::parseSizeToKb(string size)
         ret = 0;
     }
 
-    if (ret < 0) {
-        Logger::warning("Out of bound: Too big input RAM size", "sysInfo");
-    }
-
     return ret;
 }
 
@@ -308,7 +304,7 @@ void SysInfo::makeMemInfo(unsigned long phyramSize)
 
 bool SysInfo::print(JValue& allList, JValue& message)
 {
-    long long phyramSize = 0;
+    unsigned long phyramSize = 0;
     string strPhyramSize = "";
 
     sysView.clear();

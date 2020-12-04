@@ -77,7 +77,7 @@ public:
     void raiseEvent(MonitorEvent& event);
 
 private:
-    list<MonitorEvent> m_eventList;
+    list<MonitorEvent*> m_eventList;
 };
 
 #endif /* MEMORYMONITOR_MEMORYMONITOR_H_ */

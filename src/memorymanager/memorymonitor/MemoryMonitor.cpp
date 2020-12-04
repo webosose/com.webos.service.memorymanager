@@ -80,14 +80,14 @@ MemoryMonitor::MemoryMonitor()
 
     /* Create list of monitor event */
     e = new AvailMemMonitor(*this, mm->getMainLoop());
-    m_eventList.push_front(*e);
+    m_eventList.push_front(e);
 }
 
 MemoryMonitor::~MemoryMonitor()
 {
     while (!m_eventList.empty()) {
-        MonitorEvent& e = m_eventList.front();
+        MonitorEvent *e = m_eventList.front();
+        delete e;
         m_eventList.pop_front();
-        delete &e;
     }
 }

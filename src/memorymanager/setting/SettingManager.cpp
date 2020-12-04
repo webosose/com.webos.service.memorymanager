@@ -72,7 +72,7 @@ const string SettingManager::getSwapPartition()
     return value.asString();
 }
 
-const int SettingManager::getSwapSize()
+int SettingManager::getSwapSize()
 {
     JValue value = m_config["swap"]["size"];
     if (value.isNull())

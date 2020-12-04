@@ -23,6 +23,8 @@
 #include "util/Proc.h"
 
 #include <map>
+#include <chrono>
+#include <thread>
 
 MemoryLevelNormal::MemoryLevelNormal()
 {
@@ -257,6 +259,7 @@ bool MemoryManager::onRequireMemory(const int requiredMemory, string& errorText)
     for (i = 0; i < m_retryCount; ++i) {
         level->action(errorText);
         /* TODO : wait progess... */
+        this_thread::sleep_for(chrono::milliseconds(200));
 
         /* Get Meminfo */
         Proc::getMemInfo(mInfo);

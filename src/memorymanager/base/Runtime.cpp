@@ -410,7 +410,9 @@ Runtime::Runtime(Session &session):m_session(session)
         Logger::error("Error occurs while iterating directory: " + p, getClassName());
     }
 
-    for (auto& [comm, pids] : comm_pids) {
+    for (const auto& mcp : comm_pids) {
+        string comm = mcp.first;
+        list<int> pids = mcp.second;
         Service* svc = new Service(comm, pids);
         addService(svc);
     }

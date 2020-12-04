@@ -87,4 +87,17 @@ private:
     LS::Handle* m_handle;
 };
 
+class LunaLogger {
+public:
+    explicit LunaLogger() = default;
+    virtual ~LunaLogger();
+
+    static void logRequest(Message& request, JValue& requestPayload,
+                           const string& name);
+    static void logResponse(Message& request, JValue& responsePayload,
+                            const string& name);
+    static void logSubscription(const string& api, JValue& returnPayload,
+                                const string& name);
+};
+
 #endif /* LUNA_LUNACONNECTOR_H_ */

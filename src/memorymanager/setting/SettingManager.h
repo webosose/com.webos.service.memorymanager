@@ -30,7 +30,7 @@ public:
     // From target's memorymanager.json
     static const string getSwapMode();
     static const string getSwapPartition();
-    static const int getSwapSize();
+    static int getSwapSize();
 
     // From build environment
     static bool getSessionEnabled();

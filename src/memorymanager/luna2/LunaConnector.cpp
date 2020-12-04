@@ -135,13 +135,14 @@ LSSignal LunaServiceProvider::signals[] = {
 bool LunaServiceProvider::requireMemory(LSHandle* sh, LSMessage* msg, void* ctxt)
 {
     LunaServiceProvider *p = static_cast<LunaServiceProvider*>(ctxt);
+    MemoryManager* mm = MemoryManager::getInstance();
 
     Message request(msg);
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
+    LunaLogger::logRequest(request, requestPayload, mm->getServiceName());
 
     /* Request handling */
-
     int requiredMemory = 0;
     bool relaunch = false;
     bool returnValue = true;
@@ -151,13 +152,13 @@ bool LunaServiceProvider::requireMemory(LSHandle* sh, LSMessage* msg, void* ctxt
 
     returnValue = MemoryManager::getInstance()->onRequireMemory(requiredMemory, errorText);
 
-    /* Request handling */
-
-out:
     if (errorText != "")
         responsePayload.put("errorText", errorText);
 
     responsePayload.put("returnValue", returnValue);
+
+    LunaLogger::logResponse(request, responsePayload, mm->getServiceName());
+
     request.respond(responsePayload.stringify().c_str());
     return true;
 }
@@ -165,10 +166,12 @@ out:
 bool LunaServiceProvider::getMemoryStatus(LSHandle* sh, LSMessage* msg, void* ctxt)
 {
     LunaServiceProvider *p = static_cast<LunaServiceProvider*>(ctxt);
+    MemoryManager* mm = MemoryManager::getInstance();
 
     Message request(msg);
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
+    LunaLogger::logRequest(request, requestPayload, mm->getServiceName());
 
     /* Request handling */
     bool subscribed = false;
@@ -178,10 +181,11 @@ bool LunaServiceProvider::getMemoryStatus(LSHandle* sh, LSMessage* msg, void* ct
         subscribed = p->m_memoryStatus.subscribe(request);
 
     MemoryManager::getInstance()->print(responsePayload);
-    /* Request handling */
 
     responsePayload.put("subscribed", subscribed);
     responsePayload.put("returnValue", ret);
+
+    LunaLogger::logResponse(request, responsePayload, mm->getServiceName());
     request.respond(responsePayload.stringify().c_str());
     return true;
 }
@@ -189,10 +193,12 @@ bool LunaServiceProvider::getMemoryStatus(LSHandle* sh, LSMessage* msg, void* ct
 bool LunaServiceProvider::getManagerEvent(LSHandle* sh, LSMessage* msg, void* ctxt)
 {
     LunaServiceProvider *p = static_cast<LunaServiceProvider*>(ctxt);
+    MemoryManager* mm = MemoryManager::getInstance();
 
     Message request(msg);
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Object();
+    LunaLogger::logRequest(request, requestPayload, mm->getServiceName());
 
     /* Request handling */
     string type = "";
@@ -211,33 +217,38 @@ bool LunaServiceProvider::getManagerEvent(LSHandle* sh, LSMessage* msg, void* ct
     else
         errorText = "Invalid type";
 
-    /* Request handling */
-
 out:
     if (errorText != "")
         responsePayload.put("errorText", errorText);
 
     responsePayload.put("subscribed", subscribed);
     responsePayload.put("returnValue", returnValue);
+
+    LunaLogger::logResponse(request, responsePayload, mm->getServiceName());
     request.respond(responsePayload.stringify().c_str());
     return true;
 }
 
 bool LunaServiceProvider::sysInfo(LSHandle* sh, LSMessage* msg, void* ctxt)
 {
+    MemoryManager* mm = MemoryManager::getInstance();
+
     Message request(msg);
     JValue requestPayload = JDomParser::fromString(request.getPayload());
     JValue responsePayload = pbnjson::Array();
+    LunaLogger::logRequest(request, requestPayload, mm->getServiceName());
+
     bool ret = true;
 
     JValue allList = pbnjson::Object();
-    MemoryManager::getInstance()->onSysInfo(allList);
+    mm->onSysInfo(allList);
 
     SysInfo::print(allList, responsePayload);
 
     responsePayload.put("returnValue", ret);
-    request.respond(responsePayload.stringify().c_str());
 
+    LunaLogger::logResponse(request, responsePayload, mm->getServiceName());
+    request.respond(responsePayload.stringify().c_str());
     return ret;
 }
 
@@ -323,6 +334,34 @@ LunaServiceProvider::LunaServiceProvider()
 }
 
 LunaServiceProvider::~LunaServiceProvider()
+{
+
+}
+
+void LunaLogger::logRequest(Message& request, JValue& requestPayload,
+                               const string& name)
+{
+    Logger::normal("[Request] API(" + string(request.getMethod()) +
+                   ") Client(" + string(request.getSenderServiceName())+ ")\n" +
+                   requestPayload.stringify("    ").c_str(), name);
+}
+
+void LunaLogger::logResponse(Message& request, JValue& responsePayload,
+                                const string& name)
+{
+    Logger::normal("[Response] API(" + string(request.getMethod()) +
+                   ") Client(" + string(request.getSenderServiceName())+ ")\n" +
+                   responsePayload.stringify("    ").c_str(), name);
+}
+
+void LunaLogger::logSubscription(const string& api, JValue& returnPayload,
+                                    const string& name)
+{
+    Logger::normal("[Subscription] API(" + api + ")\n" +
+                   returnPayload.stringify("    ").c_str(), name);
+}
+
+LunaLogger::~LunaLogger()
 {
 
 }

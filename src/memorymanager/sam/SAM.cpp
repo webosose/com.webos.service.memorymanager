@@ -92,6 +92,8 @@ bool SAM::onGetAppLifeEvents(LSHandle *sh, LSMessage *msg, void *ctxt)
         return true;
 
     payload = JDomParser::fromString(response.getPayload());
+    LunaLogger::logSubscription("getAppLifeEvnets", payload, "SAM");
+
     JValueUtil::getValue(payload, "appId", appId);
     JValueUtil::getValue(payload, "instanceId", instanceId);
     JValueUtil::getValue(payload, "event", event);
@@ -113,6 +115,7 @@ bool SAM::onGetAppLifeEvents(LSHandle *sh, LSMessage *msg, void *ctxt)
     if (it == p->m_appsWaitToRun.end()) {
         Application* app = new Application(instanceId, appId, "", event, -1);
         p->m_appsWaitToRun.push_back(*app);
+        delete app;
     } else {
         it->setStatus(event);
     }
@@ -130,6 +133,7 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *msg, void *ctxt)
         return true;
 
     payload = JDomParser::fromString(response.getPayload());
+    LunaLogger::logSubscription("running", payload, "SAM");
 
     /* Make application vector with up-to-date runningList */
     for (JValue item : payload["running"].items()) {
@@ -230,6 +234,7 @@ void SAM::initAppWaitToRun()
 
             Application *app = new Application(instanceId, appId, appType, "", stoi(pid));
             m_appsWaitToRun.push_back(*app);
+            delete app;
         }
         return;
     } catch(const LS::Error& lse) {
