@@ -118,6 +118,9 @@ void MemoryLevelCritical::action(string& errorText)
     }
 }
 
+#ifdef SUPPORT_LEGACY_API
+const string MemoryManager::m_oldServiceName = "com.webos.memorymanager";
+#endif
 const string MemoryManager::m_serviceName = "com.webos.service.memorymanager";
 
 void MemoryManager::run()

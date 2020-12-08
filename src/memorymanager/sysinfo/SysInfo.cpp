@@ -22,8 +22,8 @@
 map<string, string> SysInfo::pidComm;
 map<string, string> SysInfo::pidSession;
 map<string, string> SysInfo::memInfo;
+map<string, unsigned long> SysInfo::pssInfo;
 map<string, unsigned long> SysInfo::sysView;
-map<string, unsigned long> SysInfo::ctgView;
 
 bool SysInfo::comparePss(const pair<string, unsigned long>& a, const pair<string, unsigned long>& b)
 {
@@ -60,7 +60,7 @@ unsigned long SysInfo::parseSizeToKb(string size)
     } else if (unit == "ZB" || unit == "Z" || unit == "ZETTABYTE") {
         ret = stoul(value) * 1024 * 1024 * 1024 * 1024 * 1024 * 1024;
     } else {
-        Logger::warning("Unknown unit of size", "sysInfo");
+        Logger::warning("Invalid unit of size", "sysInfo");
         ret = 0;
     }
 
@@ -69,71 +69,36 @@ unsigned long SysInfo::parseSizeToKb(string size)
 
 void SysInfo::makeSystemView(JValue& objSysView)
 {
-    JValue jarr = pbnjson::Array();
+    JValue obj = pbnjson::Object();
     string msg = "";
 
-    msg = "Total RAM: " + to_string(sysView["totalRam"]) + " K";
-    jarr.append(msg);
+    msg = to_string(sysView["bsp"]) + " K";
+    obj.put("BSP          ", msg);
+    msg = to_string(sysView["kernel"]) + " K";
+    obj.put("Kernel       ", msg);
+    msg = to_string(sysView["customKernel"]) + " K";
+    obj.put("Custom Kernel", msg);
+    msg = to_string(sysView["systemPss"]) + " K";
+    obj.put("System PSS   ", msg);
+    objSysView.put("Essential", obj);
 
-    msg = "Free  RAM: " + to_string(sysView["freeRam"]) + " ( "
-                        + to_string(sysView["cachedPss"]) + " K cached pss + "
-                        + to_string(sysView["cachedKernel"]) + " K cached kernel + "
-                        + to_string(sysView["free"]) + " K free)";
-    jarr.append(msg);
+    obj = pbnjson::Object();
+    msg = to_string(sysView["foregroundPss"]) + " K";
+    obj.put("Foreground   ", msg);
+    objSysView.put("Foreground PSS", obj);
 
-    msg = "Used  RAM: " + to_string(sysView["usedRam"]) + " ( "
-                        + to_string(sysView["usedPss"]) + " K used pss + "
-                        + to_string(sysView["kernel"]) + " K kernel)";
-    jarr.append(msg);
+    obj = pbnjson::Object();
+    msg = to_string(sysView["cachedPss"]) + " K";
+    obj.put("Cached PSS   ", msg);
+    msg = to_string(sysView["cachedKernel"]) + " K";
+    obj.put("Cached Kernel", msg);
+    objSysView.put("Performance", obj);
 
-    msg = "Lost  RAM: " + to_string(sysView["lostRam"]) + " K";
-    jarr.append(msg);
+    obj = pbnjson::Object();
+    msg = to_string(sysView["free"]) + " K";
+    obj.put("Free         ", msg);
+    objSysView.put("Free", obj);
 
-    objSysView.put("System View", jarr);
-}
-
-void SysInfo::makeCategorizedView(JValue& objCtgView)
-{
-    JValue jobj = pbnjson::Object();
-    JValue jarr = pbnjson::Array();
-    JValue jarrTot = pbnjson::Array();
-    string msg = "";
-
-    msg = string("BSP:            ") + to_string(ctgView["bsp"]) + " K";
-    jarr.append(msg);
-    msg = string("Kernel:         ") + to_string(ctgView["kernel"]) + " K";
-    jarr.append(msg);
-    msg = string("Custom Kernel:  ") + to_string(ctgView["customKernel"]) + " K";
-    jarr.append(msg);
-    msg = string("System PSS:     ") + to_string(ctgView["systemPss"]) + " K";
-    jarr.append(msg);
-    jobj.put("Essential", jarr);
-    jarrTot.append(jobj);
-
-    jobj = pbnjson::Object();
-    jarr = pbnjson::Array();
-    msg = string("Foreground:     ") + to_string(ctgView["foregroundPss"]) + " K";
-    jarr.append(msg);
-    jobj.put("Foreground PSS", jarr);
-    jarrTot.append(jobj);
-
-    jobj = pbnjson::Object();
-    jarr = pbnjson::Array();
-    msg = string("Cached PSS:     ") + to_string(ctgView["cachedPss"]) + " K";
-    jarr.append(msg);
-    msg = string("Cached Kernel:  ") + to_string(ctgView["cachedKernel"]) + " K";
-    jarr.append(msg);
-    jobj.put("Performance", jarr);
-    jarrTot.append(jobj);
-
-    jobj = pbnjson::Object();
-    jarr = pbnjson::Array();
-    msg = string("Free:           ") + to_string(ctgView["free"]) + " K";
-    jarr.append(msg);
-    jobj.put("Free", jarr);
-    jarrTot.append(jobj);
-
-    objCtgView.put("System View", jarrTot);
 }
 
 string SysInfo::getTotalPhyram()
@@ -175,13 +140,12 @@ void SysInfo::makePssViewMsg(JValue& session, const string& sessionId, map<strin
     session.put(sessionId, jarr);
 }
 
-void SysInfo::makePss(JValue& allList, JValue& objPssView)
+void SysInfo::makePss(JValue& allList, JValue& arrPssView)
 {
     string appId = "", stat = "", sPid = "", sPss = "", serviceId = "", sessionId = "", msg = "";
     int pid = 0, i = 0;
     unsigned long pss = 0, pssCached = 0, pssForeground = 0, pssSystem = 0, pssTotal = 0;
 
-    JValue sessionList = pbnjson::Array();
     map<string, unsigned long> pidPss;
 
     for (JValue item : allList["sessions"].items()) {
@@ -241,65 +205,51 @@ void SysInfo::makePss(JValue& allList, JValue& objPssView)
         }
 
         makePssViewMsg(objSession, sessionId, pidPss);
-        sessionList.append(objSession);
+        arrPssView.append(objSession);
     }
 
-    sysView.insert(make_pair("cachedPss", pssCached));
-    sysView.insert(make_pair("usedPss", pssTotal - pssCached));
-    ctgView.insert(make_pair("systemPss", pssSystem));
-    ctgView.insert(make_pair("foregroundPss", pssForeground));
-    ctgView.insert(make_pair("cachedPss", pssCached));
-
-    objPssView.put("PSS View", sessionList);
+    pssInfo.insert(make_pair("cachedPss", pssCached));
+    pssInfo.insert(make_pair("usedPss", pssTotal - pssCached));
+    pssInfo.insert(make_pair("systemPss", pssSystem));
+    pssInfo.insert(make_pair("foregroundPss", pssForeground));
+    pssInfo.insert(make_pair("cachedPss", pssCached));
 }
 
 void SysInfo::makeMemInfo(unsigned long phyramSize)
 {
-    unsigned long svTotalRam = 0, svCachedKernel = 0, svFree = 0,
-                  svFreeRam = 0, svKernel = 0, svUsedRam = 0,
-                  svCachedPss = 0, svUsedPss = 0, svLostRam = 0,
-                  cvBsp = 0, cvKernel = 0, cvCustomKernel = 0,
-                  cvCachedKernel = 0, cvFree = 0;
+    unsigned long mTotalRam = 0, mBsp = 0, mKernel = 0,
+                  mUsedPss = 0, mUsedRam = 0, mCachedPss = 0,
+                  mCachedKernel = 0, mFree = 0, mTotalFree = 0,
+                  mCustomKernel = 0, mSystemPss = 0, mForegroundPss = 0;
 
-    svCachedPss = sysView["cachedPss"];
-    svUsedPss = sysView["usedPss"];
+    mTotalRam       = stoul(memInfo.find("MemTotal")->second);
+    mBsp            = phyramSize - mTotalRam;
+    mKernel         = stoul(memInfo.find("Shmem")->second)
+                        + stoul(memInfo.find("SUnreclaim")->second)
+                        + stoul(memInfo.find("VmallocUsed")->second)
+                        + stoul(memInfo.find("PageTables")->second)
+                        + stoul(memInfo.find("KernelStack")->second);
+    mUsedPss        = pssInfo["usedPss"];
+    mUsedRam        = mUsedPss + mKernel;
+    mCachedPss      = pssInfo["cachedPss"];
+    mCachedKernel   = stoul(memInfo.find("Buffers")->second)
+                        + stoul(memInfo.find("Cached")->second)
+                        + stoul(memInfo.find("SReclaimable")->second)
+                        - stoul(memInfo.find("Mapped")->second);
+    mFree           = stoul(memInfo.find("MemFree")->second);
+    mTotalFree      = mCachedPss + mCachedKernel + mFree; // reclaimable + free
+    mCustomKernel   = mTotalRam - mUsedRam - mTotalFree;
+    mSystemPss      = pssInfo["systemPss"];
+    mForegroundPss  = pssInfo["foregroundPss"];
 
-    /* System View */
-    svTotalRam      = stoul(memInfo.find("MemTotal")->second);
-    svCachedKernel  = stoul(memInfo.find("Buffers")->second)
-                      + stoul(memInfo.find("Cached")->second)
-                      - stoul(memInfo.find("Mapped")->second)
-                      + stoul(memInfo.find("SReclaimable")->second);
-    svFree          = stoul(memInfo.find("MemFree")->second);
-    svFreeRam       = svCachedPss + svCachedKernel + svFree;
-    svKernel        = stoul(memInfo.find("Shmem")->second)
-                      + stoul(memInfo.find("SUnreclaim")->second)
-                      + stoul(memInfo.find("VmallocUsed")->second)
-                      + stoul(memInfo.find("PageTables")->second)
-                      + stoul(memInfo.find("KernelStack")->second);
-    svUsedRam       = svUsedPss + svKernel;
-    svLostRam       = svTotalRam - svUsedRam - svFreeRam;
-
-    /* Categorized View */
-    cvBsp           = phyramSize - svTotalRam;
-    cvKernel        = svKernel;
-    cvCustomKernel  = svLostRam;
-    cvCachedKernel  = svCachedKernel;
-    cvFree          = svFree;
-
-    sysView.insert(make_pair("totalRam", svTotalRam));
-    sysView.insert(make_pair("cachedKernel", svCachedKernel));
-    sysView.insert(make_pair("free", svFree));
-    sysView.insert(make_pair("freeRam", svFreeRam));
-    sysView.insert(make_pair("kernel", svKernel));
-    sysView.insert(make_pair("usedRam", svUsedRam));
-    sysView.insert(make_pair("lostRam", svLostRam));
-
-    ctgView.insert(make_pair("bsp", cvBsp));
-    ctgView.insert(make_pair("kernel", cvKernel));
-    ctgView.insert(make_pair("customKernel", cvCustomKernel));
-    ctgView.insert(make_pair("cachedKernel", cvCachedKernel));
-    ctgView.insert(make_pair("free", cvFree));
+    sysView.insert(make_pair("bsp", mBsp));
+    sysView.insert(make_pair("kernel", mKernel));
+    sysView.insert(make_pair("customKernel", mCustomKernel));
+    sysView.insert(make_pair("systemPss", mSystemPss));
+    sysView.insert(make_pair("foregroundPss", mForegroundPss));
+    sysView.insert(make_pair("cachedPss", mCachedPss));
+    sysView.insert(make_pair("cachedKernel", mCachedKernel));
+    sysView.insert(make_pair("free", mFree));
 }
 
 bool SysInfo::print(JValue& allList, JValue& message)
@@ -307,12 +257,11 @@ bool SysInfo::print(JValue& allList, JValue& message)
     unsigned long phyramSize = 0;
     string strPhyramSize = "";
 
+    pssInfo.clear();
     sysView.clear();
-    ctgView.clear();
 
     JValue objSysView = pbnjson::Object(); /* System View */
-    JValue objPssView = pbnjson::Object(); /* PSS View */
-    JValue objCtgView = pbnjson::Object(); /* Categorized View */
+    JValue arrPssView = pbnjson::Array(); /* PSS View */
     JValue errMsg = pbnjson::Object();
 
     Proc::getMemInfo(memInfo);
@@ -334,13 +283,12 @@ bool SysInfo::print(JValue& allList, JValue& message)
 
     phyramSize = parseSizeToKb(strPhyramSize);
 
-    makePss(allList, objPssView);
+    makePss(allList, arrPssView);
     makeMemInfo(phyramSize);
     makeSystemView(objSysView);
-    makeCategorizedView(objCtgView);
 
-    message.append(objCtgView);
-    message.append(objPssView);
+    message.put("System View", objSysView);
+    message.put("PSS View", arrPssView);
 
     return true;
 }

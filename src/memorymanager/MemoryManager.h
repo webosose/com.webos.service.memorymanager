@@ -85,6 +85,9 @@ public:
     virtual ~MemoryManager();
 
     void run();
+#ifdef SUPPORT_LEGACY_API
+    const string& getOldServiceName() const { return m_oldServiceName; }
+#endif
     const string& getServiceName() const { return m_serviceName; }
     GMainLoop* getMainLoop() const { return m_mainLoop; }
     SessionMonitor& getSessionMonitor() const { return *m_sessionMonitor; }
@@ -105,6 +108,9 @@ public:
 private:
     static const int m_defaultRequiredMemory = 120;
     static const int m_retryCount = 5;
+#ifdef SUPPORT_LEGACY_API
+    static const string m_oldServiceName;
+#endif
     static const string m_serviceName;
 
     GMainLoop* m_mainLoop;

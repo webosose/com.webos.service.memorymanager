@@ -128,6 +128,7 @@ public:
     void addApp(Application& app);
     int countApp();
     list<Application>::reverse_iterator findFirstForeground();
+    const string findFirstForegroundAppId();
     void printApp();
     void printApp(JValue& json);
 

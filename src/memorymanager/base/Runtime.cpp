@@ -370,6 +370,18 @@ list<Application>::reverse_iterator Runtime::findFirstForeground()
     return rit;
 }
 
+const string Runtime::findFirstForegroundAppId()
+{
+    list<Application>::reverse_iterator rit = m_applications.rbegin();
+    for (; rit != m_applications.rend(); ++rit) {
+        if (rit->getStatus() == "foreground") {
+            return rit->getAppId();
+        }
+    }
+
+    return "";
+}
+
 int Runtime::countApp()
 {
     return m_applications.size();

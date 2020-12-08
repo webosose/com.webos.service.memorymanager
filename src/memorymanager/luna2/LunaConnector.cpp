@@ -134,7 +134,6 @@ LSSignal LunaServiceProvider::signals[] = {
 
 bool LunaServiceProvider::requireMemory(LSHandle* sh, LSMessage* msg, void* ctxt)
 {
-    LunaServiceProvider *p = static_cast<LunaServiceProvider*>(ctxt);
     MemoryManager* mm = MemoryManager::getInstance();
 
     Message request(msg);
@@ -206,6 +205,11 @@ bool LunaServiceProvider::getManagerEvent(LSHandle* sh, LSMessage* msg, void* ct
     bool subscribed = false;
     bool returnValue = true;
 
+#ifdef SUPPORT_LEGACY_API /* Handle getCloseAppId */
+    if (requestPayload.hasKey("appType"))
+        requestPayload.put("type", "killing");
+#endif
+
     returnValue = JValueUtil::getValue(requestPayload, "type", type);
     if (!returnValue) {
         errorText = "Fail to get type";
@@ -235,15 +239,15 @@ bool LunaServiceProvider::sysInfo(LSHandle* sh, LSMessage* msg, void* ctxt)
 
     Message request(msg);
     JValue requestPayload = JDomParser::fromString(request.getPayload());
-    JValue responsePayload = pbnjson::Array();
+    JValue responsePayload = pbnjson::Object();
     LunaLogger::logRequest(request, requestPayload, mm->getServiceName());
 
     bool ret = true;
 
-    JValue allList = pbnjson::Object();
-    mm->onSysInfo(allList);
+    JValue sessionList = pbnjson::Object();
+    mm->onSysInfo(sessionList);
 
-    SysInfo::print(allList, responsePayload);
+    SysInfo::print(sessionList, responsePayload);
 
     responsePayload.put("returnValue", ret);
 
@@ -265,7 +269,74 @@ void LunaServiceProvider::raiseSignalLevelChanged(const string& prev,
     sig.put("current", cur);
 
     handle->sendSignal(uri.c_str(), sig.stringify().c_str(), false);
+
+#ifdef SUPPORT_LEGACY_API
+    raiseSignalThresholdChanged(prev, cur);
+#endif
 }
+
+#ifdef SUPPORT_LEGACY_API
+LSMethod LunaServiceProvider::oldMethods[] = {
+    {"getCloseAppId", LunaServiceProvider::getCloseAppId, LUNA_METHOD_FLAGS_NONE},
+    {"getCurrentMemState", LunaServiceProvider::getCurrentMemState, LUNA_METHOD_FLAGS_NONE},
+    {nullptr, nullptr}
+};
+
+LSSignal LunaServiceProvider::oldSignals[] = {
+    {"thresholdChanged", LUNA_SIGNAL_FLAGS_NONE},
+    {nullptr}
+};
+
+bool LunaServiceProvider::getCloseAppId(LSHandle* sh, LSMessage* msg, void* ctxt)
+{
+    return getManagerEvent(sh, msg, ctxt);
+}
+
+bool LunaServiceProvider::getCurrentMemState(LSHandle* sh, LSMessage* msg, void* ctxt)
+{
+    return getMemoryStatus(sh, msg, ctxt);
+}
+
+void LunaServiceProvider::raiseSignalThresholdChanged(const string& prev,
+                                                      const string& cur)
+{
+    LunaConnector* connector = LunaConnector::getInstance();
+    LS::Handle *handle = connector->getHandle();
+
+    pbnjson::JValue sig = pbnjson::Object();
+    const string uri = "luna://com.webos.memorymanager/thresholdChanged";
+
+    sig.put("previous", prev);
+    sig.put("current", cur);
+
+    MemoryManager* mm = MemoryManager::getInstance();
+    auto sessions = mm->getSessionMonitor().getSessions();
+    int allAppCount = 0;
+
+    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it)
+        allAppCount += it->second->m_runtime->countApp();
+    sig.put("remainCount", allAppCount);
+
+    /*
+     * TODO : There can be multiple foreground apps due to multiple sessions.
+     *        We, however, cannot distinguish whcih foreground app should be
+     *        chosen across multiple sessions for now.
+     */
+    bool found = false;
+    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
+        string appId = it->second->m_runtime->findFirstForegroundAppId();
+        if (!appId.empty()) {
+            sig.put("foregroundAppId", appId);
+            found = true;
+            break;
+        }
+    }
+    if (found == false)
+        sig.put("foregroundAppId", "");
+
+    handle->sendSignal(uri.c_str(), sig.stringify().c_str(), false);
+}
+#endif
 
 void LunaServiceProvider::postMemoryStatus()
 {
@@ -291,12 +362,34 @@ void LunaServiceProvider::postManagerEventKilling(const string& appId,
     m_managerEventKilling.post(subscriptionResponse.stringify().c_str());
 }
 
+#ifdef SUPPORT_LEGACY_API
+LS::Handle* LunaConnector::getOldHandle()
+{
+    return m_oldHandle;
+}
+
+bool LunaConnector::oldConnect(const string& oldServiceName,
+                            GMainLoop* loop)
+{
+    try {
+        m_oldHandle = new LS::Handle(oldServiceName.c_str());
+        m_oldHandle->attachToLoop(loop);
+    } catch(const LS::Error& e) {
+        Logger::error("Fail to register to luna-bus (legacy)", getClassName());
+        return false;
+    }
+
+    return true;
+}
+#endif
+
 LS::Handle* LunaConnector::getHandle()
 {
     return m_handle;
 }
 
-bool LunaConnector::connect(const string& serviceName, GMainLoop* loop)
+bool LunaConnector::connect(const string& serviceName,
+                            GMainLoop* loop)
 {
     try {
         m_handle = new LS::Handle(serviceName.c_str());
@@ -311,6 +404,10 @@ bool LunaConnector::connect(const string& serviceName, GMainLoop* loop)
 
 LunaConnector::~LunaConnector()
 {
+#ifdef SUPPORT_LEGACY_API
+    if (m_oldHandle)
+        delete m_oldHandle;
+#endif
     if (m_handle)
         delete m_handle;
 }
@@ -324,11 +421,20 @@ LunaServiceProvider::LunaServiceProvider()
 
     LunaConnector* connector = LunaConnector::getInstance();
 
-    LS::Handle* handle = connector->getHandle();
+#ifdef SUPPORT_LEGACY_API
+    LS::Handle* oldHandle = connector->getOldHandle();
+    oldHandle->registerCategory("/", oldMethods, oldSignals, nullptr);
+    oldHandle->setCategoryData("/", this);
+#endif
 
+    LS::Handle* handle = connector->getHandle();
     handle->registerCategory("/", methods, signals, nullptr);
     handle->setCategoryData("/", this);
 
+    /*
+     * TODO : MM v1.0 did not support legacy handle subscription, so we do not
+     *        call setSeviceHandle for legacy API on v2.0 until it is required.
+     */
     m_memoryStatus.setServiceHandle(handle);
     m_managerEventKilling.setServiceHandle(handle);
 }

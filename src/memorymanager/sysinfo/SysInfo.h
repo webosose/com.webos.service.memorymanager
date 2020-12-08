@@ -39,16 +39,15 @@ private:
     static unsigned long parseSizeToKb(string size);
     static void makeMemInfo(unsigned long phyramSize);
     static void makeSystemView(JValue& objSysView);
-    static void makeCategorizedView(JValue& objCtgView);
     static string getTotalPhyram();
     static void makePssViewMsg(JValue& session, const string& sessionId, map<string, unsigned long>& pidPss);
-    static void makePss(JValue& allList, JValue& objPssView);
+    static void makePss(JValue& allList, JValue& arrPssView);
 
     static map<string, string> pidComm;
     static map<string, string> pidSession;
     static map<string, string> memInfo;
+    static map<string, unsigned long> pssInfo;
     static map<string, unsigned long> sysView;
-    static map<string, unsigned long> ctgView;
 };
 
 #endif /* SYSINFO_SYSINFO_H_ */

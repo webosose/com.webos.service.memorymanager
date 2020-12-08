@@ -42,6 +42,13 @@ int main(int argc, char** argv)
     mm = MemoryManager::getInstance();
     lc = LunaConnector::getInstance();
 
+#ifdef SUPPORT_LEGACY_API
+    if (!lc->oldConnect(mm->getOldServiceName(), mm->getMainLoop())) {
+        Logger::error("Fail to connect Luna-BUS (legacy)", LOG_NAME);
+        return 0;
+    }
+#endif
+
     if (!lc->connect(mm->getServiceName(), mm->getMainLoop())) {
         Logger::error("Fail to connect Luna-BUS", LOG_NAME);
         return 0;

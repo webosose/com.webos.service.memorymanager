@@ -23,6 +23,8 @@
 #include <luna-service2/lunaservice.hpp>
 #include <pbnjson.hpp>
 
+#define SUPPORT_LEGACY_API /* TODO : will be deprecated */
+
 using namespace LS;
 using namespace pbnjson;
 
@@ -58,6 +60,10 @@ public:
     void postMemoryStatus();
     void postManagerEventKilling(const string& appId, const string& instanceId);
 
+#ifdef SUPPORT_LEGACY_API
+    void raiseSignalThresholdChanged(const string& prev, const string& cur);
+#endif
+
 private:
     static LSMethod methods[];
     static LSSignal signals[];
@@ -66,6 +72,14 @@ private:
     static bool getMemoryStatus(LSHandle* sh, LSMessage* msg, void* ctxt);
     static bool getManagerEvent(LSHandle* sh, LSMessage* msg, void* ctxt);
     static bool sysInfo(LSHandle* sh, LSMessage* msg, void* ctxt);
+
+#ifdef SUPPORT_LEGACY_API
+    static LSMethod oldMethods[];
+    static LSSignal oldSignals[];
+
+    static bool getCloseAppId(LSHandle* sh, LSMessage* msg, void* ctxt);
+    static bool getCurrentMemState(LSHandle* sh, LSMessage* msg, void* ctxt);
+#endif
 
     LS::SubscriptionPoint m_memoryStatus;
     LS::SubscriptionPoint m_managerEventKilling;
@@ -76,14 +90,25 @@ class LunaConnector : public ISingleton<LunaConnector>,
 public:
     explicit LunaConnector() : m_handle(nullptr)
     {
+#ifdef SUPPORT_LEGACY_API
+        m_oldHandle = nullptr;
+#endif
         setClassName("LunaConnector");
     }
     virtual ~LunaConnector();
 
-    bool connect(const string& serviceName, GMainLoop* loop);
+#ifdef SUPPORT_LEGACY_API
+    bool oldConnect( const string& serviceName, GMainLoop* loop);
+    LS::Handle* getOldHandle();
+#endif
+
+    bool connect( const string& serviceName, GMainLoop* loop);
     LS::Handle* getHandle();
 
 private:
+#ifdef SUPPORT_LEGACY_API
+    LS::Handle* m_oldHandle;
+#endif
     LS::Handle* m_handle;
 };
 
