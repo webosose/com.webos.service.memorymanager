@@ -45,6 +45,7 @@ private:
     static const int m_closeTimeOutMs;
 
     void initAppWaitToRun();
+    void initDefaultStatus();
 
     list<Application> m_appsWaitToRun;
     Session& m_session;

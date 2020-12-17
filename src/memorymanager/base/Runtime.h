@@ -32,7 +32,7 @@ public:
     explicit BaseProcess() = default;
     virtual ~BaseProcess() { }
 
-    unsigned long getPssValue(const int pid);
+    long getPssValue(const int pid);
 
     virtual void updateMemStat() = 0;
 };
@@ -131,6 +131,7 @@ public:
     const string findFirstForegroundAppId();
     void printApp();
     void printApp(JValue& json);
+    void setAppDefaultStatus(const string& foregroundAppId);
 
 private:
     static const string WAM_SERVICE_ID;

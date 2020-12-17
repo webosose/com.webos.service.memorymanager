@@ -32,7 +32,7 @@
 const string Runtime::WAM_SERVICE_ID = "webapp-mgr.service";
 const string Runtime::SAM_SERVICE_ID = "sam.service";
 
-unsigned long BaseProcess::getPssValue(const int pid)
+long BaseProcess::getPssValue(const int pid)
 {
     map<string, string> smaps;
 
@@ -48,7 +48,12 @@ unsigned long BaseProcess::getPssValue(const int pid)
 
 void Application::updateMemStat()
 {
-    m_pssKb = getPssValue(m_pid);
+    long ret = getPssValue(m_pid);
+
+    if (ret > 0 || ret == 0)
+        m_pssKb = static_cast<unsigned long>(ret);
+    else
+        m_pssKb = 0;
 }
 
 void Application::print()
@@ -130,13 +135,13 @@ void Service::updateMemStat()
 {
     auto it = m_pidPss.begin();
     while (it != m_pidPss.end()) {
-        int localPss = getPssValue(it->first);
+        long localPss = getPssValue(it->first);
 
         if (localPss < 0) {
             it = m_pidPss.erase(it);
             continue;
         } else {
-            it->second = localPss;
+            it->second = (unsigned long)localPss;
             ++it;
         }
     }
@@ -400,6 +405,16 @@ void Runtime::printApp()
 {
     for (auto it = m_applications.begin(); it != m_applications.end(); ++it)
         it->print();
+}
+
+void Runtime::setAppDefaultStatus(const string& foregroundAppId)
+{
+    for (auto it = m_applications.begin(); it != m_applications.end(); ++it) {
+        if (it->getAppId() == foregroundAppId)
+            it->setStatus("foreground");
+        else
+            it->setStatus("background");
+    }
 }
 
 Runtime::Runtime(Session &session):m_session(session)

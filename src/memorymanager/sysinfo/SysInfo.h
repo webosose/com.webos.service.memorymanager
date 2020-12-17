@@ -27,6 +27,13 @@
 
 using namespace std;
 
+enum class PssCategory {
+    SYS_PSS,
+    FG_PSS,
+    CACHED_PSS,
+    TOTAL_PSS_CTG,
+};
+
 class SysInfo {
 public:
     static bool print(JValue& allList, JValue& message);
@@ -35,19 +42,22 @@ private:
     SysInfo() = delete;
     virtual ~SysInfo();
 
-    static bool comparePss(const pair<string, unsigned long>& a, const pair<string, unsigned long>& b);
-    static unsigned long parseSizeToKb(string size);
-    static void makeMemInfo(unsigned long phyramSize);
-    static void makeSystemView(JValue& objSysView);
+    static bool comparePss(const pair<string, long>& a, const pair<string, long>& b);
+    static long parseSizeToKb(string size);
+    static void makeMemInfo(long phyramSize);
+    static void makeSystemView(JValue& arrSysView);
     static string getTotalPhyram();
-    static void makePssViewMsg(JValue& session, const string& sessionId, map<string, unsigned long>& pidPss);
-    static void makePss(JValue& allList, JValue& arrPssView);
+    static void makePssViewMsg(JValue& session, const string& sessionId,
+                        map<string, long> pidPss[], map<string, string> pidComm[]);
+    static void makePssInfo(JValue& allList, JValue& arrPssView);
 
-    static map<string, string> pidComm;
-    static map<string, string> pidSession;
     static map<string, string> memInfo;
-    static map<string, unsigned long> pssInfo;
-    static map<string, unsigned long> sysView;
+    static vector<pair<string, map<string, long>>> sysView;
+
+    static long totalPSS;
+    static long cachedPSS;
+    static long fgPSS;
+    static long systemPSS;
 };
 
 #endif /* SYSINFO_SYSINFO_H_ */

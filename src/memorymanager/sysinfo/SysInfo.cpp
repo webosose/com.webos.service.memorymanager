@@ -18,22 +18,25 @@
 #include "util/LinuxProcess.h"
 
 #include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
 
-map<string, string> SysInfo::pidComm;
-map<string, string> SysInfo::pidSession;
 map<string, string> SysInfo::memInfo;
-map<string, unsigned long> SysInfo::pssInfo;
-map<string, unsigned long> SysInfo::sysView;
+vector<pair<string, map<string, long>>> SysInfo::sysView;
 
-bool SysInfo::comparePss(const pair<string, unsigned long>& a, const pair<string, unsigned long>& b)
+long SysInfo::totalPSS = 0;
+long SysInfo::cachedPSS = 0;
+long SysInfo::fgPSS = 0;
+long SysInfo::systemPSS = 0;
+
+bool SysInfo::comparePss(const pair<string, long>& a, const pair<string, long>& b)
 {
     return a.second > b.second;
 }
 
-unsigned long SysInfo::parseSizeToKb(string size)
+long SysInfo::parseSizeToKb(string size)
 {
     string value = "", unit = "";
-    unsigned long ret = 0;
+    long ret = 0;
 
     for (auto &c : size) {
         if (isdigit(c))
@@ -44,21 +47,21 @@ unsigned long SysInfo::parseSizeToKb(string size)
     }
 
     if (unit == "B" || unit == "BYTE") {
-        ret = stoul(value) / 1024;
+        ret = stol(value) / 1024;
     } else if (unit == "KB" || unit == "K" || unit == "KILOBYTE" || unit == "") {
-        ret = stoul(value);
+        ret = stol(value);
     } else if (unit == "MB" || unit == "M" || unit == "MEGABYTE") {
-        ret = stoul(value) * 1024;
+        ret = stol(value) * 1024;
     } else if (unit == "GB" || unit == "G" || unit == "GIGABYTE") {
-        ret = stoul(value) * 1024 * 1024;
+        ret = stol(value) * 1024 * 1024;
     } else if (unit == "TB" || unit == "T" || unit == "TERABYTE") {
-        ret = stoul(value) * 1024 * 1024 * 1024;
+        ret = stol(value) * 1024 * 1024 * 1024;
     } else if (unit == "PB" || unit == "P" || unit == "PETABYTE") {
-        ret = stoul(value) * 1024 * 1024 * 1024 * 1024;
+        ret = stol(value) * 1024 * 1024 * 1024 * 1024;
     } else if (unit == "EB" || unit == "E" || unit == "EXABYTE") {
-        ret = stoul(value) * 1024 * 1024 * 1024 * 1024 * 1024;
+        ret = stol(value) * 1024 * 1024 * 1024 * 1024 * 1024;
     } else if (unit == "ZB" || unit == "Z" || unit == "ZETTABYTE") {
-        ret = stoul(value) * 1024 * 1024 * 1024 * 1024 * 1024 * 1024;
+        ret = stol(value) * 1024 * 1024 * 1024 * 1024 * 1024 * 1024;
     } else {
         Logger::warning("Invalid unit of size", "sysInfo");
         ret = 0;
@@ -67,38 +70,37 @@ unsigned long SysInfo::parseSizeToKb(string size)
     return ret;
 }
 
-void SysInfo::makeSystemView(JValue& objSysView)
+void SysInfo::makeSystemView(JValue& arrSysView)
 {
-    JValue obj = pbnjson::Object();
-    string msg = "";
+    const unsigned int nItem = sysView.size();
+    volatile unsigned int i = 0;
 
-    msg = to_string(sysView["bsp"]) + " K";
-    obj.put("BSP          ", msg);
-    msg = to_string(sysView["kernel"]) + " K";
-    obj.put("Kernel       ", msg);
-    msg = to_string(sysView["customKernel"]) + " K";
-    obj.put("Custom Kernel", msg);
-    msg = to_string(sysView["systemPss"]) + " K";
-    obj.put("System PSS   ", msg);
-    objSysView.put("Essential", obj);
+    JValue obj[nItem], arr[nItem];
+    boost::format formKey("%-15s: %ld K");
+    string key = "", msg = "";
 
-    obj = pbnjson::Object();
-    msg = to_string(sysView["foregroundPss"]) + " K";
-    obj.put("Foreground   ", msg);
-    objSysView.put("Foreground PSS", obj);
+    for (; i < nItem; i++) {
+        obj[i] = pbnjson::Object();
+        arr[i] = pbnjson::Array();
+    }
 
-    obj = pbnjson::Object();
-    msg = to_string(sysView["cachedPss"]) + " K";
-    obj.put("Cached PSS   ", msg);
-    msg = to_string(sysView["cachedKernel"]) + " K";
-    obj.put("Cached Kernel", msg);
-    objSysView.put("Performance", obj);
+    i = 0;
 
-    obj = pbnjson::Object();
-    msg = to_string(sysView["free"]) + " K";
-    obj.put("Free         ", msg);
-    objSysView.put("Free", obj);
+    for (auto& m : sysView) {
+        string name = m.first;
+        for (auto& p : m.second) {
+            string subName = p.first;
+            long val = p.second;
 
+            formKey %subName %val;
+            arr[i].append(formKey.str());
+        }
+
+        obj[i].put(name, arr[i]);
+        arrSysView.append(obj[i]);
+
+        i++;
+    }
 }
 
 string SysInfo::getTotalPhyram()
@@ -107,8 +109,8 @@ string SysInfo::getTotalPhyram()
 
     /* If no lsmem exists or 'Total online' not found, round up /proc/MemTotal */
     if (lsmemTotal.empty()) {
-        unsigned long memTotal = stoul(memInfo.find("MemTotal")->second);
-        unsigned long multiple = 1024 * 1024; /* round up to multiple of 1 G */
+        long memTotal = stol(memInfo.find("MemTotal")->second);
+        long multiple = 1024 * 1024; /* round up to multiple of 1 G */
         memTotal = ((memTotal + multiple - 1) / multiple) * multiple;
         Logger::verbose("Physical RAM size is estimated: " +
                         to_string(memTotal) + " K", "SysInfo");
@@ -121,38 +123,61 @@ string SysInfo::getTotalPhyram()
     return lsmemTotal;
 }
 
-void SysInfo::makePssViewMsg(JValue& session, const string& sessionId, map<string, unsigned long>& pidPss)
+void SysInfo::makePssViewMsg(JValue& session, const string& sessionId,
+                    map<string, long> pidPss[], map<string, string> pidComm[])
 {
-    JValue jarr = pbnjson::Array();
+    JValue sessionArr = pbnjson::Array();
+    const unsigned int nPssCtg = static_cast<const unsigned int>(PssCategory::TOTAL_PSS_CTG);
 
-    /* Make vector from map for sorting */
-    vector<pair<string, unsigned long>> vPidPss(pidPss.begin(), pidPss.end());
+    const string pssTitle[nPssCtg] = {"System", "Foreground", "Cached"};
 
-    sort(vPidPss.begin(), vPidPss.end(), comparePss);
+    for (volatile unsigned int i = 0; i < nPssCtg; i++) {
+        if (pidPss[i].size() == 0 || pidComm[i].size() == 0)
+            continue;
 
-    for (pair<string, unsigned long> pairPidPss: vPidPss) {
-        string msg = "";
-        msg = to_string(pairPidPss.second) + " K: " + pidComm.find(pairPidPss.first)->second
-                + " (pid " + pairPidPss.first + ")";
-        jarr.append(msg);
+        JValue obj = pbnjson::Object();
+        JValue arr = pbnjson::Array();
+        map<string, long> mpp = pidPss[i];
+        map<string, string> mpc = pidComm[i];
+
+        /* Make vector from map for sorting */
+        vector<pair<string, long>> vps(mpp.begin(), mpp.end());
+
+        sort(vps.begin(), vps.end(), comparePss);
+
+        for (pair<string, long> ppp: vps) {
+            string msg = "";
+            msg = to_string(ppp.second) + " K: " + mpc[ppp.first] + " (pid " + ppp.first + ")";
+            arr.append(msg);
+        }
+
+        obj.put(pssTitle[i], arr);
+        sessionArr.append(obj);
     }
 
-    session.put(sessionId, jarr);
+    session.put(sessionId, sessionArr);
 }
 
-void SysInfo::makePss(JValue& allList, JValue& arrPssView)
+void SysInfo::makePssInfo(JValue& allList, JValue& arrPssView)
 {
-    string appId = "", stat = "", sPid = "", sPss = "", serviceId = "", sessionId = "", msg = "";
-    int pid = 0, i = 0;
-    unsigned long pss = 0, pssCached = 0, pssForeground = 0, pssSystem = 0, pssTotal = 0;
+    string appId = "", stat = "", sPid = "", sPss = "", serviceId = "", sessionId = "";
+    int pid = 0;
+    volatile unsigned int i = 0;
+    long pss = 0, pssCached = 0, pssForeground = 0, pssSystem = 0, pssTotal = 0;
+    const unsigned int nPssCtg = static_cast<const unsigned int>(PssCategory::TOTAL_PSS_CTG);
 
-    map<string, unsigned long> pidPss;
+    map<string, long> pidPss[nPssCtg];
+    map<string, string> pidComm[nPssCtg];
 
     for (JValue item : allList["sessions"].items()) {
         JValueUtil::getValue(item, "sessionId", sessionId);
 
         JValue objSession = pbnjson::Object();
-        pidPss.clear();
+
+        for (i = 0; i < nPssCtg; i++) {
+            pidPss[i].clear();
+            pidComm[i].clear();
+        }
 
         for (JValue subItem : item["apps"].items()) {
             JValueUtil::getValue(subItem, "appId", appId);
@@ -167,17 +192,29 @@ void SysInfo::makePss(JValue& allList, JValue& arrPssView)
             sPid = to_string(pid);
 
             if (stat == "background" || stat == "preload" || stat == "stop" || stat == "close") {
-                pssCached += pss;
+                cachedPSS += pss;
+
+                const unsigned int idxCachedPss =
+                                static_cast<const unsigned int>(PssCategory::CACHED_PSS);
+                pidComm[idxCachedPss].insert(make_pair(sPid, appId));
+                pidPss[idxCachedPss].insert(make_pair(sPid, pss));
             } else if (stat == "foreground" || stat == "launch" || stat == "splash") {
-                pssForeground += pss;
+                fgPSS += pss;
+
+                const unsigned int idxFgPss =
+                                static_cast<const unsigned int>(PssCategory::FG_PSS);
+                pidComm[idxFgPss].insert(make_pair(sPid, appId));
+                pidPss[idxFgPss].insert(make_pair(sPid, pss));
             } else if (stat == "pause") {
-                pssSystem += pss;
+                systemPSS += pss;
+
+                const unsigned int idxSysPss =
+                                static_cast<const unsigned int>(PssCategory::SYS_PSS);
+                pidComm[idxSysPss].insert(make_pair(sPid, appId));
+                pidPss[idxSysPss].insert(make_pair(sPid, pss));
             }
 
-            pssTotal += pss;
-
-            pidComm.insert(make_pair(sPid, appId));
-            pidPss.insert(make_pair(sPid, pss));
+            totalPSS += pss;
         }
 
         for (JValue subItem : item["services"].items()) {
@@ -196,79 +233,92 @@ void SysInfo::makePss(JValue& allList, JValue& arrPssView)
             for (i = 0; i < pidList.size(); ++i) {
                 pss = stoul(pssList[i]);
 
-                pssSystem += pss;
-                pssTotal += pss;
+                systemPSS += pss;
+                totalPSS += pss;
 
-                pidComm.insert(make_pair(pidList[i], serviceId));
-                pidPss.insert(make_pair(pidList[i], pss));
+                const unsigned int idxSysPss =
+                                static_cast<const unsigned int>(PssCategory::SYS_PSS);
+                pidComm[idxSysPss].insert(make_pair(pidList[i], serviceId));
+                pidPss[idxSysPss].insert(make_pair(pidList[i], pss));
             }
         }
 
-        makePssViewMsg(objSession, sessionId, pidPss);
+        makePssViewMsg(objSession, sessionId, pidPss, pidComm);
         arrPssView.append(objSession);
     }
-
-    pssInfo.insert(make_pair("cachedPss", pssCached));
-    pssInfo.insert(make_pair("usedPss", pssTotal - pssCached));
-    pssInfo.insert(make_pair("systemPss", pssSystem));
-    pssInfo.insert(make_pair("foregroundPss", pssForeground));
-    pssInfo.insert(make_pair("cachedPss", pssCached));
 }
 
-void SysInfo::makeMemInfo(unsigned long phyramSize)
+void SysInfo::makeMemInfo(long phyramSize)
 {
-    unsigned long mTotalRam = 0, mBsp = 0, mKernel = 0,
-                  mUsedPss = 0, mUsedRam = 0, mCachedPss = 0,
-                  mCachedKernel = 0, mFree = 0, mTotalFree = 0,
-                  mCustomKernel = 0, mSystemPss = 0, mForegroundPss = 0;
+    long mTotalRam = 0, mBsp = 0, mKernel = 0,
+                  mUsedRam = 0, mCachedKernel = 0, mFree = 0,
+                  mTotalFree = 0, mCustomKernel = 0,
+                  mUsedPss = 0, mCachedPss = 0,
+                  mSystemPss = 0, mForegroundPss = 0;
 
     mTotalRam       = stoul(memInfo.find("MemTotal")->second);
     mBsp            = phyramSize - mTotalRam;
+
     mKernel         = stoul(memInfo.find("Shmem")->second)
                         + stoul(memInfo.find("SUnreclaim")->second)
                         + stoul(memInfo.find("VmallocUsed")->second)
                         + stoul(memInfo.find("PageTables")->second)
                         + stoul(memInfo.find("KernelStack")->second);
-    mUsedPss        = pssInfo["usedPss"];
+    mUsedPss        = totalPSS - cachedPSS;
     mUsedRam        = mUsedPss + mKernel;
-    mCachedPss      = pssInfo["cachedPss"];
+
+    mCachedPss      = cachedPSS;
     mCachedKernel   = stoul(memInfo.find("Buffers")->second)
                         + stoul(memInfo.find("Cached")->second)
                         + stoul(memInfo.find("SReclaimable")->second)
                         - stoul(memInfo.find("Mapped")->second);
     mFree           = stoul(memInfo.find("MemFree")->second);
     mTotalFree      = mCachedPss + mCachedKernel + mFree; // reclaimable + free
-    mCustomKernel   = mTotalRam - mUsedRam - mTotalFree;
-    mSystemPss      = pssInfo["systemPss"];
-    mForegroundPss  = pssInfo["foregroundPss"];
 
-    sysView.insert(make_pair("bsp", mBsp));
-    sysView.insert(make_pair("kernel", mKernel));
-    sysView.insert(make_pair("customKernel", mCustomKernel));
-    sysView.insert(make_pair("systemPss", mSystemPss));
-    sysView.insert(make_pair("foregroundPss", mForegroundPss));
-    sysView.insert(make_pair("cachedPss", mCachedPss));
-    sysView.insert(make_pair("cachedKernel", mCachedKernel));
-    sysView.insert(make_pair("free", mFree));
+    mCustomKernel   = mTotalRam - mUsedRam - mTotalFree;
+    if (mCustomKernel < 0)
+        mCustomKernel = 0;
+
+    mSystemPss      = systemPSS;
+    mForegroundPss  = fgPSS;
+
+    /* Each map should be inserted sequentially */
+    map<string, long> mapEsse, mapFg, mapPerf, mapFree;
+    mapEsse.insert(make_pair("BSP", mBsp));
+    mapEsse.insert(make_pair("Kernel", mKernel));
+    mapEsse.insert(make_pair("Custom Kernel", mCustomKernel));
+    mapEsse.insert(make_pair("System PSS", mSystemPss));
+    mapFg.insert(make_pair("Foreground PSS", mForegroundPss));
+    mapPerf.insert(make_pair("Cached PSS", mCachedPss));
+    mapPerf.insert(make_pair("Cached Kernel", mCachedKernel));
+    mapFree.insert(make_pair("Free", mFree));
+
+    sysView.emplace_back(make_pair("Essential", mapEsse));
+    sysView.emplace_back(make_pair("Foreground", mapFg));
+    sysView.emplace_back(make_pair("Performance", mapPerf));
+    sysView.emplace_back(make_pair("Free", mapFree));
 }
 
 bool SysInfo::print(JValue& allList, JValue& message)
 {
-    unsigned long phyramSize = 0;
+    long phyramSize = 0;
     string strPhyramSize = "";
 
-    pssInfo.clear();
+    JValue arrSysView = pbnjson::Array(); /* System View */
+    JValue arrPssView = pbnjson::Array(); /* PSS View */
+
+    memInfo.clear();
     sysView.clear();
 
-    JValue objSysView = pbnjson::Object(); /* System View */
-    JValue arrPssView = pbnjson::Array(); /* PSS View */
-    JValue errMsg = pbnjson::Object();
+    totalPSS = 0;
+    systemPSS = 0;
+    fgPSS = 0;
+    cachedPSS = 0;
 
     Proc::getMemInfo(memInfo);
     if (memInfo.empty()) {
         Logger::warning("Cannot get meminfo", "SysInfo");
-        errMsg.put("errorText", "Cannot get 'meminfo'");
-        message.append(errMsg);
+        message.put("errorText", "Cannot get 'meminfo'");
         return false;
     }
 
@@ -276,18 +326,17 @@ bool SysInfo::print(JValue& allList, JValue& message)
 
     if (strPhyramSize.empty()) {
         Logger::warning("Cannot get total physical ram size", "SysInfo");
-        errMsg.put("errorText", "Cannot get total pyhsical ram size");
-        message.append(errMsg);
+        message.put("errorText", "Cannot get total pyhsical ram size");
         return false;
     }
 
     phyramSize = parseSizeToKb(strPhyramSize);
 
-    makePss(allList, arrPssView);
+    makePssInfo(allList, arrPssView);
     makeMemInfo(phyramSize);
-    makeSystemView(objSysView);
+    makeSystemView(arrSysView);
 
-    message.put("System View", objSysView);
+    message.put("System View", arrSysView);
     message.put("PSS View", arrPssView);
 
     return true;
