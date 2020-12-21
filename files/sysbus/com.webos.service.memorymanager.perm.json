@@ -1,7 +1,7 @@
 {
     "com.webos.service.memorymanager": [
-        "applications.internal",
-        "notifications",
+        "applicationmanager.launcher",
+        "notification.management",
         "session.management"
     ]
 }

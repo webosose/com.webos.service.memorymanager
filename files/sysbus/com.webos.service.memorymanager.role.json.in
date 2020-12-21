@@ -1,5 +1,6 @@
 {
     "exeName":"@WEBOS_INSTALL_SBINDIR@/memorymanager",
+    "trustLevel" : "oem",
     "type": "regular",
     "allowedNames": ["com.webos.memorymanager", "com.webos.service.memorymanager"],
     "permissions": [

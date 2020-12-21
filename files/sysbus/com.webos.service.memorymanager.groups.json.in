@@ -1,0 +1,5 @@
+{
+    "allowedNames" : [],
+    "memory.query" : ["dev"],
+    "memory.management" : ["oem"]
+}

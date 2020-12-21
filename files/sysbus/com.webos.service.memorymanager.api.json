@@ -1,22 +1,12 @@
 {
-    "applications.internal": [
+    "memory.query": [
+        "com.webos.memorymanager/getCurrentMemState",
         "com.webos.memorymanager/getCloseAppId",
-        "com.webos.memorymanager/getCurrentMemState"
-    ],
-    "system": [
-        "com.webos.memorymanager/getCloseAppId",
-        "com.webos.memorymanager/getCurrentMemState"
-    ],
-    "memory.information": [
-        "com.webos.service.memorymanager/getMemoryStatus"
-    ],
-    "memory.management": [
         "com.webos.service.memorymanager/getMemoryStatus",
         "com.webos.service.memorymanager/getManagerEvent",
-        "com.webos.service.memorymanager/requireMemory"
+        "com.webos.service.memorymanager/sysInfo"
     ],
-    "configurator.callbacks": [
-        "com.webos.service.applicationmanager/launch",
-        "com.webos.service.applicationmanager/getForegroundAppInfo"
+    "memory.management": [
+        "com.webos.service.memorymanager/requireMemory"
     ]
 }
