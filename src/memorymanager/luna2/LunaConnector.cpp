@@ -23,6 +23,14 @@
 
 #include <glib.h>
 
+const vector<string> LunaServiceProvider::errorCode{"No Error",         // 0
+                                                    "Unknown Error",    // 1
+                                                    "Wrong Json Format Error",  // 2
+                                                    "No Required Parameters Error", // 3
+                                                    "Invalid Parameters Error", // 4
+                                                    "LS2 Internal Error",       // 5
+                                                    "Unsupported API"};
+
 string LunaSubscriber::getSubscribeServiceName()
 {
     return m_subscribeServiceName;
@@ -147,10 +155,17 @@ bool LunaServiceProvider::requireMemory(LSHandle* sh, LSMessage* msg, void* ctxt
     bool returnValue = true;
     string errorText = "";
 
-    JValueUtil::getValue(requestPayload, "requiredMemory", requiredMemory);
+    if (!JValueUtil::getValue(requestPayload, "requiredMemory", requiredMemory)) {
+        int err = 3;
+        responsePayload.put("errorCode", err);
+        responsePayload.put("errorText", errorCode[err]);
+        returnValue = false;
+        goto out;
+    }
 
     returnValue = MemoryManager::getInstance()->onRequireMemory(requiredMemory, errorText);
 
+out:
     if (errorText != "")
         responsePayload.put("errorText", errorText);
 
@@ -204,26 +219,42 @@ bool LunaServiceProvider::getManagerEvent(LSHandle* sh, LSMessage* msg, void* ct
     string errorText = "";
     bool subscribed = false;
     bool returnValue = true;
+    bool required = true;
+    int errCode = 0;
 
 #ifdef SUPPORT_LEGACY_API /* Handle getCloseAppId */
     if (requestPayload.hasKey("appType"))
         requestPayload.put("type", "killing");
 #endif
 
-    returnValue = JValueUtil::getValue(requestPayload, "type", type);
-    if (!returnValue) {
-        errorText = "Fail to get type";
+    required &= JValueUtil::getValue(requestPayload, "type", type);
+    required &= JValueUtil::getValue(requestPayload, "subscribe", subscribed);
+
+    if (!required) {
+        errCode = 3;
+        errorText = errorCode[errCode];
+        goto out;
+    }
+
+    if (!subscribed) {
+        errCode = 4;
+        errorText = errorCode[errCode];
         goto out;
     }
 
     if (type == "killing")
         subscribed = p->m_managerEventKilling.subscribe(request);
-    else
-        errorText = "Invalid type";
+    else {
+        errCode = 4;
+        errorText = errorCode[errCode];
+    }
 
 out:
-    if (errorText != "")
+    if (errorText != "") {
+        responsePayload.put("errorCode", errCode);
         responsePayload.put("errorText", errorText);
+        returnValue = false;
+    }
 
     responsePayload.put("subscribed", subscribed);
     responsePayload.put("returnValue", returnValue);

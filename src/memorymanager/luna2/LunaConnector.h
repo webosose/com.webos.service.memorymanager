@@ -67,6 +67,7 @@ public:
 private:
     static LSMethod methods[];
     static LSSignal signals[];
+    static const vector<string> errorCode;
 
     static bool requireMemory(LSHandle* sh, LSMessage* msg, void* ctxt);
     static bool getMemoryStatus(LSHandle* sh, LSMessage* msg, void* ctxt);
