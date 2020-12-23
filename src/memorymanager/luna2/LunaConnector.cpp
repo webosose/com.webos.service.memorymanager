@@ -31,6 +31,13 @@ const vector<string> LunaServiceProvider::errorCode{"No Error",         // 0
                                                     "LS2 Internal Error",       // 5
                                                     "Unsupported API"};
 
+const string LunaServiceProvider::nameService = "com.webos.service.memorymanager";
+const string LunaServiceProvider::nameSignal = "com/webos/service/memorymanager";
+#ifdef SUPPORT_LEGACY_API
+const string LunaServiceProvider::nameOldService = "com.webos.memorymanager";
+const string LunaServiceProvider::nameOldSignal = "com/webos/memory";
+#endif
+
 string LunaSubscriber::getSubscribeServiceName()
 {
     return m_subscribeServiceName;
@@ -294,7 +301,7 @@ void LunaServiceProvider::raiseSignalLevelChanged(const string& prev,
     LS::Handle *handle = connector->getHandle();
 
     pbnjson::JValue sig = pbnjson::Object();
-    const string uri = "luna://com.webos.service.memorymanager/levelChanged";
+    const string uri = "luna://" + nameService + "/" + nameSignal + "/" + "levelChanged";
 
     sig.put("previous", prev);
     sig.put("current", cur);
@@ -335,7 +342,7 @@ void LunaServiceProvider::raiseSignalThresholdChanged(const string& prev,
     LS::Handle *handle = connector->getHandle();
 
     pbnjson::JValue sig = pbnjson::Object();
-    const string uri = "luna://com.webos.memorymanager/thresholdChanged";
+    const string uri = "luna://" + nameOldService + "/" + nameOldSignal + "/" + "thresholdChanged";
 
     sig.put("previous", prev);
     sig.put("current", cur);

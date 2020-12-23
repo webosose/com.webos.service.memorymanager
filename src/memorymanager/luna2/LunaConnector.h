@@ -68,6 +68,8 @@ private:
     static LSMethod methods[];
     static LSSignal signals[];
     static const vector<string> errorCode;
+    static const string nameService;
+    static const string nameSignal;
 
     static bool requireMemory(LSHandle* sh, LSMessage* msg, void* ctxt);
     static bool getMemoryStatus(LSHandle* sh, LSMessage* msg, void* ctxt);
@@ -77,6 +79,8 @@ private:
 #ifdef SUPPORT_LEGACY_API
     static LSMethod oldMethods[];
     static LSSignal oldSignals[];
+    static const string nameOldService;
+    static const string nameOldSignal;
 
     static bool getCloseAppId(LSHandle* sh, LSMessage* msg, void* ctxt);
     static bool getCurrentMemState(LSHandle* sh, LSMessage* msg, void* ctxt);
