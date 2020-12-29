@@ -111,13 +111,17 @@ public:
     explicit Runtime(Session& session);
     virtual ~Runtime();
 
-    void waitForSystemdJobDone(const int sec, const string& sessionId);
     void updateMemStat();
     bool reclaimMemory(bool critical);
 
+    /* Reserved Pid List Management */
+    void clearReservedPid();
+    void addReservedPid(const int pid);
+
     /* Service List Management */
-    bool updateService(const string& appType, const int pid);
     void addService(Service* service);
+    void updateService(const string& serviceId, const int pid);
+    void createService(Session *sesssion);
     int countService();
     void printService();
     void printService(JValue& json);
@@ -139,6 +143,7 @@ private:
 
     Session& m_session;
 
+    list<int> m_reservedPids;
     list<Service*> m_services;
     list<Application> m_applications;
 };

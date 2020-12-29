@@ -136,6 +136,7 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *msg, void *ctxt)
     LunaLogger::logSubscription("running", payload, "SAM");
 
     /* Make application vector with up-to-date runningList */
+    p->m_session.m_runtime->clearReservedPid();
     for (JValue item : payload["running"].items()) {
         string appId = "", instanceId = "", pid = "", webPid = "", appType = "";
 
@@ -152,11 +153,8 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *msg, void *ctxt)
         if (pid.empty() || stoi(pid) < 0)
             continue;
 
-        /*
-         * Forked proecss from WAM or SAM may exist in both Service and
-         * Application object. Remove duplicated pid from Service object.
-         */
-        p->m_session.m_runtime->updateService(appType, stoi(pid));
+        /* To remove duplicated pid from Service list later */
+        p->m_session.m_runtime->addReservedPid(stoi(pid));
 
         /* Move complete app instance to Runtime */
         auto it = p->m_appsWaitToRun.begin();
@@ -214,6 +212,7 @@ void SAM::initAppWaitToRun()
 
         JValue responsePayload = JDomParser::fromString(response.getPayload());
 
+        m_session.m_runtime->clearReservedPid();
         for (JValue item : responsePayload["running"].items()) {
             string instanceId = "", appType = "", appId = "", pid = "", webPid = "";
 
@@ -226,11 +225,8 @@ void SAM::initAppWaitToRun()
             if (!webPid.empty())
                 pid = webPid;
 
-            /*
-             * Forked proecss from WAM or SAM may exist in both Service and
-             * Application object. Remove duplicated pid from Service object.
-             */
-            m_session.m_runtime->updateService(appType, stoi(pid));
+            /* To remove duplicated pid from Service list later */
+            m_session.m_runtime->addReservedPid(stoi(pid));
 
             Application *app = new Application(instanceId, appId, appType, "", stoi(pid));
             m_appsWaitToRun.push_back(*app);

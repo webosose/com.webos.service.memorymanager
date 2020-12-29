@@ -284,6 +284,17 @@ void MemoryManager::onSysInfo(JValue& json)
         JValue appList = pbnjson::Array();
         JValue serviceList = pbnjson::Array();
 
+        /*
+         * TODO : Can we move this code during initialization?
+         * We want to create service list when session runtime is created once.
+         * But, we do not know when all systemd services' initialization id done.
+         * We tried to find this moment by using systemctl :
+         * http://gpro.lge.com/c/webosose/com.webos.service.memorymanager/+/294155
+         * This, however, brings another issue that app cannot be launched
+         * until MM initialization is done.
+         */
+        it->second->m_runtime->createService(it->second);
+
         it->second->m_runtime->updateMemStat();
         it->second->m_runtime->printApp(appList);
         it->second->m_runtime->printService(serviceList);
