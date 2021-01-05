@@ -46,8 +46,6 @@ public:
                          const int pid);
     virtual ~Application() { }
 
-    bool isCloseable();
-
     void setStatus(const string& status);
     void setType(const string& type);
     void setPid(const int pid);

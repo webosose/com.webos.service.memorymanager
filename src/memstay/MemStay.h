@@ -38,8 +38,6 @@ public:
         return instance;
     }
 
-    static int getFreeMemory();
-
     virtual ~MemStay();
 
     void setTarget(int target);

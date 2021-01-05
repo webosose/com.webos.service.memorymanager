@@ -37,9 +37,6 @@ public:
     static int getMemoryLevelCriticalExit();
 
 private:
-    SettingManager() = delete;
-    virtual ~SettingManager();
-
     static void initEnv();
 
     // From build environmena

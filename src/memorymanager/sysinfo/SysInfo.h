@@ -39,9 +39,6 @@ public:
     static bool print(JValue& allList, JValue& message);
 
 private:
-    SysInfo() = delete;
-    virtual ~SysInfo();
-
     static bool comparePss(const pair<string, long>& a, const pair<string, long>& b);
     static long parseSizeToKb(string size);
     static void makeMemInfo(long phyramSize);
