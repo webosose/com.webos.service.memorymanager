@@ -327,6 +327,11 @@ MemoryManager::MemoryManager()
 
     gCtxt = g_main_context_new();
     m_mainLoop = g_main_loop_new(gCtxt, FALSE);
+
+    m_memoryLevel = nullptr;
+    m_memoryMonitor = nullptr;
+    m_sessionMonitor = nullptr;
+    m_lunaServiceProvider = nullptr;
 }
 
 MemoryManager::~MemoryManager()
