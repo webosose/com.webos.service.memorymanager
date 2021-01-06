@@ -39,10 +39,10 @@ long SysInfo::parseSizeToKb(string size)
     long ret = 0;
 
     for (auto &c : size) {
-        if (isdigit(c))
+        if (isdigit(static_cast<int>(c)))
             value.push_back(c);
-        if (isalpha(c)) {
-            unit.push_back(toupper(c));
+        if (isalpha(static_cast<int>(c))) {
+            unit.push_back(toupper(static_cast<int>(c)));
         }
     }
 
