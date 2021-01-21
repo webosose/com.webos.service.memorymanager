@@ -1,12 +1,12 @@
 {
-    "memory.query": [
+    "memorymanager.query": [
         "com.webos.memorymanager/getCurrentMemState",
         "com.webos.memorymanager/getCloseAppId",
         "com.webos.service.memorymanager/getMemoryStatus",
         "com.webos.service.memorymanager/getManagerEvent",
         "com.webos.service.memorymanager/sysInfo"
     ],
-    "memory.management": [
+    "memorymanager.management": [
         "com.webos.service.memorymanager/requireMemory"
     ]
 }
