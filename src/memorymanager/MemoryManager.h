@@ -107,7 +107,7 @@ public:
 
 private:
     static const int m_defaultRequiredMemory = 120;
-    static const int m_retryCount = 5;
+    static const int m_retryCount = 20;
 #ifdef SUPPORT_LEGACY_API
     static const string m_oldServiceName;
 #endif
