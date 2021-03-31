@@ -27,7 +27,7 @@
 const string SessionMonitor::HOST_SESSION_ID = "host";
 const string SessionMonitor::HOST_USER_ID = "root";
 const string SessionMonitor::HOST_UID = "0";
-const string SessionMonitor::m_externalServiceName = "com.webos.service.sessionmanager";
+const string SessionMonitor::m_externalServiceName = "com.webos.service.account";
 
 Session::Session(const string& sessionId,
                  const string& userId,
@@ -87,10 +87,10 @@ bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
         return true;
 
     payload = JDomParser::fromString(response.getPayload());
-    LunaLogger::logSubscription("getSessionList", payload, "SessionMonitor");
+    LunaLogger::logSubscription("getSessions", payload, "SessionMonitor");
 
-    JValue sessionList = pbnjson::Array();
-    JValueUtil::getValue(payload, "sessionList", sessionList);
+    JValue sessions = pbnjson::Array();
+    JValueUtil::getValue(payload, "sessions", sessions);
 
     map<string, Session*> localMap;
 
@@ -99,7 +99,7 @@ bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
     p->m_sessions.erase(HOST_SESSION_ID);
 
     /* Sync new sessions to previous sessions */
-    for (JValue session : sessionList.items()) {
+    for (JValue session : sessions.items()) {
         string sessionId = "", userId = "", uid = "";
 
         if (!JValueUtil::getValue(session, "sessionId", sessionId))
@@ -136,7 +136,7 @@ bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
 
 void SessionMonitor::onConnected()
 {
-    const string uri = "luna://" + m_externalServiceName + "/getSessionList";
+    const string uri = "luna://" + m_externalServiceName + "/getSessions";
     startSubscribe(uri, onGetSessionList, this, "");
 
     Logger::normal(getSubscribeServiceName() + " is up", getClassName());

@@ -15,7 +15,7 @@
             "outbound": [
                 "com.webos.service.applicationmanager",
                 "com.webos.notification",
-                "com.webos.service.sessionmanager"
+                "com.webos.service.account"
             ]
         }
     ]
