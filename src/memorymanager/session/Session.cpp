@@ -30,10 +30,10 @@ const string SessionMonitor::HOST_UID = "0";
 const string SessionMonitor::m_externalServiceName = "com.webos.service.account";
 
 Session::Session(const string& sessionId,
-                 const string& userId,
+                 const string& accountId,
                  const string& uid)
     : m_sessionId(sessionId),
-      m_userId(userId),
+      m_accountId(accountId),
       m_uid(uid),
       m_sam(nullptr),
       m_runtime(nullptr)
@@ -62,7 +62,7 @@ void Session::print()
 
     snprintf(buf, 1024, "%8.8s %8.8s %5.5s %s",
              m_sessionId.c_str(),
-             m_userId.c_str(),
+             m_accountId.c_str(),
              m_uid.c_str(),
              m_path.c_str());
 
@@ -72,12 +72,12 @@ void Session::print()
 void Session::print(JValue& json)
 {
     json.put("sessionId", m_sessionId);
-    json.put("userId", m_userId);
+    json.put("accountId", m_accountId);
     json.put("uid", m_uid);
     json.put("path", m_path);
 }
 
-bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
+bool SessionMonitor::onGetSessions(LSHandle *sh, LSMessage *msg, void *ctxt)
 {
     SessionMonitor *p = static_cast<SessionMonitor*>(ctxt);
     Message response(msg);
@@ -100,20 +100,20 @@ bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
 
     /* Sync new sessions to previous sessions */
     for (JValue session : sessions.items()) {
-        string sessionId = "", userId = "", uid = "";
+        string sessionId = "", accountId = "", uid = "";
 
         if (!JValueUtil::getValue(session, "sessionId", sessionId))
             continue;
 
-        JValueUtil::getValue(session, "userInfo", "userId", userId);
+        JValueUtil::getValue(session, "accountInfo", "accountId", accountId);
         uid = LinuxProcess::getStdoutFromCmd("id -u " + sessionId);
 
-        Logger::normal("onGetSessionList " + sessionId, p->getClassName());
+        Logger::normal("onGetSessions " + sessionId, p->getClassName());
 
         auto it = p->m_sessions.find(sessionId);
         if (it == p->m_sessions.end()) {
             /* Create new session */
-            Session *s = new Session(sessionId, userId, uid);
+            Session *s = new Session(sessionId, accountId, uid);
             localMap.insert(make_pair(sessionId, s));
         } else {
             /* Move to localMap for later swap */
@@ -137,7 +137,7 @@ bool SessionMonitor::onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt)
 void SessionMonitor::onConnected()
 {
     const string uri = "luna://" + m_externalServiceName + "/getSessions";
-    startSubscribe(uri, onGetSessionList, this, "");
+    startSubscribe(uri, onGetSessions, this, "");
 
     Logger::normal(getSubscribeServiceName() + " is up", getClassName());
 }

@@ -33,12 +33,12 @@ class Runtime;
 class Session : public IPrintable,
                 public IClassName {
 public:
-    explicit Session(const string& sessionId, const string& userId,
+    explicit Session(const string& sessionId, const string& accountId,
                      const string& uid);
     virtual ~Session();
 
     const string& getSessionId() const { return m_sessionId; }
-    const string& getUserId() const { return m_userId; }
+    const string& getAccountId() const { return m_accountId; }
     const string& getUid() const { return m_uid; }
     const string& getPath() const { return m_path; }
 
@@ -51,7 +51,7 @@ public:
 
 private:
     const string m_sessionId; /* unique id which external SessionManager creates for each session */
-    const string m_userId;    /* user id which external SessionManager creates for each session */
+    const string m_accountId; /* account id which external SessionManager creates for each session */
     const string m_uid;       /* Linux uid asssined to each user on the system */
     string m_path;            /* cgroup leaf path */
 };
@@ -74,7 +74,7 @@ public:
 
 private:
     static const string m_externalServiceName;
-    static bool onGetSessionList(LSHandle *sh, LSMessage *msg, void *ctxt);
+    static bool onGetSessions(LSHandle *sh, LSMessage *msg, void *ctxt);
 
     std::map<string, Session*> m_sessions;
 };
