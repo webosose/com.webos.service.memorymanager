@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2020 LG Electronics, Inc.
+# Copyright (c) 2018-2021 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,20 +45,38 @@ include_directories(${Boost_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${Boost_CFLAGS_OTHER})
 
 pkg_check_modules(PROCPS REQUIRED libprocps)
-include_directories(PROCPS_INCLUDE_DIRS)
+include_directories(${PROCPS_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PROCPS_CFLAGS})
+
+pkg_check_modules(GIO_UNIX REQUIRED gio-unix-2.0)
+include_directories(${GIO_UNIX_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${GIO_UNIX_CFLAGS})
+
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/MMBus.c
+    COMMAND gdbus-codegen --pragma-once
+                          --generate-c-code=${CMAKE_CURRENT_BINARY_DIR}/MMBus
+                          --c-namespace MMBus
+                          --interface-prefix com.webos.MemoryManager1.
+                          ${PROJECT_SOURCE_DIR}/files/dbus/MemoryManager1.xml
+
+    DEPENDS ${PROJECT_SOURCE_DIR}/files/dbus/MemoryManager1.xml
+    COMMENT "Generate D-Bus 'MemroyManager1.xml"
+)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # Environment
 set(BIN_NAME memorymanager)
 file(GLOB_RECURSE SRC_COMMON ${PROJECT_SOURCE_DIR}/src/common/*.cpp)
 file(GLOB_RECURSE SRC_MEMORYMANAGER ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+set(SRC_DBUS ${CMAKE_CURRENT_BINARY_DIR}/MMBus.c)
 
 # Compile
 webos_add_compiler_flags(ALL CXX -std=c++0x)
 include_directories(${PROJECT_BINARY_DIR}/Configured/src)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/common)
-add_executable(${BIN_NAME} ${SRC_COMMON} ${SRC_MEMORYMANAGER})
+add_executable(${BIN_NAME} ${SRC_COMMON} ${SRC_MEMORYMANAGER} ${SRC_DBUS})
 
 # Link
 set(LIBS
@@ -70,6 +88,7 @@ set(LIBS
     ${PBNJSON_C_LDFLAGS}
     ${PBNJSON_CPP_LDFLAGS}
     ${PROCPS_LDFLAGS}
+    ${GIO_UNIX_LDFLAGS}
 )
 target_link_libraries(${BIN_NAME} ${LIBS})
 

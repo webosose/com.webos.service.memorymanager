@@ -21,6 +21,7 @@
 #include <glib.h>
 #include <pbnjson.hpp>
 
+#include "MMBus.h"
 #include "memorymonitor/MemoryMonitor.h"
 #include "luna2/LunaConnector.h"
 #include "base/Runtime.h"
@@ -105,20 +106,22 @@ public:
     virtual void print() override final {};
     virtual void print(JValue& printOut) override final;
 
+    // DBus
+    bool registerSignal();
+
 private:
-    static const int m_defaultRequiredMemory = 120;
-    static const int m_retryCount = 20;
+    static bool onMemoryPressured(MMBusComWebosMemoryManager1 *object, guint var);
+
+    LunaServiceProvider* m_lunaServiceProvider;
+    GMainLoop* m_mainLoop;
+    MemoryLevel* m_memoryLevel;
+    MemoryMonitor* m_memoryMonitor;
 #ifdef SUPPORT_LEGACY_API
     static const string m_oldServiceName;
 #endif
+    MMBusComWebosMemoryManager1* m_proxy;
     static const string m_serviceName;
-
-    GMainLoop* m_mainLoop;
-    MemoryLevel* m_memoryLevel;
-
-    MemoryMonitor* m_memoryMonitor;
     SessionMonitor* m_sessionMonitor;
-    LunaServiceProvider* m_lunaServiceProvider;
 };
 
 #endif /* CORE_SERVICE_MEMORYMANAGER_H_ */

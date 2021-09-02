@@ -16,14 +16,14 @@
 
 #include "MemoryManager.h"
 
-#include "setting/SettingManager.h"
+#include <chrono>
+#include <map>
+#include <thread>
 
+#include "MMBus.h"
+#include "setting/SettingManager.h"
 #include "util/Logger.h"
 #include "util/Proc.h"
-
-#include <map>
-#include <chrono>
-#include <thread>
 
 MemoryLevelNormal::MemoryLevelNormal()
 {
@@ -69,18 +69,6 @@ bool MemoryLevelLow::keepLevel(long memAvail)
 
 void MemoryLevelLow::action(string& errorText)
 {
-    MemoryManager* mm = MemoryManager::getInstance();
-    auto sessions = mm->getSessionMonitor().getSessions();
-    int allAppCount = 0;
-
-    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
-        it->second->m_runtime->reclaimMemory(false);
-        allAppCount += it->second->m_runtime->countApp();
-    }
-
-    if (allAppCount == 0) {
-        errorText = "Failed to reclaim required memory. All apps were closed";
-    }
 }
 
 MemoryLevelCritical::MemoryLevelCritical()
@@ -103,18 +91,6 @@ bool MemoryLevelCritical::keepLevel(long memAvail)
 
 void MemoryLevelCritical::action(string& errorText)
 {
-    MemoryManager* mm = MemoryManager::getInstance();
-    auto sessions = mm->getSessionMonitor().getSessions();
-    int allAppCount = 0;
-
-    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
-        it->second->m_runtime->reclaimMemory(true);
-        allAppCount += it->second->m_runtime->countApp();
-    }
-
-    if (allAppCount == 0) {
-        errorText = "Failed to reclaim required memory. All apps were closed";
-    }
 }
 
 #ifdef SUPPORT_LEGACY_API
@@ -229,49 +205,33 @@ void MemoryManager::handleRuntimeChange(const string& appId, const string& insta
         m_lunaServiceProvider->postMemoryStatus();
 }
 
+bool MemoryManager::onMemoryPressured(MMBusComWebosMemoryManager1 *object, guint var)
+{
+    const int type_swap = 0, type_psi = 1;
+    if (var == type_psi) { // we will handle PSI only
+        MemoryManager* self = MemoryManager::getInstance();
+        auto sessions = self->getSessionMonitor().getSessions();
+        int allAppCount = 0;
+
+        auto it = sessions.cbegin();
+        if (it != sessions.cend()) {
+            it->second->m_runtime->reclaimMemory(true);
+            allAppCount += it->second->m_runtime->countApp();
+            Logger::normal("reclaimMemory called by PSI : allApp" + std::to_string(allAppCount));
+        }
+        if (allAppCount == 0) {
+            Logger::normal("Failed to reclaim required memory. No more app to be closed");
+        }
+    } else if (var == type_swap) {// we will ignore TYPE_SWAP now
+        Logger::normal("Received SWAP Pressure");
+    }
+
+    return true;
+}
+
 bool MemoryManager::onRequireMemory(const int requiredMemory, string& errorText)
 {
-    MemoryLevel *level = NULL;
-    map<string, string> mInfo;
-    int i, requested;
-    bool ret = false;
-
-    if (SettingManager::getSingleAppPolicy()) {
-        Logger::normal("SingleAppPolicy, Skip memory level check", getClassName());
-        return true;
-    }
-
-    if (requiredMemory <= 0)
-        requested = m_defaultRequiredMemory;
-    else
-        requested = requiredMemory;
-
-    /* Get Meminfo */
-    Proc::getMemInfo(mInfo);
-    auto it = mInfo.find("MemAvailable");
-    long available = stol(it->second) / 1024;
-
-    if (available - requested > SettingManager::getMemoryLevelCriticalEnter())
-        return true;
-
-    level = new MemoryLevelCritical;
-    for (i = 0; i < m_retryCount; ++i) {
-        level->action(errorText);
-        /* TODO : wait progess... */
-        this_thread::sleep_for(chrono::milliseconds(200));
-
-        /* Get Meminfo */
-        Proc::getMemInfo(mInfo);
-        it = mInfo.find("MemAvailable");
-        available = stol(it->second) / 1024;
-
-        if (available - requested > SettingManager::getMemoryLevelCriticalEnter()) {
-            ret = true;
-            break;
-        }
-    }
-    delete level;
-    return ret;
+    return true;
 }
 
 void MemoryManager::onSysInfo(JValue& json)
@@ -319,25 +279,59 @@ void MemoryManager::onSysInfo(JValue& json)
     }
 }
 
+bool MemoryManager::registerSignal()
+{
+    GDBusConnection *conn;
+    GError *error = NULL;
+    guint arg1;
+
+    conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
+    if (error != NULL) {
+        Logger::normal("Failed to get bus", getClassName());
+        g_error_free(error);
+        return false;
+    }
+
+    m_proxy = mmbus_com_webos_memory_manager1_proxy_new_sync(
+                                  conn,
+                                  G_DBUS_PROXY_FLAGS_NONE,
+                                  "com.webos.MemoryManager1",
+                                  "/com/webos/MemoryManager1",
+                                  NULL,
+                                  &error);
+
+    if (m_proxy == NULL) {
+        Logger::normal("Failed to create proxy", getClassName());
+        g_error_free(error);
+        return false;
+    }
+
+    g_signal_connect(m_proxy, "memory-pressured", G_CALLBACK(MemoryManager::onMemoryPressured), NULL);
+    Logger::normal("DBus Signal registered", getClassName());
+
+    return true;
+}
+
 MemoryManager::MemoryManager()
 {
-    GMainContext* gCtxt;
-
     setClassName("MemoryManager");
 
-    gCtxt = g_main_context_new();
-    m_mainLoop = g_main_loop_new(gCtxt, FALSE);
+    m_mainLoop = g_main_loop_new(NULL, FALSE);
 
     m_memoryLevel = nullptr;
     m_memoryMonitor = nullptr;
     m_sessionMonitor = nullptr;
     m_lunaServiceProvider = nullptr;
+
+    if (registerSignal() == false)
+        Logger::normal("Failed to register dbus signal", getClassName());
 }
 
 MemoryManager::~MemoryManager()
 {
     g_main_loop_unref(m_mainLoop);
 
+    g_object_unref(m_proxy);
     delete m_memoryMonitor;
     delete m_lunaServiceProvider;
 }

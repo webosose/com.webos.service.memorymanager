@@ -13,66 +13,85 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
-
-#include <iostream>
 #include <glib.h>
+#include <getopt.h>
+#include <iostream>
 
 #include "MemStay.h"
 #include "util/Proc.h"
 
 using namespace std;
 
+void help()
+{
+    cout << "-s|--swap-usage <n> : Set swap usage percentage(%)" << endl;
+    cout << "-m|--memory-usage <n> : Set memory Usage Percentage(%)" << endl;
+}
+
 int main(int argc, char** argv)
 {
-    int target = 200;
-    int interval = 1;
+    int interval = 10;
     int unit = 1;
-    bool free = false;
+    int memUsageRate = -1; //locked mem usage raet
+    int swapUsageRate = -1; // swap-outed mem usage rate
 
-    if (argc == 1) {
-        long total, available;
-        map<string, string> mInfo;
+    const char *const short_options = "hs:m:";
+    const struct option long_options[] = {
+        { "help", no_argument, nullptr, 'h' },
+        { "swap-usage", required_argument, nullptr, 's' },
+        { "memory-usage", required_argument, nullptr, 'm' },
+        { nullptr, no_argument, nullptr, 0 }
+    };
 
-        Proc::getMemInfo(mInfo);
-
-        auto it = mInfo.find("MemTotal");
-        total = stol(it->second) / 1024;
-        it = mInfo.find("MemAvailable");
-        available = stol(it->second) / 1024;
-
-        cerr << "[memstay] Three parameters are needed (optional)" << endl;
-        cerr << "[memstay] #1 : Allocation Target (mb) - Default 200mb"  << endl;
-        cerr << "[memstay] #2 : Allocation Interval (ms) - Default 1ms"  << endl;
-        cerr << "[memstay] #3 : Allocation Unit (mb) - Default 1mb" << endl;
-        cerr << "[memstay] #4 : Enable free operation - Default 'false'" << endl;
-        cerr << "[memstay] #5 : Total(" << total << ") Free(" << available << ")" << endl;
-        return 0;
-    }
-    if (argc >= 2) {
-        target = atoi(argv[1]);
-    }
-    if (argc >= 3) {
-        interval = atoi(argv[2]);
-    }
-    if (argc >= 4) {
-        unit = atoi(argv[3]);
-    }
-    if (argc >= 5 && strcmp(argv[4], "free") == 0) {
-        free = true;
+    if (argc <= 1)  {
+        help();
+	return 0;
     }
 
-    cout << "[memstay] Allocation : target(" << argv[1] << "MB) / "
-         << "interval(" << argv[2] << "ms) / "
-         << "unit(" << argv[3] << "MB) / "
-         << (free ? "free(enabled)" : "free(disabled)") << endl;
+    while (true) {
+        const auto opt = getopt_long(argc, argv, short_options, long_options, nullptr);
 
-    MemStay::getInstance().setTarget(target);
+        if (opt == -1)
+            break;
+
+        switch (opt) {
+            case 's':
+                swapUsageRate = stoi(optarg);
+                if ( swapUsageRate < 0 || swapUsageRate > 100) {
+                    cout << "[memstay] swapUsage should be percentage value(0-100)"<< endl;
+                    help();
+                    exit(0);
+                }
+                break;
+            case 'm':
+                memUsageRate = stoi(optarg);
+                if ( memUsageRate < 0 || memUsageRate > 100) {
+                    cout << "[memstay] memUsage should be percentage value(0-100)" << endl;
+                    help();
+                    exit(0);
+                }
+                break;
+            case 'h':
+            default:
+                help();
+                break;
+        }
+    }
+
+    if ( memUsageRate == -1 && swapUsageRate == -1) {
+        cout << "[memstay] There is no options" << endl;
+        help();
+        exit(0);
+    }
+
     MemStay::getInstance().setInterval(interval);
     MemStay::getInstance().setUnit(unit);
-    MemStay::getInstance().setFree(free);
+    MemStay::getInstance().setMemUsageRate(memUsageRate);
+    MemStay::getInstance().setSwapUsageRate(swapUsageRate);
+
     MemStay::getInstance().configure();
 
     GMainLoop* mainLoop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(mainLoop);
+    return 0;
 }
-

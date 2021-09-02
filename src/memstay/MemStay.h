@@ -17,6 +17,7 @@
 #ifndef MEMSTAY_H_
 #define MEMSTAY_H_
 
+#include <sys/types.h>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -39,28 +40,39 @@ public:
     }
 
     virtual ~MemStay();
-
-    void setTarget(int target);
     void setInterval(int interval);
     void setUnit(int unit);
-    void setFree(bool free);
+    void setMemUsageRate(float memUsageRate);
+    void setSwapUsageRate(float swapUsageRate);
 
     void configure();
 
 private:
     static gboolean _tick(gpointer data);
+    static gboolean _tick_1sec(gpointer data);
 
     MemStay();
+    void print(long currentSwap, long currentMem);
 
-    void print(char type, long available);
-
-    int m_target;
-    guint32 m_interval;
-    int m_unit;
-    bool m_free;
-
-    vector<void*> m_allocations;
     long m_allocationSize;
+    vector<void*> m_allocations;
+    guint32 m_interval;
+    int m_timer;
+    int m_unit;
+
+    int m_allocMemBlockCnt;
+    int m_occupiedMemBlockCnt;
+    int m_targetMemBlockCnt;
+    int m_targetMemUsageBlock;
+    float m_targetMemUsageRate;
+    int m_totalMemBlock;
+
+    int m_allocSwapBlockCnt;
+    int m_occupiedSwapBlockCnt;
+    int m_targetSwapBlockCnt;
+    int m_targetSwapUsageBlock;
+    float m_targetSwapUsageRate;
+    int m_totalSwapBlock;
 };
 
 #endif /* MEMSTAY_H_ */
