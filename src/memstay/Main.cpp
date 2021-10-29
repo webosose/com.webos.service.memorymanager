@@ -24,8 +24,11 @@ using namespace std;
 
 void help()
 {
-    cout << "-s|--swap-usage <n> : Set swap usage percentage(%)" << endl;
-    cout << "-m|--memory-usage <n> : Set memory Usage Percentage(%)" << endl;
+    cout << endl ;
+    cout << "memstay [OPTIONS...]" << endl ;
+    cout << "    -h|--help  : Show this help" << endl;
+    cout << "    -s|--swap-usage <n> : Set swap usage percentage(%)" << endl;
+    cout << "    -m|--memory-usage <n> : Set memory Usage Percentage(%)" << endl << endl;
 }
 
 int main(int argc, char** argv)
@@ -34,6 +37,7 @@ int main(int argc, char** argv)
     int unit = 1;
     int memUsageRate = -1; //locked mem usage raet
     int swapUsageRate = -1; // swap-outed mem usage rate
+    int opt;
 
     const char *const short_options = "hs:m:";
     const struct option long_options[] = {
@@ -42,11 +46,6 @@ int main(int argc, char** argv)
         { "memory-usage", required_argument, nullptr, 'm' },
         { nullptr, no_argument, nullptr, 0 }
     };
-
-    if (argc <= 1)  {
-        help();
-	return 0;
-    }
 
     while (true) {
         const auto opt = getopt_long(argc, argv, short_options, long_options, nullptr);
@@ -58,36 +57,32 @@ int main(int argc, char** argv)
             case 's':
                 swapUsageRate = stoi(optarg);
                 if ( swapUsageRate < 0 || swapUsageRate > 100) {
-                    cout << "[memstay] swapUsage should be percentage value(0-100)"<< endl;
-                    help();
-                    exit(0);
+                    cout << "[memstay] swapUsage should be percentage value(0-100)" << endl;
                 }
                 break;
             case 'm':
                 memUsageRate = stoi(optarg);
                 if ( memUsageRate < 0 || memUsageRate > 100) {
                     cout << "[memstay] memUsage should be percentage value(0-100)" << endl;
-                    help();
-                    exit(0);
                 }
                 break;
             case 'h':
-            default:
                 help();
+                return 0;
+            default:
                 break;
         }
     }
 
     if ( memUsageRate == -1 && swapUsageRate == -1) {
-        cout << "[memstay] There is no options" << endl;
         help();
-        exit(0);
+        return 0;
     }
 
     MemStay::getInstance().setInterval(interval);
     MemStay::getInstance().setUnit(unit);
-    MemStay::getInstance().setMemUsageRate(memUsageRate);
-    MemStay::getInstance().setSwapUsageRate(swapUsageRate);
+    MemStay::getInstance().setMemUsageRate(memUsageRate / 100.0);
+    MemStay::getInstance().setSwapUsageRate(swapUsageRate / 100.0);
 
     MemStay::getInstance().configure();
 

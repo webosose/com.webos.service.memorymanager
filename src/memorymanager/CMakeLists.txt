@@ -67,9 +67,9 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # Environment
 set(BIN_NAME memorymanager)
+set(SRC_DBUS ${CMAKE_CURRENT_BINARY_DIR}/MMBus.c)
 file(GLOB_RECURSE SRC_COMMON ${PROJECT_SOURCE_DIR}/src/common/*.cpp)
 file(GLOB_RECURSE SRC_MEMORYMANAGER ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-set(SRC_DBUS ${CMAKE_CURRENT_BINARY_DIR}/MMBus.c)
 
 # Compile
 webos_add_compiler_flags(ALL CXX -std=c++0x)
@@ -80,6 +80,7 @@ add_executable(${BIN_NAME} ${SRC_COMMON} ${SRC_MEMORYMANAGER} ${SRC_DBUS})
 
 # Link
 set(LIBS
+    ${GIO_UNIX_LDFLAGS}
     ${GLIB2_LDFLAGS}
     ${LUNASERVICE2_LDFLAGS}
     ${LUNASERVICE2CPP_LDFLAGS}
@@ -88,7 +89,6 @@ set(LIBS
     ${PBNJSON_C_LDFLAGS}
     ${PBNJSON_CPP_LDFLAGS}
     ${PROCPS_LDFLAGS}
-    ${GIO_UNIX_LDFLAGS}
 )
 target_link_libraries(${BIN_NAME} ${LIBS})
 

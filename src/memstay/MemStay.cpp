@@ -47,12 +47,12 @@ void MemStay::setUnit(int unit)
 
 void MemStay::setMemUsageRate(float memUsageRate)
 {
-    m_targetMemUsageRate = memUsageRate / 100;
+    m_targetMemUsageRate = memUsageRate;
 }
 
 void MemStay::setSwapUsageRate(float swapUsageRate)
 {
-    m_targetSwapUsageRate = swapUsageRate / 100;
+    m_targetSwapUsageRate = swapUsageRate;
 }
 
 void MemStay::configure()
@@ -97,15 +97,15 @@ void MemStay::configure()
     }
 
 
-    cout << "[memstay] Total SwapUsageBlock: " << m_totalSwapBlock << endl;
-    cout << "[memstay] Free SwapBlock: " << freeSwapBlock << endl;
-    cout << "[memstay] Target SwapUsageBlock  : " << m_targetSwapUsageBlock << endl;
-    cout << "[memstay] OccupiedSwapblockCnt  : " << m_occupiedSwapBlockCnt << endl;
+    cout << "[memstay] Total SwapUsageBlock : " << m_totalSwapBlock << endl;
+    cout << "[memstay] Free SwapBlock : " << freeSwapBlock << endl;
+    cout << "[memstay] Target SwapUsageBlock : " << m_targetSwapUsageBlock << endl;
+    cout << "[memstay] OccupiedSwapblockCnt : " << m_occupiedSwapBlockCnt << endl;
 
-    cout << "[memstay] Total MemBlock: " << m_totalMemBlock << endl;
-    cout << "[memstay] Free MemBlock: " << freeMemBlock << endl;
-    cout << "[memstay] Target MemUsageBlock  : " << m_targetMemUsageBlock << endl;
-    cout << "[memstay] OccupiedMemBlockCnt  : " << m_occupiedMemBlockCnt << endl;
+    cout << "[memstay] Total MemBlock : " << m_totalMemBlock << endl;
+    cout << "[memstay] Free MemBlock : " << freeMemBlock << endl;
+    cout << "[memstay] Target MemUsageBlock : " << m_targetMemUsageBlock << endl;
+    cout << "[memstay] OccupiedMemBlockCnt : " << m_occupiedMemBlockCnt << endl;
 
     cout << "[memstay] Unit             : " << m_unit << "MB" << endl;
     if ((m_timer = g_timeout_add(m_interval, _tick, NULL)) <= 0) {
@@ -228,10 +228,9 @@ gboolean MemStay::_tick(gpointer data)
 
 void MemStay::print(long currentSwap, long currentMem)
 {
-    cout << "[memstay] " << " : "
-         << "swap-total(" << ((m_targetSwapUsageRate > 0)?  m_targetSwapUsageRate * 100 : 0) << "%/" << currentSwap << "%) "
-         << "swap-local(" << (m_targetSwapUsageBlock - m_occupiedSwapBlockCnt) * m_unit << "MB/" << (m_allocSwapBlockCnt - m_occupiedSwapBlockCnt) * m_unit << "MB) "
-         << "memory-total(" << ((m_targetMemUsageRate > 0)? m_targetMemUsageRate * 100 : 0)<< "%/" << currentMem << "%) "
-         << "memory-local(" << (m_targetMemUsageBlock - m_occupiedMemBlockCnt) * m_unit << "MB/" << (m_allocMemBlockCnt - m_occupiedMemBlockCnt) * m_unit << "MB) "
-         << endl;
+    printf("[memstay] : swap-total(%d%%/%d%%), swap-local(%dMB/%dMB), memory-total(%d%%/%d%%), memory-local(%dMB/%dMB)\n",
+             ((m_targetSwapUsageRate > 0) ? (int)(m_targetSwapUsageRate * 100) : 0), currentSwap,
+             (m_targetSwapUsageBlock - m_occupiedSwapBlockCnt) * m_unit, (m_allocSwapBlockCnt - m_occupiedSwapBlockCnt) * m_unit,
+             ((m_targetMemUsageRate > 0) ? (int)(m_targetMemUsageRate * 100) : 0),  currentMem,
+             (m_targetMemUsageBlock - m_occupiedMemBlockCnt) * m_unit, (m_allocMemBlockCnt - m_occupiedMemBlockCnt) * m_unit);
 }
