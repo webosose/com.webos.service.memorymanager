@@ -22,10 +22,17 @@ MemStay::MemStay()
     : m_allocationSize(0),
       m_allocMemBlockCnt(0),
       m_allocSwapBlockCnt(0),
+      m_occupiedMemBlockCnt(0),
+      m_occupiedSwapBlockCnt(0),
       m_interval(0),
       m_timer(-1),
+      m_targetMemBlockCnt(0),
+      m_targetMemUsageBlock(0),
       m_targetMemUsageRate(-1),
+      m_targetSwapBlockCnt(0),
+      m_targetSwapUsageBlock(0),
       m_targetSwapUsageRate(-1),
+      m_totalMemBlock(0),
       m_totalSwapBlock(0),
       m_unit(0)
 {
@@ -59,11 +66,11 @@ void MemStay::configure()
 {
     long targetMemBlock;
     long totalMem, freeMem;
-    long freeMemBlock;
+    long freeMemBlock = 0;
 
     long targetSwapBlock;
     long totalSwap, freeSwap;
-    long freeSwapBlock;
+    long freeSwapBlock = 0;
 
     map<string, string> mInfo;
 
