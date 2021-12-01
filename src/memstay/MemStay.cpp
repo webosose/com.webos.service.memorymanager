@@ -143,18 +143,18 @@ gboolean MemStay::_tick_1sec(gpointer data)
     int size = MemStay::getInstance().m_unit * 1024 * 1024;
     void* buffer = NULL;
 
-    MemStay::getInstance().print(100 * (totalSwap - freeSwap) / totalSwap, 100 * (totalMem - freeMem) / totalMem);
+    MemStay::getInstance().print( (totalSwap==0)? 0 : (100 * (totalSwap - freeSwap) / totalSwap), 100 * (totalMem - freeMem) / totalMem);
 
     return G_SOURCE_CONTINUE;
 }
 
 gboolean MemStay::_tick(gpointer data)
 {
-    static int memDone=0;
+    static int memDone = 0;
     long freeMem;
     long freeSwap;
     map<string, string> mInfo;
-    static int swapDone=0;
+    static int swapDone = 0;
     long totalMem;
     long totalSwap;
 
@@ -191,7 +191,7 @@ gboolean MemStay::_tick(gpointer data)
         madvise(buffer, size, MADV_PAGEOUT);
         MemStay::getInstance().m_allocSwapBlockCnt++;
 
-        MemStay::getInstance().print(100 * (totalSwap - freeSwap) / totalSwap, 100 * (totalMem - freeMem) / totalMem);
+        MemStay::getInstance().print((totalSwap == 0)? 0 : (100 * (totalSwap - freeSwap) / totalSwap), 100 * (totalMem - freeMem) / totalMem);
         MemStay::getInstance().m_allocationSize += MemStay::getInstance().m_unit;
         MemStay::getInstance().m_allocations.push_back(buffer);
 
@@ -220,7 +220,7 @@ gboolean MemStay::_tick(gpointer data)
         memDone = 1;
     }
 
-    MemStay::getInstance().print(100 * (totalSwap-freeSwap) / totalSwap, 100 * (totalMem-freeMem) / totalMem);
+    MemStay::getInstance().print((totalSwap==0)? 0 : (100 * (totalSwap-freeSwap) / totalSwap), 100 * (totalMem-freeMem) / totalMem);
 
     if (memDone && swapDone) {
         if (g_timeout_add(1000, _tick_1sec, NULL) <= 0) {
@@ -235,7 +235,7 @@ gboolean MemStay::_tick(gpointer data)
 
 void MemStay::print(long currentSwap, long currentMem)
 {
-    printf("[memstay] : swap-total(%d%%/%d%%), swap-local(%dMB/%dMB), memory-total(%d%%/%d%%), memory-local(%dMB/%dMB)\n",
+    printf("[memstay] : swap-total(%d%%/%d%%), swap-local(%dMB/%dMB), memory-total(%d%%/%ld%%), memory-local(%dMB/%dMB)\n",
              ((m_targetSwapUsageRate > 0) ? (int)(m_targetSwapUsageRate * 100) : 0), currentSwap,
              (m_targetSwapUsageBlock - m_occupiedSwapBlockCnt) * m_unit, (m_allocSwapBlockCnt - m_occupiedSwapBlockCnt) * m_unit,
              ((m_targetMemUsageRate > 0) ? (int)(m_targetMemUsageRate * 100) : 0),  currentMem,
