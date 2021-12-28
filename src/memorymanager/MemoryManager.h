@@ -110,6 +110,9 @@ public:
     bool registerSignal();
 
 private:
+    static const int m_defaultRequiredMemory = 120;
+    static const int m_retryCount = 20;
+
     static bool onMemoryPressured(MMBusComWebosMemoryManager1 *object, guint var);
 
     LunaServiceProvider* m_lunaServiceProvider;

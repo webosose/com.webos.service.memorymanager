@@ -41,8 +41,14 @@ void SettingManager::initEnv()
     else
         m_SessionEnabled = false;
 
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0 ||
-        strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
+    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0) {
+        m_SingleAppPolicy = false;
+
+        m_memoryLevelLowEnter = 350;
+        m_memoryLevelLowExit = 380;
+        m_memoryLevelCriticalEnter = 200;
+        m_memoryLevelCriticalExit = 230;
+    } else if (strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
         m_SingleAppPolicy = false;
 
         m_memoryLevelLowEnter = 250;

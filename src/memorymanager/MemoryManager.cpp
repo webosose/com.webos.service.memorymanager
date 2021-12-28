@@ -69,6 +69,18 @@ bool MemoryLevelLow::keepLevel(long memAvail)
 
 void MemoryLevelLow::action(string& errorText)
 {
+    MemoryManager* mm = MemoryManager::getInstance();
+    auto sessions = mm->getSessionMonitor().getSessions();
+    int allAppCount = 0;
+
+    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
+        it->second->m_runtime->reclaimMemory(false);
+        allAppCount += it->second->m_runtime->countApp();
+    }
+
+    if (allAppCount == 0) {
+        errorText = "Failed to reclaim required memory. All apps were closed";
+    }
 }
 
 MemoryLevelCritical::MemoryLevelCritical()
@@ -91,6 +103,19 @@ bool MemoryLevelCritical::keepLevel(long memAvail)
 
 void MemoryLevelCritical::action(string& errorText)
 {
+    MemoryManager* mm = MemoryManager::getInstance();
+    auto sessions = mm->getSessionMonitor().getSessions();
+    int allAppCount = 0;
+
+    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
+        it->second->m_runtime->reclaimMemory(true);
+        allAppCount += it->second->m_runtime->countApp();
+    }
+
+    if (allAppCount == 0) {
+        errorText = "Failed to reclaim required memory. All apps were closed";
+    }
+
 }
 
 #ifdef SUPPORT_LEGACY_API
@@ -231,7 +256,47 @@ bool MemoryManager::onMemoryPressured(MMBusComWebosMemoryManager1 *object, guint
 
 bool MemoryManager::onRequireMemory(const int requiredMemory, string& errorText)
 {
-    return true;
+    MemoryLevel *level = NULL;
+    map<string, string> mInfo;
+    int i, requested;
+    bool ret = false;
+
+    if (SettingManager::getSingleAppPolicy()) {
+        Logger::normal("SingleAppPolicy, Skip memory level check", getClassName());
+        return true;
+    }
+
+    if (requiredMemory <= 0)
+        requested = m_defaultRequiredMemory;
+    else
+        requested = requiredMemory;
+
+    /* Get Meminfo */
+    Proc::getMemInfo(mInfo);
+    auto it = mInfo.find("MemAvailable");
+    long available = stol(it->second) / 1024;
+
+    if (available - requested > SettingManager::getMemoryLevelCriticalEnter())
+        return true;
+
+    level = new MemoryLevelCritical;
+    for (i = 0; i < m_retryCount; ++i) {
+        level->action(errorText);
+        /* TODO : wait progess... */
+        this_thread::sleep_for(chrono::milliseconds(200));
+
+        /* Get Meminfo */
+        Proc::getMemInfo(mInfo);
+        it = mInfo.find("MemAvailable");
+        available = stol(it->second) / 1024;
+
+        if (available - requested > SettingManager::getMemoryLevelCriticalEnter()) {
+            ret = true;
+            break;
+        }
+    }
+    delete level;
+    return ret;
 }
 
 void MemoryManager::onSysInfo(JValue& json)
