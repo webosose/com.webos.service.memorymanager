@@ -15,6 +15,8 @@
 
 #include "Cgroup.h"
 
+#include <fstream>
+
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
