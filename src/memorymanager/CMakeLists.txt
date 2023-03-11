@@ -44,10 +44,6 @@ find_package(Boost REQUIRED COMPONENTS regex system filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${Boost_CFLAGS_OTHER})
 
-pkg_check_modules(PROCPS REQUIRED libprocps)
-include_directories(${PROCPS_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${PROCPS_CFLAGS})
-
 pkg_check_modules(GIO_UNIX REQUIRED gio-unix-2.0)
 include_directories(${GIO_UNIX_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${GIO_UNIX_CFLAGS})
@@ -88,7 +84,6 @@ set(LIBS
     ${Boost_LIBRARIES}
     ${PBNJSON_C_LDFLAGS}
     ${PBNJSON_CPP_LDFLAGS}
-    ${PROCPS_LDFLAGS}
 )
 target_link_libraries(${BIN_NAME} ${LIBS})
 

@@ -15,7 +15,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <glib.h>
-#include <proc/readproc.h>
 #include <stdlib.h>
 #include <array>
 #include <memory>
