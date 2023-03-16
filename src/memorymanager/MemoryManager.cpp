@@ -299,51 +299,6 @@ bool MemoryManager::onRequireMemory(const int requiredMemory, string& errorText)
     return ret;
 }
 
-void MemoryManager::onSysInfo(JValue& json)
-{
-    auto sessions = getSessionMonitor().getSessions();
-    JValue sessionList = pbnjson::Array();
-
-    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
-        JValue session = pbnjson::Object();
-        JValue appList = pbnjson::Array();
-        JValue serviceList = pbnjson::Array();
-
-        /*
-         * TODO : Can we move this code during initialization?
-         * We want to create service list when session runtime is created once.
-         * But, we do not know when all systemd services' initialization id done.
-         * We tried to find this moment by using systemctl :
-         * http://gpro.lge.com/c/webosose/com.webos.service.memorymanager/+/294155
-         * This, however, brings another issue that app cannot be launched
-         * until MM initialization is done.
-         */
-        it->second->m_runtime->createService(it->second);
-
-        it->second->m_runtime->updateMemStat();
-        it->second->m_runtime->printApp(appList);
-        it->second->m_runtime->printService(serviceList);
-
-        session.put("sessionId", it->second->getSessionId());
-        session.put("apps", appList);
-        session.put("services", serviceList);
-        sessionList.append(session);
-    }
-
-    json.put("sessions", sessionList);
-
-    /* For debugging, print session, service list, and app list */
-    for (auto it = sessions.cbegin(); it != sessions.cend(); ++it) {
-        it->second->print();
-
-        if (it->second->m_runtime->countService() > 0)
-            it->second->m_runtime->printService();
-
-        if (it->second->m_runtime->countApp() > 0)
-            it->second->m_runtime->printApp();
-    }
-}
-
 bool MemoryManager::registerSignal()
 {
     GDBusConnection *conn;

@@ -100,7 +100,6 @@ public:
 
     /* for exposed APIs used by LunaServiceProvider */
     bool onRequireMemory(const int requiredMemory, string& errorText);
-    void onSysInfo(JValue& json);
 
     // IPrintable
     virtual void print() override final {};

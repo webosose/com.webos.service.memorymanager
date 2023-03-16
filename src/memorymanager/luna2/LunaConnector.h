@@ -74,7 +74,6 @@ private:
     static bool requireMemory(LSHandle* sh, LSMessage* msg, void* ctxt);
     static bool getMemoryStatus(LSHandle* sh, LSMessage* msg, void* ctxt);
     static bool getManagerEvent(LSHandle* sh, LSMessage* msg, void* ctxt);
-    static bool sysInfo(LSHandle* sh, LSMessage* msg, void* ctxt);
 
 #ifdef SUPPORT_LEGACY_API
     static LSMethod oldMethods[];

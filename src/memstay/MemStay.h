@@ -25,7 +25,6 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/sysinfo.h>
 #include <unistd.h>
 #include <malloc.h>
 
