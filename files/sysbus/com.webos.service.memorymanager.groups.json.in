@@ -1,5 +1,5 @@
 {
-    "allowedNames" : ["com.webos.service.memorymanager", "com.webos.memorymanager"],
+    "allowedNames" : ["com.webos.service.memorymanager"],
     "memorymanager.query" : ["dev"],
     "memorymanager.management" : ["oem"]
 }

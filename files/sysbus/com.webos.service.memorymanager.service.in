@@ -1,4 +1,4 @@
 [D-BUS Service]
-Name=com.webos.memorymanager;com.webos.service.memorymanager
+Name=com.webos.service.memorymanager
 Exec=@WEBOS_INSTALL_SBINDIR@/memorymanager
 Type=static

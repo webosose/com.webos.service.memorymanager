@@ -23,8 +23,6 @@
 #include <luna-service2/lunaservice.hpp>
 #include <pbnjson.hpp>
 
-#define SUPPORT_LEGACY_API /* TODO : will be deprecated */
-
 using namespace LS;
 using namespace pbnjson;
 
