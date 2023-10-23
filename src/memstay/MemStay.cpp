@@ -235,7 +235,7 @@ gboolean MemStay::_tick(gpointer data)
 
 void MemStay::print(long currentSwap, long currentMem)
 {
-    printf("[memstay] : swap-total(%d%%/%d%%), swap-local(%dMB/%dMB), memory-total(%d%%/%ld%%), memory-local(%dMB/%dMB)\n",
+    printf("[memstay] : swap-total(%d%%/%ld%%), swap-local(%dMB/%dMB), memory-total(%d%%/%ld%%), memory-local(%dMB/%dMB)\n",
              ((m_targetSwapUsageRate > 0) ? (int)(m_targetSwapUsageRate * 100) : 0), currentSwap,
              (m_targetSwapUsageBlock - m_occupiedSwapBlockCnt) * m_unit, (m_allocSwapBlockCnt - m_occupiedSwapBlockCnt) * m_unit,
              ((m_targetMemUsageRate > 0) ? (int)(m_targetMemUsageRate * 100) : 0),  currentMem,

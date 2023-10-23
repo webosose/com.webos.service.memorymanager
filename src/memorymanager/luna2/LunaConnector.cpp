@@ -64,8 +64,10 @@ bool LunaSubscriber::startSubscribe(const string& uri, LSFilterFunc callback,
                                                  callback, ctxt, nullptr, sessionId.c_str());
     }
 #else
-    m_subscribePorts[m_portIndex] = handle->callMultiReply(uri.c_str(), req.stringify().c_str(),
-                                             callback, ctxt, nullptr);
+    if (m_portIndex >= 0) {
+        m_subscribePorts[m_portIndex] = handle->callMultiReply(uri.c_str(), req.stringify().c_str(),
+                                                 callback, ctxt, nullptr);
+    }
 #endif
 
     m_portIndex++;
