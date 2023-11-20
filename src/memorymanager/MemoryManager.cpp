@@ -178,16 +178,21 @@ void MemoryManager::handleMemoryMonitorEvent(MonitorEvent& event)
 
 void MemoryManager::print(JValue& printOut)
 {
-    int total, available;
+    int total = 0, available = 0;
 
     /* Get Meminfo */
     map<string, string> mInfo;
     Proc::getMemInfo(mInfo);
 
     auto it = mInfo.find("MemTotal");
-    total = stoi(it->second) / 1024;
+    if (it != mInfo.end()) {
+        total = stoi(it->second) / 1024;
+    }
+
     it = mInfo.find("MemAvailable");
-    available = stoi(it->second) / 1024;
+    if (it != mInfo.end()) {
+        available = stoi(it->second) / 1024;
+    }
 
     /* Organize "system" */
     JValue current = pbnjson::Object();
@@ -274,7 +279,10 @@ bool MemoryManager::onRequireMemory(const int requiredMemory, string& errorText)
     /* Get Meminfo */
     Proc::getMemInfo(mInfo);
     auto it = mInfo.find("MemAvailable");
-    long available = stol(it->second) / 1024;
+    long available = 0;
+    if (it != mInfo.end()) {
+        available = stol(it->second) / 1024;
+    }
 
     if (available - requested > SettingManager::getMemoryLevelCriticalEnter())
         return true;
@@ -288,7 +296,9 @@ bool MemoryManager::onRequireMemory(const int requiredMemory, string& errorText)
         /* Get Meminfo */
         Proc::getMemInfo(mInfo);
         it = mInfo.find("MemAvailable");
-        available = stol(it->second) / 1024;
+        if (it != mInfo.end()) {
+            available = stol(it->second) / 1024;
+        }
 
         if (available - requested > SettingManager::getMemoryLevelCriticalEnter()) {
             ret = true;

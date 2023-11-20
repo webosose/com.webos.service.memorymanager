@@ -147,7 +147,7 @@ bool SAM::onRunning(LSHandle *sh, LSMessage *msg, void *ctxt)
         JValueUtil::getValue(item, "appType", appType);
 
         if (!webPid.empty())
-            pid = webPid;
+            pid = std::move(webPid);
 
         /* If pid not found, keep it in wait list (m_appsWaitToRun) */
         if (pid.empty() || stoi(pid) < 0)
@@ -223,7 +223,7 @@ void SAM::initAppWaitToRun()
             JValueUtil::getValue(item, "webprocessid", webPid);
 
             if (!webPid.empty())
-                pid = webPid;
+                pid = std::move(webPid);
 
             /* To remove duplicated pid from Service list later */
             m_session.m_runtime->addReservedPid(stoi(pid));

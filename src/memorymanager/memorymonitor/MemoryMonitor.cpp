@@ -42,9 +42,14 @@ void AvailMemMonitor::update(void)
     Proc::getMemInfo(mInfo);
 
     auto it = mInfo.find("MemTotal");
-    m_total = stoul(it->second) / 1024;
+    if (it != mInfo.end()) {    
+        m_total = stoul(it->second) / 1024;
+    }
+
     it = mInfo.find("MemAvailable");
-    m_available = stoul(it->second) / 1024;
+    if (it != mInfo.end()) {        
+        m_available = stoul(it->second) / 1024;
+    }
 
     this->m_memoryMonitor.raiseEvent((MonitorEvent&)*this);
 }

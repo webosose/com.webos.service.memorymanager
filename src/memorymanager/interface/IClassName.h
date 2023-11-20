@@ -33,7 +33,7 @@ public:
 
     void setClassName(string name)
     {
-        m_name = name;
+        m_name = std::move(name);
     }
 
 private:

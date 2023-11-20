@@ -65,11 +65,11 @@ void MemStay::setSwapUsageRate(float swapUsageRate)
 void MemStay::configure()
 {
     long targetMemBlock;
-    long totalMem, freeMem;
+    long totalMem = 0, freeMem = 0;
     long freeMemBlock = 0;
 
-    long targetSwapBlock;
-    long totalSwap, freeSwap;
+    long targetSwapBlock = 0;
+    long totalSwap = 0, freeSwap = 0;
     long freeSwapBlock = 0;
 
     map<string, string> mInfo;
@@ -77,14 +77,23 @@ void MemStay::configure()
     Proc::getMemInfo(mInfo);
 
     auto it = mInfo.find("SwapTotal");
-    totalSwap = stol(it->second) / 1024;
+    if (it != mInfo.end()) {
+        totalSwap = stol(it->second) / 1024;
+    }
     it = mInfo.find("SwapFree");
-    freeSwap = stol(it->second) / 1024;
+    if (it != mInfo.end()) {
+        freeSwap = stol(it->second) / 1024;
+    }
 
     it = mInfo.find("MemTotal");
-    totalMem = stol(it->second) / 1024;
+    if (it != mInfo.end()) {
+        totalMem = stol(it->second) / 1024;
+    }
+
     it = mInfo.find("MemAvailable");
-    freeMem = stol(it->second) / 1024;
+    if (it != mInfo.end()) {
+        freeMem = stol(it->second) / 1024;
+    }
 
     if (m_targetSwapUsageRate > 0) {
         m_totalSwapBlock = totalSwap / m_unit; // MB based on m_unit
@@ -122,28 +131,38 @@ void MemStay::configure()
 
 gboolean MemStay::_tick_1sec(gpointer data)
 {
-    long freeMem;
-    long freeSwap;
+    long freeMem = 0;
+    long freeSwap = 0;
     map<string, string> mInfo;
-    long totalMem;
-    long totalSwap;
+    long totalMem = 0;
+    long totalSwap = 0;
 
     Proc::getMemInfo(mInfo);
 
     auto it = mInfo.find("SwapTotal");
-    totalSwap = stol(it->second) / 1024;
+    if (it != mInfo.end()) {
+        totalSwap = stol(it->second) / 1024;
+    }
+
     it = mInfo.find("SwapFree");
-    freeSwap = stol(it->second) / 1024;
+    if (it != mInfo.end()) {
+        freeSwap = stol(it->second) / 1024;
+    }
 
     it = mInfo.find("MemTotal");
-    totalMem = stol(it->second) / 1024;
+    if (it != mInfo.end()) {
+        totalMem = stol(it->second) / 1024;
+    }
+
     it = mInfo.find("MemAvailable");
-    freeMem = stol(it->second) / 1024;
+    if (it != mInfo.end()) {
+        freeMem = stol(it->second) / 1024;
+    }
 
     int size = MemStay::getInstance().m_unit * 1024 * 1024;
     void* buffer = NULL;
 
-    MemStay::getInstance().print( (totalSwap==0)? 0 : (100 * (totalSwap - freeSwap) / totalSwap), 100 * (totalMem - freeMem) / totalMem);
+    MemStay::getInstance().print( (totalSwap == 0)? 0 : (100 * (totalSwap - freeSwap) / totalSwap), (totalMem == 0)? 0 : (100 * (totalMem - freeMem) / totalMem));
 
     return G_SOURCE_CONTINUE;
 }
@@ -151,25 +170,34 @@ gboolean MemStay::_tick_1sec(gpointer data)
 gboolean MemStay::_tick(gpointer data)
 {
     static int memDone = 0;
-    long freeMem;
-    long freeSwap;
+    long freeMem = 0;
+    long freeSwap = 0;
     map<string, string> mInfo;
     static int swapDone = 0;
-    long totalMem;
-    long totalSwap;
+    long totalMem = 0;
+    long totalSwap = 0;
 
     Proc::getMemInfo(mInfo);
 
     auto it = mInfo.find("SwapTotal");
-    totalSwap = stol(it->second) / 1024;
-    it = mInfo.find("SwapFree");
-    freeSwap = stol(it->second) / 1024;
+    if (it != mInfo.end()) {    
+        totalSwap = stol(it->second) / 1024;
+    }
+    
+    it = mInfo.find("SwapFree");    
+    if (it != mInfo.end()) {
+        freeSwap = stol(it->second) / 1024;
+    }
 
     it = mInfo.find("MemTotal");
-    totalMem = stol(it->second) / 1024;
+    if (it != mInfo.end()) {
+        totalMem = stol(it->second) / 1024;
+    }
 
     it = mInfo.find("MemAvailable");
-    freeMem = stol(it->second) / 1024;
+    if (it != mInfo.end()) {    
+        freeMem = stol(it->second) / 1024;
+    }
 
     int size = MemStay::getInstance().m_unit * 1024 * 1024;
     void* buffer = NULL;
@@ -191,7 +219,7 @@ gboolean MemStay::_tick(gpointer data)
         madvise(buffer, size, MADV_PAGEOUT);
         MemStay::getInstance().m_allocSwapBlockCnt++;
 
-        MemStay::getInstance().print((totalSwap == 0)? 0 : (100 * (totalSwap - freeSwap) / totalSwap), 100 * (totalMem - freeMem) / totalMem);
+        MemStay::getInstance().print((totalSwap == 0)? 0 : (100 * (totalSwap - freeSwap) / totalSwap),(totalMem == 0)? 0 : (100 * (totalMem - freeMem) / totalMem));
         MemStay::getInstance().m_allocationSize += MemStay::getInstance().m_unit;
         MemStay::getInstance().m_allocations.push_back(buffer);
 
@@ -220,7 +248,7 @@ gboolean MemStay::_tick(gpointer data)
         memDone = 1;
     }
 
-    MemStay::getInstance().print((totalSwap==0)? 0 : (100 * (totalSwap-freeSwap) / totalSwap), 100 * (totalMem-freeMem) / totalMem);
+    MemStay::getInstance().print((totalSwap == 0)? 0 : (100 * (totalSwap-freeSwap) / totalSwap), (totalMem == 0)? 0: (100 * (totalMem-freeMem) / totalMem));
 
     if (memDone && swapDone) {
         if (g_timeout_add(1000, _tick_1sec, NULL) <= 0) {
