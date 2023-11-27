@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2021 LG Electronics, Inc.
+# Copyright (c) 2018-2023 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -87,7 +87,3 @@ set(LIBS
 )
 target_link_libraries(${BIN_NAME} ${LIBS})
 
-# Install
-install(TARGETS ${BIN_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
-webos_build_configured_file(files/launch/memorymanager.conf SYSCONFDIR init)
-webos_build_configured_file(files/launch/memorymanager.service SYSCONFDIR systemd/system)
