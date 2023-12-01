@@ -87,3 +87,4 @@ set(LIBS
 )
 target_link_libraries(${BIN_NAME} ${LIBS})
 
+install(TARGETS ${BIN_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
