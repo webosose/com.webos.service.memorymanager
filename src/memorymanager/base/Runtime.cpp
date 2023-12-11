@@ -120,8 +120,8 @@ void Service::toString(map<T, U>& pMap, string& str1, string& str2)
 
     auto it = pMap.cbegin();
     for (; it != pMap.cend(); ++it) {
-        ret1 += std::move(to_string(it->first)) + " ";
-        ret2 += std::move(to_string(it->second)) + " ";
+        ret1 += to_string(it->first) + " ";
+        ret2 += to_string(it->second) + " ";
     }
 
     boost::trim(ret1);
@@ -208,7 +208,7 @@ bool Runtime::reclaimMemory(bool critical)
     if (m_applications.empty())
         return false;
 
-    const auto& it = m_applications.front();
+    auto it = m_applications.front();
 
     if (it.getStatus() == "foreground" && !critical)
         return false;
