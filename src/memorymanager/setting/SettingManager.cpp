@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 LG Electronics, Inc.
+// Copyright (c) 2018-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,28 +41,12 @@ void SettingManager::initEnv()
     else
         m_SessionEnabled = false;
 
-    if (strcmp(WEBOS_TARGET_DISTRO, "webos") == 0) {
-        m_SingleAppPolicy = false;
+    m_SingleAppPolicy = false;
 
-        m_memoryLevelLowEnter = 350;
-        m_memoryLevelLowExit = 380;
-        m_memoryLevelCriticalEnter = 200;
-        m_memoryLevelCriticalExit = 230;
-    } else if (strcmp(WEBOS_TARGET_DISTRO, "webos-auto") == 0) {
-        m_SingleAppPolicy = false;
-
-        m_memoryLevelLowEnter = 250;
-        m_memoryLevelLowExit = 280;
-        m_memoryLevelCriticalEnter = 100;
-        m_memoryLevelCriticalExit = 130;
-    } else {
-        m_SingleAppPolicy = true;
-
-        m_memoryLevelLowEnter = 100;
-        m_memoryLevelLowExit = 120;
-        m_memoryLevelCriticalEnter = 50;
-        m_memoryLevelCriticalExit = 70;
-    }
+    m_memoryLevelLowEnter = 350;
+    m_memoryLevelLowExit = 380;
+    m_memoryLevelCriticalEnter = 200;
+    m_memoryLevelCriticalExit = 230;
 }
 
 int SettingManager::getMemoryLevelLowEnter()

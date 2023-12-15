@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 LG Electronics, Inc.
+// Copyright (c) 2018-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ bool SAM::close(string appId, string instanceId)
 
     try {
         Call call;
-#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
+#if defined(ENABLE_SESSION)
         if (m_session.getSessionId().empty()) {
             call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
                                         (const char *)nullptr, (const char *)nullptr);
@@ -186,7 +186,7 @@ void SAM::initAppWaitToRun()
 
     try {
         Call call;
-#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
+#if defined(ENABLE_SESSION)
         if (m_session.getSessionId().empty()) {
             call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
                                         (const char *)nullptr, (const char *)nullptr);
@@ -252,7 +252,7 @@ void SAM::initDefaultStatus()
 
     try {
         Call call;
-#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
+#if defined(ENABLE_SESSION)
         if (m_session.getSessionId().empty()) {
             call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
                                         (const char *)nullptr, (const char *)nullptr);

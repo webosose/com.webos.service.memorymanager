@@ -1,4 +1,4 @@
-// Copyright (c) 2020 LG Electronics, Inc.
+// Copyright (c) 2020-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ bool LunaSubscriber::startSubscribe(const string& uri, LSFilterFunc callback,
     JValue req = pbnjson::Object();
 
     req.put("subscribe", true);
-#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
+#if defined(ENABLE_SESSION)
     if (sessionId.empty()) {
         m_subscribePorts[m_portIndex] = handle->callMultiReply(uri.c_str(), req.stringify().c_str(),
                                                  callback, ctxt, nullptr, nullptr);
@@ -97,7 +97,7 @@ LunaSubscriber::LunaSubscriber(const string& serviceName,
     if (!sessionId.empty())
         req.put("sessionId", sessionId);
 
-#if defined(WEBOS_TARGET_DISTRO_WEBOS_AUTO)
+#if defined(ENABLE_SESSION)
     m_subscribePorts[m_portIndex] = handle->callMultiReply(uri.c_str(), req.stringify().c_str(),
                                             onStatusChange, this, nullptr, nullptr);
 #else
