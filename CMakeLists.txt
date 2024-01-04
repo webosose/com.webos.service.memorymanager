@@ -23,9 +23,6 @@ include(webOS/webOS)
 webos_modules_init(1 1 1 QUALIFIER RC4)
 webos_component(1 0 0)
 
-webos_machine_dep()
-webos_machine_impl_dep()
-
 webos_configure_source_files(cfg ${PROJECT_SOURCE_DIR}/src/Environment.h)
 
 add_subdirectory(src/memorymanager)
