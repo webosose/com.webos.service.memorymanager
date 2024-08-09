@@ -257,11 +257,8 @@ void Runtime::createService(Session *session)
 {
     const string p = session->getPath();
     map<string, list<int>> comm_pids;
-    try {
-        Cgroup::iterateDir(comm_pids, p);
-    } catch (...) {
-        Logger::error("Error occurs while iterating directory: " + p, getClassName());
-    }
+
+    Cgroup::iterateDir(comm_pids, p);
 
     /* Destroy previous service list */
     for (auto &svc:m_services)

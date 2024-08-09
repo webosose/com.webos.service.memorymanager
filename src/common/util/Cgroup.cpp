@@ -57,13 +57,11 @@ void Cgroup::iterateDir(map<string, list<int>>& p_comm_pids, string path)
     while (true) {
         list<int> pids;
         string pid;
-        ifs >> pid;
 
-        if (pid.empty()) {
+        if (!std::getline(ifs, pid))
             break;
-        } else {
-            pids.push_back(stoi(pid));
-        }
+
+        pids.push_back(stoi(pid));
 
         boost::filesystem::path comm_path{path.c_str()};
         string key = comm_path.filename().string();

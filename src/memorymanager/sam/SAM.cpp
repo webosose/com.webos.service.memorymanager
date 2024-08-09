@@ -35,50 +35,42 @@ bool SAM::close(string appId, string instanceId)
     LS::Handle *handle = LunaConnector::getInstance()->getHandle();
     const string uri = "luna://com.webos.service.applicationmanager/close";
 
-    try {
-        Call call;
+    Call call;
 #if defined(ENABLE_SESSION)
-        if (m_session.getSessionId().empty()) {
-            call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                                        (const char *)nullptr, (const char *)nullptr);
-        } else {
-            call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                                        (const char *)nullptr, m_session.getSessionId().c_str());
-        }
-#else
+    if (m_session.getSessionId().empty()) {
         call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                                    (const char *)nullptr);
+                                    (const char *)nullptr, (const char *)nullptr);
+    } else {
+        call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                    (const char *)nullptr, m_session.getSessionId().c_str());
+    }
+#else
+    call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                (const char *)nullptr);
 #endif
 
-        Message response = call.get(m_closeTimeOutMs);
-        if (!response) {
-            Logger::error("Error: No response from SAM in 5s", getClassName());
-            return false;
-        }
-
-        if (response.isHubError()) {
-            Logger::error("Error: " + string(response.getPayload()), getClassName());
-            return false;
-        }
-
-        JValue responsePayload = JDomParser::fromString(response.getPayload());
-        bool returnValue = false;
-
-        JValueUtil::getValue(responsePayload, "returnValue", returnValue);
-        if (returnValue != true) {
-            Logger::error("Error: " + string(response.getPayload()), getClassName());
-            return false;
-        }
-
-        /* Successful response from SAM */
-        return true;
-    } catch(const LS::Error& lse) {
-        Logger::error("Exception: " + string(lse.what()), getClassName());
-        return false;
-    } catch(const std::exception& e) {
-        Logger::error("Exception: " + string(e.what()), getClassName());
+    Message response = call.get(m_closeTimeOutMs);
+    if (!response) {
+        Logger::error("Error: No response from SAM in 5s", getClassName());
         return false;
     }
+
+    if (response.isHubError()) {
+        Logger::error("Error: " + string(response.getPayload()), getClassName());
+        return false;
+    }
+
+    JValue responsePayload = JDomParser::fromString(response.getPayload());
+    bool returnValue = false;
+
+    JValueUtil::getValue(responsePayload, "returnValue", returnValue);
+    if (returnValue != true) {
+        Logger::error("Error: " + string(response.getPayload()), getClassName());
+        return false;
+    }
+
+    /* Successful response from SAM */
+    return true;
 }
 
 bool SAM::onGetAppLifeEvents(LSHandle *sh, LSMessage *msg, void *ctxt)
@@ -184,62 +176,54 @@ void SAM::initAppWaitToRun()
     LS::Handle *handle = LunaConnector::getInstance()->getHandle();
     const string uri = "luna://" + m_externalServiceName + "/running";
 
-    try {
-        Call call;
+    Call call;
 #if defined(ENABLE_SESSION)
-        if (m_session.getSessionId().empty()) {
-            call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                                        (const char *)nullptr, (const char *)nullptr);
-        } else {
-            call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                                        (const char *)nullptr, m_session.getSessionId().c_str());
-        }
-#else
+    if (m_session.getSessionId().empty()) {
         call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                                    (const char *)nullptr);
+                                    (const char *)nullptr, (const char *)nullptr);
+    } else {
+        call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                    (const char *)nullptr, m_session.getSessionId().c_str());
+    }
+#else
+    call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                (const char *)nullptr);
 #endif
 
-        Message response = call.get(m_closeTimeOutMs);
-        if (!response) {
-            Logger::error("Error: No response from SAM in 5s", getClassName());
-            return;
-        }
-
-        if (response.isHubError()) {
-            Logger::error("Error: " + string(response.getPayload()), getClassName());
-            return;
-        }
-
-        JValue responsePayload = JDomParser::fromString(response.getPayload());
-
-        m_session.m_runtime->clearReservedPid();
-        for (JValue item : responsePayload["running"].items()) {
-            string instanceId = "", appType = "", appId = "", pid = "", webPid = "";
-
-            JValueUtil::getValue(item, "instanceId", instanceId);
-            JValueUtil::getValue(item, "id", appId);
-            JValueUtil::getValue(item, "appType", appType);
-            JValueUtil::getValue(item, "processid", pid);
-            JValueUtil::getValue(item, "webprocessid", webPid);
-
-            if (!webPid.empty())
-                pid = std::move(webPid);
-
-            /* To remove duplicated pid from Service list later */
-            m_session.m_runtime->addReservedPid(stoi(pid));
-
-            Application *app = new Application(instanceId, appId, appType, "", stoi(pid));
-            m_appsWaitToRun.push_back(*app);
-            delete app;
-        }
-        return;
-    } catch(const LS::Error& lse) {
-        Logger::error("Exception: " + string(lse.what()), getClassName());
-        return;
-    } catch(const std::exception& e) {
-        Logger::error("Exception: " + string(e.what()), getClassName());
+    Message response = call.get(m_closeTimeOutMs);
+    if (!response) {
+        Logger::error("Error: No response from SAM in 5s", getClassName());
         return;
     }
+
+    if (response.isHubError()) {
+        Logger::error("Error: " + string(response.getPayload()), getClassName());
+        return;
+    }
+
+    JValue responsePayload = JDomParser::fromString(response.getPayload());
+
+    m_session.m_runtime->clearReservedPid();
+    for (JValue item : responsePayload["running"].items()) {
+        string instanceId = "", appType = "", appId = "", pid = "", webPid = "";
+
+        JValueUtil::getValue(item, "instanceId", instanceId);
+        JValueUtil::getValue(item, "id", appId);
+        JValueUtil::getValue(item, "appType", appType);
+        JValueUtil::getValue(item, "processid", pid);
+        JValueUtil::getValue(item, "webprocessid", webPid);
+
+        if (!webPid.empty())
+            pid = std::move(webPid);
+
+        /* To remove duplicated pid from Service list later */
+        m_session.m_runtime->addReservedPid(stoi(pid));
+
+        Application *app = new Application(instanceId, appId, appType, "", stoi(pid));
+        m_appsWaitToRun.push_back(*app);
+        delete app;
+    }
+    return;
 }
 
 void SAM::initDefaultStatus()
@@ -250,46 +234,38 @@ void SAM::initDefaultStatus()
     LS::Handle *handle = LunaConnector::getInstance()->getHandle();
     const string uri = "luna://" + m_externalServiceName + "/getForegroundAppInfo";
 
-    try {
-        Call call;
+    Call call;
 #if defined(ENABLE_SESSION)
-        if (m_session.getSessionId().empty()) {
-            call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                                        (const char *)nullptr, (const char *)nullptr);
-        } else {
-            call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                                        (const char *)nullptr, m_session.getSessionId().c_str());
-        }
-#else
+    if (m_session.getSessionId().empty()) {
         call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
-                                    (const char *)nullptr);
+                                    (const char *)nullptr, (const char *)nullptr);
+    } else {
+        call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                    (const char *)nullptr, m_session.getSessionId().c_str());
+    }
+#else
+    call = handle->callOneReply(uri.c_str(), payload.stringify().c_str(),
+                                (const char *)nullptr);
 #endif
 
-        Message response = call.get(m_closeTimeOutMs);
-        if (!response) {
-            Logger::error("Error: No response from SAM in 5s", getClassName());
-            return;
-        }
-
-        if (response.isHubError()) {
-            Logger::error("Error: " + string(response.getPayload()), getClassName());
-            return;
-        }
-
-        JValue responsePayload = JDomParser::fromString(response.getPayload());
-
-        string appId = "";
-        JValueUtil::getValue(responsePayload, "appId", appId);
-        m_session.m_runtime->setAppDefaultStatus(appId);
-
-        return;
-    } catch(const LS::Error& lse) {
-        Logger::error("Exception: " + string(lse.what()), getClassName());
-        return;
-    } catch(const std::exception& e) {
-        Logger::error("Exception: " + string(e.what()), getClassName());
+    Message response = call.get(m_closeTimeOutMs);
+    if (!response) {
+        Logger::error("Error: No response from SAM in 5s", getClassName());
         return;
     }
+
+    if (response.isHubError()) {
+        Logger::error("Error: " + string(response.getPayload()), getClassName());
+        return;
+    }
+
+    JValue responsePayload = JDomParser::fromString(response.getPayload());
+
+    string appId = "";
+    JValueUtil::getValue(responsePayload, "appId", appId);
+    m_session.m_runtime->setAppDefaultStatus(appId);
+
+    return;
 }
 
 void SAM::onConnected()

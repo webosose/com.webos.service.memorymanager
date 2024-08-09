@@ -408,11 +408,11 @@ bool LunaConnector::connect(const string& serviceName,
 {
     try {
         m_handle = new LS::Handle(serviceName.c_str());
-        m_handle->attachToLoop(loop);
     } catch(const LS::Error& e) {
         Logger::error("Fail to register to luna-bus", getClassName());
         return false;
     }
+    m_handle->attachToLoop(loop);
 
     return true;
 }

@@ -20,63 +20,69 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 
+#include <iostream>
+#include <sstream>
+#include <string>
+
 #define LOG_NAME "PROC"
 
 void Proc::getMemInfo(map<string, string>& mInfo)
 {
-    string key;
-    string value;
-    string kb;
+    std::ifstream ifs("/proc/meminfo");
 
-    ifstream f("/proc/meminfo");
-
-    if (f.fail()) {
-        Logger::warning("Fail to open /proc/meminfo", LOG_NAME);
-        f.close();
+    if (!ifs.is_open())
         return;
+
+    std::string line;
+    while(std::getline(ifs, line))
+    {
+        //Logger::debug("getMemInfo: line" + line);
+        std::wstring::size_type key_pos = line.find_first_not_of(' ');
+        std::wstring::size_type key_end = line.find(":");
+        std::wstring::size_type val_pos = line.find_first_not_of(' ', key_end + 1);
+        std::wstring::size_type val_end = line.find(' ', val_pos);
+        std::string key, val;
+
+        key = line.substr(key_pos, key_end - key_pos);
+        val = line.substr(val_pos, val_end - val_pos);
+
+        //Logger::debug("getMemInfo: insert key " + key + ", value " + val);
+        mInfo.insert(make_pair(key, val));
     }
-
-    while (true) {
-        f >> key >> value >> kb;
-
-        if (f.fail())
-            break;
-
-        key = key.substr(0, key.find(":"));
-        mInfo.insert(make_pair(key, value));
-    }
-
-    f.close();
+    ifs.close();
 }
 
 bool Proc::getSmapsRollup(const int pid, map<string, string>& smaps_rollup)
 {
-    string key;
-    string value;
-    string kb;
+    string file = "/proc/" + to_string(pid) + "/smaps_rollup";
+    Logger::warning("getSmapsRollup: try open " + file);
+    std::ifstream ifs(file);
 
-    ifstream f("/proc/" + to_string(pid) + "/smaps_rollup");
-
-    if (f.fail()) {
-        Logger::warning("Fail to open /proc/" + to_string(pid) + "/smaps_rollup", LOG_NAME);
-        f.close();
+    if (!ifs.is_open())
         return false;
-    }
+
+    std::string line;
 
     /* In case of smaps_rollup, pass first line */
-    f >> key >> value >> kb;
+    std::getline(ifs, line);
+    Logger::warning("getSmapsRollup: discard first line, " + line);
 
-    while (true) {
-        f >> key >> value >> kb;
+    while(std::getline(ifs, line))
+    {
+        Logger::warning("getSmapsRollup: line" + line);
+        std::wstring::size_type key_pos = line.find_first_not_of(' ');
+        std::wstring::size_type key_end = line.find(":");
+        std::wstring::size_type val_pos = line.find_first_not_of(' ', key_end + 1);
+        std::wstring::size_type val_end = line.find(' ', val_pos);
+        std::string key, val;
 
-        if (f.fail())
-            break;
+        key = line.substr(key_pos, key_end - key_pos);
+        val = line.substr(val_pos, val_end - val_pos);
 
-        key = key.substr(0, key.find(":"));
-        smaps_rollup.insert(make_pair(key, value));
+        Logger::warning("getSmapsRollup: insert key " + key + ", value " + val);
+        smaps_rollup.insert(make_pair(key, val));
     }
-
-    f.close();
+    ifs.close();
 
     return true;
 }
