@@ -50,11 +50,12 @@ webos_add_compiler_flags(ALL ${GIO_UNIX_CFLAGS})
 
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/MMBus.c
     COMMAND gdbus-codegen --pragma-once
-                          --generate-c-code=${CMAKE_CURRENT_BINARY_DIR}/MMBus
+                          --generate-c-code MMBus
                           --c-namespace MMBus
                           --interface-prefix com.webos.MemoryManager1.
                           ${PROJECT_SOURCE_DIR}/files/dbus/MemoryManager1.xml
 
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS ${PROJECT_SOURCE_DIR}/files/dbus/MemoryManager1.xml
     COMMENT "Generate D-Bus 'MemroyManager1.xml"
 )
